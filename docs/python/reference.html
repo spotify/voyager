@@ -1,0 +1,875 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<meta property="og:title" content="The voyager Python API" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://spotify.github.io/voyager/python/reference.html" />
+<meta property="og:site_name" content="Voyager 1.0.9 Python Documentation" />
+<meta property="og:description" content="This module provides classes and functions for creating indices of vector data. A quick example on how to get started: Enums: Utilities:" />
+<meta property="og:image" content="https://github.com/spotify/pedalboard/assets/213293/07eb4ce7-11c7-4bda-9ba0-d43f719525f2" />
+<meta property="og:image:alt" content="🛰️ Documentation for Voyager: A nearest-neighbor search library." />
+<meta name="description" content="This module provides classes and functions for creating indices of vector data. A quick example on how to get started: Enums: Utilities:" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="&lt;no title&gt;" href="index.html" />
+        <link rel="canonical" href="python/reference.html" />
+
+    <link rel="shortcut icon" href="_static/favicon.ico"/><meta name="generator" content="sphinx-5.3.0, furo 2022.09.29"/>
+        <title>The voyager Python API - Voyager 1.0.9 Python Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=d81277517bee4d6b0349d71bb2661d4890b5617c" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Voyager 1.0.9 Python Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand centered" href="index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/voyager_logo_roundrect_black_small.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">Voyager 1.0.9 Python Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder=Search name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Python API Reference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="/java#http://">Java Documentation</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/spotify/voyager">GitHub Repo</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="the-voyager-python-api">
+<h1>The <code class="docutils literal notranslate"><span class="pre">voyager</span></code> Python API<a class="headerlink" href="#the-voyager-python-api" title="Permalink to this heading">#</a></h1>
+<p>This module provides classes and functions for creating indices of vector data.</p>
+<p>A quick example on how to get started:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">voyager</span> <span class="kn">import</span> <span class="n">Index</span><span class="p">,</span> <span class="n">Space</span>
+
+<span class="c1"># Create an empty Index object that can store vectors:</span>
+<span class="n">index</span> <span class="o">=</span> <span class="n">Index</span><span class="p">(</span><span class="n">Space</span><span class="o">.</span><span class="n">Euclidean</span><span class="p">,</span> <span class="n">num_dimensions</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">id_a</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">add_item</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="n">id_b</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">add_item</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">id_a</span><span class="p">)</span>  <span class="c1"># =&gt; 0</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">id_b</span><span class="p">)</span>  <span class="c1"># =&gt; 1</span>
+
+<span class="c1"># Find the two closest elements:</span>
+<span class="n">neighbors</span><span class="p">,</span> <span class="n">distances</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">neighbors</span><span class="p">)</span>  <span class="c1"># =&gt; [0, 1]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>  <span class="c1"># =&gt; [0.0, 125.0]</span>
+
+<span class="c1"># Save the index to disk to reload later (or in Java!)</span>
+<span class="n">index</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;output_file.voy&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="voyager.Index">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">voyager.</span></span><span class="sig-name descname"><span class="pre">Index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">space</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#voyager.Space" title="voyager.Space"><span class="pre">Space</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_dimensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ef_construction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_elements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_data_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#voyager.StorageDataType" title="voyager.StorageDataType"><span class="pre">StorageDataType</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">StorageDataType.Float32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#voyager.Index" title="Permalink to this definition">#</a></dt>
+<dd><p>A nearest-neighbor search index containing vector data (i.e. lists of
+floating-point values, each list labeled with a single integer ID).</p>
+<p>Think of a Voyager <a class="reference internal" href="#voyager.Index" title="voyager.Index"><code class="xref py py-class docutils literal notranslate"><span class="pre">Index</span></code></a> as a <code class="docutils literal notranslate"><span class="pre">Dict[int,</span> <span class="pre">List[float]]</span></code>
+(a dictionary mapping integers to lists of floats), where a
+<a class="reference internal" href="#voyager.Index.query" title="voyager.Index.query"><code class="xref py py-meth docutils literal notranslate"><span class="pre">query()</span></code></a> method allows finding the <em>k</em> nearest <code class="docutils literal notranslate"><span class="pre">int</span></code> keys
+to a provided <code class="docutils literal notranslate"><span class="pre">List[float]</span></code> query vector.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Voyager is an <strong>approximate</strong> nearest neighbor index package, which means
+that each call to the <a class="reference internal" href="#voyager.Index.query" title="voyager.Index.query"><code class="xref py py-meth docutils literal notranslate"><span class="pre">query()</span></code></a> method may return results that
+are <em>approximately</em> correct. The metric used to gauge the accuracy
+of a Voyager <a class="reference internal" href="#voyager.Index.query" title="voyager.Index.query"><code class="xref py py-meth docutils literal notranslate"><span class="pre">query()</span></code></a> is called
+<a class="reference external" href="https://en.wikipedia.org/wiki/Precision_and_recall">recall</a>. Recall
+measures the percentage of correct results returned per
+<a class="reference internal" href="#voyager.Index.query" title="voyager.Index.query"><code class="xref py py-meth docutils literal notranslate"><span class="pre">query()</span></code></a>.</p>
+<p>Various parameters documented below (like <code class="docutils literal notranslate"><span class="pre">M</span></code>, <code class="docutils literal notranslate"><span class="pre">ef_construction</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">ef</span></code>) may affect the recall of queries. Usually, increasing recall
+requires either increasing query latency, increasing memory usage,
+increasing index creation time, or all of the above.</p>
+</div>
+<p>Voyager indices support insertion, lookup, and deletion of vectors.</p>
+<p>Calling the <a class="reference internal" href="#voyager.Index" title="voyager.Index"><code class="xref py py-class docutils literal notranslate"><span class="pre">Index</span></code></a> constructor will return an object of one
+of three classes:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">FloatIndex</span></code>, which uses 32-bit precision for all data</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Float8Index</span></code>, which uses 8-bit fixed-point precision and requires all vectors to be within the bounds [-1, 1]</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">E4M3Index</span></code>, which uses 8-bit floating-point precision and requires all vectors to be within the bounds [-448, 448]</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>space</strong> – <p>The <a class="reference internal" href="#voyager.Space" title="voyager.Space"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space</span></code></a> to use to calculate the distance between vectors,
+<a class="reference internal" href="#voyager.Space.Cosine" title="voyager.Space.Cosine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space.Cosine</span></code></a> (cosine distance).</p>
+<p>The choice of distance to use usually depends on the kind of vector
+data being inserted into the index. If your vectors are usually compared
+by measuring the cosine distance between them, use <a class="reference internal" href="#voyager.Space.Cosine" title="voyager.Space.Cosine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space.Cosine</span></code></a>.</p>
+</p></li>
+<li><p><strong>num_dimensions</strong> – The number of dimensions present in each vector added to this index.
+Each vector in the index must have the same number of dimensions.</p></li>
+<li><p><strong>M</strong> – The number of connections between nodes in the tree’s internal data structure.
+Larger values give better recall, but use more memory. This parameter cannot
+be changed after the index is instantiated.</p></li>
+<li><p><strong>ef_construction</strong> – The number of vectors to search through when inserting a new vector into
+the index. Higher values make index construction slower, but give better
+recall. This parameter cannot be changed after the index is instantiated.</p></li>
+<li><p><strong>random_seed</strong> – The seed (initial value) of the random number generator used when
+constructing this index. Byte-for-byte identical indices can be created
+by setting this value to a known value and adding vectors to the index
+one-at-a-time (to avoid nondeterministic ordering due to multi-threaded
+insertion).</p></li>
+<li><p><strong>max_elements</strong> – The maximum size of the index at construction time. Indices can be resized
+(and are automatically resized when <a class="reference internal" href="#voyager.Index.add_item" title="voyager.Index.add_item"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_item()</span></code></a> or
+<a class="reference internal" href="#voyager.Index.add_items" title="voyager.Index.add_items"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_items()</span></code></a> is called) so this value is only useful if the exact
+number of elements that will be added to this index is known in advance.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.__contains__">
+<span class="sig-name descname"><span class="pre">__contains__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#voyager.Index.__contains__" title="Permalink to this definition">#</a></dt>
+<dd><p>Check to see if a provided vector’s ID is present in this index.</p>
+<p>Returns true iff the provided integer ID has a corresponding (non-deleted) vector in this index.
+Use the <code class="docutils literal notranslate"><span class="pre">in</span></code> operator to call this method:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1234</span> <span class="ow">in</span> <span class="n">index</span> <span class="c1"># =&gt; returns True or False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#voyager.Index.__len__" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the number of non-deleted vectors in this index.</p>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">len</span></code> operator to call this method:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="c1"># =&gt; 1234</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This value may differ from <a class="reference internal" href="#voyager.Index.num_elements" title="voyager.Index.num_elements"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_elements</span></code></a> if elements have been deleted.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.add_item">
+<span class="sig-name descname"><span class="pre">add_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#voyager.Index.add_item" title="Permalink to this definition">#</a></dt>
+<dd><p>Add a vector to this index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vector</strong> – <p>A 32-bit floating-point NumPy array, with shape <code class="docutils literal notranslate"><span class="pre">(num_dimensions,)</span></code>.</p>
+<p>If using the <a class="reference internal" href="#voyager.Space.Cosine" title="voyager.Space.Cosine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space.Cosine</span></code></a> <a class="reference internal" href="#voyager.Space" title="voyager.Space"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space</span></code></a>, this vector will be normalized
+before insertion. If using a <a class="reference internal" href="#voyager.StorageDataType" title="voyager.StorageDataType"><code class="xref py py-class docutils literal notranslate"><span class="pre">StorageDataType</span></code></a> other than
+<a class="reference internal" href="#voyager.StorageDataType.Float32" title="voyager.StorageDataType.Float32"><code class="xref py py-class docutils literal notranslate"><span class="pre">StorageDataType.Float32</span></code></a>, the vector will be converted to the lower-precision
+data type <em>after</em> normalization.</p>
+</p></li>
+<li><p><strong>id</strong> – An optional ID to assign to this vector.
+If not provided, this vector’s ID will automatically be generated based on the
+number of elements already in this index.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ID that was assigned to this vector (either auto-generated or provided).</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If calling <a class="reference internal" href="#voyager.Index.add_item" title="voyager.Index.add_item"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_item()</span></code></a> in a loop, consider batching your
+calls by using <a class="reference internal" href="#voyager.Index.add_items" title="voyager.Index.add_items"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_items()</span></code></a> instead, which will be faster.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.add_items">
+<span class="sig-name descname"><span class="pre">add_items</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_threads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#voyager.Index.add_items" title="Permalink to this definition">#</a></dt>
+<dd><p>Add multiple vectors to this index simultaneously.</p>
+<p>This method may be faster than calling <a class="reference internal" href="#voyager.Index.add_items" title="voyager.Index.add_items"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_items()</span></code></a> multiple times,
+as passing a batch of vectors helps avoid Python’s Global Interpreter Lock.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vectors</strong> – <p>A 32-bit floating-point NumPy array, with shape <code class="docutils literal notranslate"><span class="pre">(num_vectors,</span> <span class="pre">num_dimensions)</span></code>.</p>
+<p>If using the <a class="reference internal" href="#voyager.Space.Cosine" title="voyager.Space.Cosine"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space.Cosine</span></code></a> <a class="reference internal" href="#voyager.Space" title="voyager.Space"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space</span></code></a>, these vectors will be normalized
+before insertion. If using a <a class="reference internal" href="#voyager.StorageDataType" title="voyager.StorageDataType"><code class="xref py py-class docutils literal notranslate"><span class="pre">StorageDataType</span></code></a> other than
+<a class="reference internal" href="#voyager.StorageDataType.Float32" title="voyager.StorageDataType.Float32"><code class="xref py py-class docutils literal notranslate"><span class="pre">StorageDataType.Float32</span></code></a>, these vectors will be converted to the lower-precision
+data type <em>after</em> normalization.</p>
+</p></li>
+<li><p><strong>id</strong> – An optional list of IDs to assign to these vectors.
+If provided, this list must be identical in length to the first dimension of <code class="docutils literal notranslate"><span class="pre">vectors</span></code>.
+If not provided, each vector’s ID will automatically be generated based on the
+number of elements already in this index.</p></li>
+<li><p><strong>num_threads</strong> – Up to <code class="docutils literal notranslate"><span class="pre">num_threads</span></code> will be started to perform insertions in parallel.
+If <code class="docutils literal notranslate"><span class="pre">vectors</span></code> contains only one query vector, <code class="docutils literal notranslate"><span class="pre">num_threads</span></code> will have no effect.
+By default, one thread will be spawned per CPU core.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The IDs that were assigned to the provided vectors (either auto-generated or provided), in the
+same order as the provided vectors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.as_bytes">
+<span class="sig-name descname"><span class="pre">as_bytes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="headerlink" href="#voyager.Index.as_bytes" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the contents of this index as a <code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code> object. The resulting object
+will contain the same data as if this index was serialized to disk and then read back
+into memory again.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This may be extremely large (many gigabytes) if the index is sufficiently large.
+To save to disk without allocating this entire bytestring, use <code class="xref py py-meth docutils literal notranslate"><span class="pre">save_index()</span></code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method can also be called by passing this object to the <code class="docutils literal notranslate"><span class="pre">bytes(...)</span></code>
+built-in function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">index</span><span class="p">:</span> <span class="n">voyager</span><span class="o">.</span><span class="n">Index</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">serialized_index</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.get_distance">
+<span class="sig-name descname"><span class="pre">get_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#voyager.Index.get_distance" title="Permalink to this definition">#</a></dt>
+<dd><p>Get the distance between two provided vectors. The vectors must share the dimensionality of the index.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.get_vector">
+<span class="sig-name descname"><span class="pre">get_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#voyager.Index.get_vector" title="Permalink to this definition">#</a></dt>
+<dd><p>Get the vector stored in this index at the provided integer ID.
+If no such vector exists, a <code class="xref py py-exc docutils literal notranslate"><span class="pre">KeyError</span></code> will be thrown.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method can also be called by using the subscript operator
+(i.e. <code class="docutils literal notranslate"><span class="pre">my_index[1234]</span></code>).</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If using the <code class="xref py py-class docutils literal notranslate"><span class="pre">Cosine</span></code> <a class="reference internal" href="#voyager.Space" title="voyager.Space"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space</span></code></a>, this method
+will return a normalized version of the vector that was
+originally added to this index.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.get_vectors">
+<span class="sig-name descname"><span class="pre">get_vectors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#voyager.Index.get_vectors" title="Permalink to this definition">#</a></dt>
+<dd><p>Get one or more vectors stored in this index at the provided integer IDs.
+If one or more of the provided IDs cannot be found in the index, a
+<code class="xref py py-exc docutils literal notranslate"><span class="pre">KeyError</span></code> will be thrown.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If using the <code class="xref py py-class docutils literal notranslate"><span class="pre">Cosine</span></code> <a class="reference internal" href="#voyager.Space" title="voyager.Space"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space</span></code></a>, this method
+will return normalized versions of the vector that were
+originally added to this index.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_like</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BinaryIO</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">space</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#voyager.Space" title="voyager.Space"><span class="pre">Space</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_dimensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_data_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#voyager.StorageDataType" title="voyager.StorageDataType"><span class="pre">StorageDataType</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">StorageDataType.Float32</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#voyager.Index" title="voyager.Index"><span class="pre">Index</span></a></span></span><a class="headerlink" href="#voyager.Index.load" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">space</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#voyager.Space" title="voyager.Space"><span class="pre">Space</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_dimensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_data_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#voyager.StorageDataType" title="voyager.StorageDataType"><span class="pre">StorageDataType</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">StorageDataType.Float32</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#voyager.Index" title="voyager.Index"><span class="pre">Index</span></a></span></span></dt>
+<dd><p>Load an index from a file on disk, or a Python file-like object.</p>
+<p>If provided a string as a first argument, the string is assumed to refer to a file
+on the local filesystem. Loading of an index from this file will be done in native
+code, without holding Python’s Global Interpreter Lock (GIL), allowing for performant
+loading of multiple indices simultaneously.</p>
+<p>If provided a file-like object as a first argument, the provided object must have
+<code class="docutils literal notranslate"><span class="pre">read</span></code>, <code class="docutils literal notranslate"><span class="pre">seek</span></code>, <code class="docutils literal notranslate"><span class="pre">tell</span></code>, and <code class="docutils literal notranslate"><span class="pre">seekable</span></code> methods, and must return
+binary data (i.e.: <code class="docutils literal notranslate"><span class="pre">open(...,</span> <span class="pre">&quot;rb&quot;)</span></code> or <code class="docutils literal notranslate"><span class="pre">io.BinaryIO</span></code>, etc.).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Loading an index from a file-like object will not release the GIL.
+However, chunks of data of up to 100MB in size will be read from the file-like
+object at once, hopefully reducing the impact of the GIL.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.mark_deleted">
+<span class="sig-name descname"><span class="pre">mark_deleted</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#voyager.Index.mark_deleted" title="Permalink to this definition">#</a></dt>
+<dd><p>Mark an ID in this index as deleted.</p>
+<p>Deleted IDs will not show up in the results of calls to <a class="reference internal" href="#voyager.Index.query" title="voyager.Index.query"><code class="xref py py-meth docutils literal notranslate"><span class="pre">query()</span></code></a>,
+but will still take up space in the index, and will slow down queries.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To delete one or more vectors from a <a class="reference internal" href="#voyager.Index" title="voyager.Index"><code class="xref py py-class docutils literal notranslate"><span class="pre">Index</span></code></a> without
+incurring any query-time performance penalty, recreate the index
+from scratch without the vectors you want to remove:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">original</span><span class="p">:</span> <span class="n">Index</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">ids_to_remove</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="o">...</span>
+
+<span class="n">recreated</span> <span class="o">=</span> <span class="n">Index</span><span class="p">(</span>
+  <span class="n">original</span><span class="o">.</span><span class="n">space</span><span class="p">,</span>
+  <span class="n">original</span><span class="o">.</span><span class="n">num_dimensions</span><span class="p">,</span>
+  <span class="n">original</span><span class="o">.</span><span class="n">M</span><span class="p">,</span>
+  <span class="n">original</span><span class="o">.</span><span class="n">ef_construction</span><span class="p">,</span>
+  <span class="n">max_elements</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">original</span><span class="p">),</span>
+  <span class="n">storage_data_type</span><span class="o">=</span><span class="n">original</span><span class="o">.</span><span class="n">storage_data_type</span>
+<span class="p">)</span>
+<span class="n">ordered_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">original</span><span class="o">.</span><span class="n">ids</span><span class="p">)</span> <span class="o">-</span> <span class="n">ids_to_remove</span><span class="p">)</span>
+<span class="n">recreated</span><span class="o">.</span><span class="n">add_items</span><span class="p">(</span><span class="n">original</span><span class="o">.</span><span class="n">get_vectors</span><span class="p">(</span><span class="n">ordered_ids</span><span class="p">),</span> <span class="n">ordered_ids</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method can also be called by using the <code class="docutils literal notranslate"><span class="pre">del</span></code> operator:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">index</span><span class="p">:</span> <span class="n">voyager</span><span class="o">.</span><span class="n">Index</span> <span class="o">=</span> <span class="o">...</span>
+<span class="k">del</span> <span class="n">index</span><span class="p">[</span><span class="mi">1234</span><span class="p">]</span>  <span class="c1"># deletes the ID 1234</span>
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.query">
+<span class="sig-name descname"><span class="pre">query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_threads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_ef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.uint64</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.float32</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#voyager.Index.query" title="Permalink to this definition">#</a></dt>
+<dd><p>Query this index to retrieve the <code class="docutils literal notranslate"><span class="pre">k</span></code> nearest neighbors of the provided vectors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vectors</strong> – A 32-bit floating-point NumPy array, with shape <code class="docutils literal notranslate"><span class="pre">(num_dimensions,)</span></code>
+<em>or</em> <code class="docutils literal notranslate"><span class="pre">(num_queries,</span> <span class="pre">num_dimensions)</span></code>.</p></li>
+<li><p><strong>k</strong> – The number of neighbors to return.</p></li>
+<li><p><strong>num_threads</strong> – If <code class="docutils literal notranslate"><span class="pre">vectors</span></code> contains more than one query vector, up
+to <code class="docutils literal notranslate"><span class="pre">num_threads</span></code> will be started to perform queries
+in parallel. If <code class="docutils literal notranslate"><span class="pre">vectors</span></code> contains only one query vector,
+<code class="docutils literal notranslate"><span class="pre">num_threads</span></code> will have no effect. Defaults to using one
+thread per CPU core.</p></li>
+<li><p><strong>query_ef</strong> – The depth of search to perform for this query. Up to <code class="docutils literal notranslate"><span class="pre">query_ef</span></code>
+candidates will be searched through to try to find up the <code class="docutils literal notranslate"><span class="pre">k</span></code>
+nearest neighbors per query vector.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>A tuple of <code class="docutils literal notranslate"><span class="pre">(neighbor_ids,</span> <span class="pre">distances)</span></code>. If a single query vector was provided,
+both <code class="docutils literal notranslate"><span class="pre">neighbor_ids</span></code> and <code class="docutils literal notranslate"><span class="pre">distances</span></code> will be of shape <code class="docutils literal notranslate"><span class="pre">(k,)</span></code>.</p>
+<p>If multiple query vectors were provided, both <code class="docutils literal notranslate"><span class="pre">neighbor_ids</span></code> and <code class="docutils literal notranslate"><span class="pre">distances</span></code>
+will be of shape <code class="docutils literal notranslate"><span class="pre">(num_queries,</span> <span class="pre">k)</span></code>, ordered such that the <code class="docutils literal notranslate"><span class="pre">i</span></code>-th result
+corresponds with the <code class="docutils literal notranslate"><span class="pre">i</span></code>-th query vector.</p>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Query with a single vector:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">neighbor_ids</span><span class="p">,</span> <span class="n">distances</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]),</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">neighbor_ids</span><span class="o">.</span><span class="n">shape</span> <span class="c1"># =&gt; (10,)</span>
+<span class="n">distances</span><span class="o">.</span><span class="n">shape</span> <span class="c1"># =&gt; (10,)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">neighbor_id</span><span class="p">,</span> <span class="n">distance</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">neighbor_ids</span><span class="p">,</span> <span class="n">distances</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">-th closest neighbor is </span><span class="si">{</span><span class="n">neighbor_id</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">distance</span><span class="si">}</span><span class="s2"> away&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Query with multiple vectors simultaneously:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">query_vectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
+<span class="p">])</span>
+<span class="n">all_neighbor_ids</span><span class="p">,</span> <span class="n">all_distances</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query_vectors</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">all_neighbor_ids</span><span class="o">.</span><span class="n">shape</span> <span class="c1"># =&gt; (2, 10)</span>
+<span class="n">all_distances</span><span class="o">.</span><span class="n">shape</span> <span class="c1"># =&gt; (2, 10)</span>
+
+<span class="k">for</span> <span class="n">query_vector</span><span class="p">,</span> <span class="n">query_neighbor_ids</span><span class="p">,</span> <span class="n">query_distances</span> <span class="ow">in</span> \
+        <span class="nb">zip</span><span class="p">(</span><span class="n">query_vectors</span><span class="p">,</span> <span class="n">all_neighbor_ids</span><span class="p">,</span> <span class="n">all_distances</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;For query vector </span><span class="si">{</span><span class="n">query_vector</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">neighbor_ids</span><span class="p">,</span> <span class="n">distances</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">query_neighbor_ids</span><span class="p">,</span> <span class="n">query_distances</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">-th closest neighbor is </span><span class="si">{</span><span class="n">neighbor_id</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">distance</span><span class="si">}</span><span class="s2"> away&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.resize">
+<span class="sig-name descname"><span class="pre">resize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#voyager.Index.resize" title="Permalink to this definition">#</a></dt>
+<dd><p>Resize this index, allocating space for up to <code class="docutils literal notranslate"><span class="pre">new_size</span></code> elements to
+be stored. This changes the <a class="reference internal" href="#voyager.Index.max_elements" title="voyager.Index.max_elements"><code class="xref py py-attr docutils literal notranslate"><span class="pre">max_elements</span></code></a> property and may
+cause this <a class="reference internal" href="#voyager.Index" title="voyager.Index"><code class="xref py py-class docutils literal notranslate"><span class="pre">Index</span></code></a> object to use more memory. This is a fairly
+expensive operation and prevents queries from taking place while the
+resize is in process.</p>
+<p>Note that the size of an index is a <strong>soft limit</strong>; if a call to
+<a class="reference internal" href="#voyager.Index.add_item" title="voyager.Index.add_item"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_item()</span></code></a> or <a class="reference internal" href="#voyager.Index.add_items" title="voyager.Index.add_items"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_items()</span></code></a> would cause
+<a class="reference internal" href="#voyager.Index.num_elements" title="voyager.Index.num_elements"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_elements</span></code></a> to exceed <a class="reference internal" href="#voyager.Index.max_elements" title="voyager.Index.max_elements"><code class="xref py py-attr docutils literal notranslate"><span class="pre">max_elements</span></code></a>, the
+index will automatically be resized to accommodate the new elements.</p>
+<p>Calling <a class="reference internal" href="#voyager.Index.resize" title="voyager.Index.resize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">resize()</span></code></a> <em>once</em> before adding vectors to the
+index will speed up index creation if the number of elements is known
+in advance, as subsequent calls to <a class="reference internal" href="#voyager.Index.add_items" title="voyager.Index.add_items"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_items()</span></code></a> will not need
+to resize the index on-the-fly.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_like</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BinaryIO</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#voyager.Index.save" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Save this index to the provided file path or file-like object.</p>
+<p>If provided a file path, Voyager will release Python’s Global Interpreter Lock (GIL)
+and will write to the provided file.</p>
+<p>If provided a file-like object, Voyager will <em>not</em> release the GIL, but will pass
+one or more chunks of data (of up to 100MB each) to the provided object for writing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="voyager.Index.unmark_deleted">
+<span class="sig-name descname"><span class="pre">unmark_deleted</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#voyager.Index.unmark_deleted" title="Permalink to this definition">#</a></dt>
+<dd><p>Unmark an ID in this index as deleted.</p>
+<p>Once unmarked as deleted, an existing ID will show up in the results of
+calls to <a class="reference internal" href="#voyager.Index.query" title="voyager.Index.query"><code class="xref py py-meth docutils literal notranslate"><span class="pre">query()</span></code></a> again.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="voyager.Index.M">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">M</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#voyager.Index.M" title="Permalink to this definition">#</a></dt>
+<dd><p>The number of connections between nodes in the tree’s internal data structure.</p>
+<p>Larger values give better recall, but use more memory. This parameter cannot be changed
+after the index is instantiated.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="voyager.Index.ef">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ef</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#voyager.Index.ef" title="Permalink to this definition">#</a></dt>
+<dd><p>The default number of vectors to search through when calling <a class="reference internal" href="#voyager.Index.query" title="voyager.Index.query"><code class="xref py py-meth docutils literal notranslate"><span class="pre">query()</span></code></a>.</p>
+<p>Higher values make queries slower, but give better recall.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Changing this parameter affects all calls to <a class="reference internal" href="#voyager.Index.query" title="voyager.Index.query"><code class="xref py py-meth docutils literal notranslate"><span class="pre">query()</span></code></a> made after this
+change is made.</p>
+<p>This parameter can be overridden on a per-query basis when calling <a class="reference internal" href="#voyager.Index.query" title="voyager.Index.query"><code class="xref py py-meth docutils literal notranslate"><span class="pre">query()</span></code></a>
+by passing the <code class="docutils literal notranslate"><span class="pre">query_ef</span></code> parameter, allowing finer-grained control over query
+speed and recall.</p>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="voyager.Index.ef_construction">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ef_construction</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#voyager.Index.ef_construction" title="Permalink to this definition">#</a></dt>
+<dd><p>The number of vectors that this index searches through when inserting a new vector into
+the index. Higher values make index construction slower, but give better recall. This
+parameter cannot be changed after the index is instantiated.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="voyager.Index.ids">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#voyager.LabelSetView" title="voyager.LabelSetView"><span class="pre">LabelSetView</span></a></em><a class="headerlink" href="#voyager.Index.ids" title="Permalink to this definition">#</a></dt>
+<dd><p>A set-like object containing the integer IDs stored as ‘keys’ in this index.</p>
+<p>Use these indices to iterate over the vectors in this index, or to check for inclusion of a
+specific integer ID in this index:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">index</span><span class="p">:</span> <span class="n">voyager</span><span class="o">.</span><span class="n">Index</span> <span class="o">=</span> <span class="o">...</span>
+
+<span class="mi">1234</span> <span class="ow">in</span> <span class="n">index</span><span class="o">.</span><span class="n">ids</span>  <span class="c1"># =&gt; true, this ID is present in the index</span>
+<span class="mi">1234</span> <span class="ow">in</span> <span class="n">index</span>  <span class="c1"># =&gt; also works!</span>
+
+<span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">ids</span><span class="p">)</span> <span class="c1"># =&gt; returns the number of non-deleted vectors</span>
+<span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="c1"># =&gt; also returns the number of valid labels</span>
+
+<span class="k">for</span> <span class="n">_id</span> <span class="ow">in</span> <span class="n">index</span><span class="o">.</span><span class="n">ids</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">_id</span><span class="p">)</span> <span class="c1"># print all labels</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="voyager.Index.max_elements">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_elements</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#voyager.Index.max_elements" title="Permalink to this definition">#</a></dt>
+<dd><p>The maximum number of elements that can be stored in this index.</p>
+<p>If <a class="reference internal" href="#voyager.Index.max_elements" title="voyager.Index.max_elements"><code class="xref py py-attr docutils literal notranslate"><span class="pre">max_elements</span></code></a> is much larger than
+<a class="reference internal" href="#voyager.Index.num_elements" title="voyager.Index.num_elements"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_elements</span></code></a>, this index may use more memory
+than necessary. (Call <a class="reference internal" href="#voyager.Index.resize" title="voyager.Index.resize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">resize()</span></code></a> to reduce the
+memory footprint of this index.)</p>
+<p>This is a <strong>soft limit</strong>; if a call to <a class="reference internal" href="#voyager.Index.add_item" title="voyager.Index.add_item"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_item()</span></code></a> or
+<a class="reference internal" href="#voyager.Index.add_items" title="voyager.Index.add_items"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_items()</span></code></a> would cause <a class="reference internal" href="#voyager.Index.num_elements" title="voyager.Index.num_elements"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_elements</span></code></a> to exceed
+<a class="reference internal" href="#voyager.Index.max_elements" title="voyager.Index.max_elements"><code class="xref py py-attr docutils literal notranslate"><span class="pre">max_elements</span></code></a>, the index will automatically be resized
+to accommodate the new elements.</p>
+<p>Note that assigning to this property is functionally identical to
+calling <a class="reference internal" href="#voyager.Index.resize" title="voyager.Index.resize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">resize()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="voyager.Index.num_dimensions">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_dimensions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#voyager.Index.num_dimensions" title="Permalink to this definition">#</a></dt>
+<dd><p>The number of dimensions in each vector stored by this index.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="voyager.Index.num_elements">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_elements</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#voyager.Index.num_elements" title="Permalink to this definition">#</a></dt>
+<dd><p>The number of elements (vectors) currently stored in this index.</p>
+<p>Note that the number of elements will not decrease if any elements are
+deleted from the index; those deleted elements simply become invisible.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="voyager.Index.space">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#voyager.Space" title="voyager.Space"><span class="pre">Space</span></a></em><a class="headerlink" href="#voyager.Index.space" title="Permalink to this definition">#</a></dt>
+<dd><p>Return the <a class="reference internal" href="#voyager.Space" title="voyager.Space"><code class="xref py py-class docutils literal notranslate"><span class="pre">Space</span></code></a> used to calculate distances between vectors.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="voyager.Index.storage_data_type">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">storage_data_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#voyager.StorageDataType" title="voyager.StorageDataType"><span class="pre">StorageDataType</span></a></em><a class="headerlink" href="#voyager.Index.storage_data_type" title="Permalink to this definition">#</a></dt>
+<dd><p>The <a class="reference internal" href="#voyager.StorageDataType" title="voyager.StorageDataType"><code class="xref py py-class docutils literal notranslate"><span class="pre">StorageDataType</span></code></a> used to store vectors in this <a class="reference internal" href="#voyager.Index" title="voyager.Index"><code class="xref py py-class docutils literal notranslate"><span class="pre">Index</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<section id="enums">
+<h2>Enums<a class="headerlink" href="#enums" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="voyager.Space">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">voyager.</span></span><span class="sig-name descname"><span class="pre">Space</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#voyager.Space" title="Permalink to this definition">#</a></dt>
+<dd><p>The method used to calculate the distance between vectors.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="voyager.Space.Euclidean">
+<span class="sig-name descname"><span class="pre">Euclidean</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#voyager.Space.Euclidean" title="Permalink to this definition">#</a></dt>
+<dd><p>Euclidean distance; also known as L2 distance. The square root of the sum of the squared differences between each element of each vector.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="voyager.Space.InnerProduct">
+<span class="sig-name descname"><span class="pre">InnerProduct</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#voyager.Space.InnerProduct" title="Permalink to this definition">#</a></dt>
+<dd><p>Inner product distance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="voyager.Space.Cosine">
+<span class="sig-name descname"><span class="pre">Cosine</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#voyager.Space.Cosine" title="Permalink to this definition">#</a></dt>
+<dd><p>Cosine distance; also known as normalized inner product.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="voyager.StorageDataType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">voyager.</span></span><span class="sig-name descname"><span class="pre">StorageDataType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#voyager.StorageDataType" title="Permalink to this definition">#</a></dt>
+<dd><p>The data type used to store vectors in memory and on-disk.</p>
+<p>The <a class="reference internal" href="#voyager.StorageDataType" title="voyager.StorageDataType"><code class="xref py py-class docutils literal notranslate"><span class="pre">StorageDataType</span></code></a> used for an <a class="reference internal" href="#voyager.Index" title="voyager.Index"><code class="xref py py-class docutils literal notranslate"><span class="pre">Index</span></code></a> directly determines
+its memory usage, disk space usage, and recall. Both <a class="reference internal" href="#voyager.StorageDataType.Float8" title="voyager.StorageDataType.Float8"><code class="xref py py-class docutils literal notranslate"><span class="pre">Float8</span></code></a> and
+<a class="reference internal" href="#voyager.StorageDataType.E4M3" title="voyager.StorageDataType.E4M3"><code class="xref py py-class docutils literal notranslate"><span class="pre">E4M3</span></code></a> data types use 8 bits (1 byte) per dimension per vector, reducing
+memory usage and index size by a factor of 4 compared to <a class="reference internal" href="#voyager.StorageDataType.Float32" title="voyager.StorageDataType.Float32"><code class="xref py py-class docutils literal notranslate"><span class="pre">Float32</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="voyager.StorageDataType.Float8">
+<span class="sig-name descname"><span class="pre">Float8</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#voyager.StorageDataType.Float8" title="Permalink to this definition">#</a></dt>
+<dd><p>8-bit fixed-point decimal values. All values must be within [-1, 1.00787402].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="voyager.StorageDataType.Float32">
+<span class="sig-name descname"><span class="pre">Float32</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#voyager.StorageDataType.Float32" title="Permalink to this definition">#</a></dt>
+<dd><p>32-bit floating point (default).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="voyager.StorageDataType.E4M3">
+<span class="sig-name descname"><span class="pre">E4M3</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#voyager.StorageDataType.E4M3" title="Permalink to this definition">#</a></dt>
+<dd><p>8-bit floating point with a range of [-448, 448], from the paper “FP8 Formats for Deep Learning” by Micikevicius et al.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="utilities">
+<h2>Utilities<a class="headerlink" href="#utilities" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="voyager.LabelSetView">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">voyager.</span></span><span class="sig-name descname"><span class="pre">LabelSetView</span></span><a class="headerlink" href="#voyager.LabelSetView" title="Permalink to this definition">#</a></dt>
+<dd><p>A read-only set-like object containing 64-bit integers. Use this object like a regular Python <code class="xref py py-class docutils literal notranslate"><span class="pre">set</span></code> object, by either iterating through it, or checking for membership with the <code class="docutils literal notranslate"><span class="pre">in</span></code> operator.</p>
+</dd></dl>
+
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          <a class="prev-page" href="index.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Home</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2022-2023, Spotify AB
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://github.com/spotify/voyager" aria-label="GitHub">
+                <svg stroke="currentColor" fill="currentColor"
+                     stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">The <code class="docutils literal notranslate"><span class="pre">voyager</span></code> Python API</a><ul>
+<li><a class="reference internal" href="#voyager.Index"><code class="docutils literal notranslate"><span class="pre">Index</span></code></a><ul>
+<li><a class="reference internal" href="#voyager.Index.__contains__"><code class="docutils literal notranslate"><span class="pre">Index.__contains__()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.__len__"><code class="docutils literal notranslate"><span class="pre">Index.__len__()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.add_item"><code class="docutils literal notranslate"><span class="pre">Index.add_item()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.add_items"><code class="docutils literal notranslate"><span class="pre">Index.add_items()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.as_bytes"><code class="docutils literal notranslate"><span class="pre">Index.as_bytes()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.get_distance"><code class="docutils literal notranslate"><span class="pre">Index.get_distance()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.get_vector"><code class="docutils literal notranslate"><span class="pre">Index.get_vector()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.get_vectors"><code class="docutils literal notranslate"><span class="pre">Index.get_vectors()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.load"><code class="docutils literal notranslate"><span class="pre">Index.load()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.mark_deleted"><code class="docutils literal notranslate"><span class="pre">Index.mark_deleted()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.query"><code class="docutils literal notranslate"><span class="pre">Index.query()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.resize"><code class="docutils literal notranslate"><span class="pre">Index.resize()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.save"><code class="docutils literal notranslate"><span class="pre">Index.save()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.unmark_deleted"><code class="docutils literal notranslate"><span class="pre">Index.unmark_deleted()</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.M"><code class="docutils literal notranslate"><span class="pre">Index.M</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.ef"><code class="docutils literal notranslate"><span class="pre">Index.ef</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.ef_construction"><code class="docutils literal notranslate"><span class="pre">Index.ef_construction</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.ids"><code class="docutils literal notranslate"><span class="pre">Index.ids</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.max_elements"><code class="docutils literal notranslate"><span class="pre">Index.max_elements</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.num_dimensions"><code class="docutils literal notranslate"><span class="pre">Index.num_dimensions</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.num_elements"><code class="docutils literal notranslate"><span class="pre">Index.num_elements</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.space"><code class="docutils literal notranslate"><span class="pre">Index.space</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Index.storage_data_type"><code class="docutils literal notranslate"><span class="pre">Index.storage_data_type</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#enums">Enums</a><ul>
+<li><a class="reference internal" href="#voyager.Space"><code class="docutils literal notranslate"><span class="pre">Space</span></code></a><ul>
+<li><a class="reference internal" href="#voyager.Space.Euclidean"><code class="docutils literal notranslate"><span class="pre">Space.Euclidean</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Space.InnerProduct"><code class="docutils literal notranslate"><span class="pre">Space.InnerProduct</span></code></a></li>
+<li><a class="reference internal" href="#voyager.Space.Cosine"><code class="docutils literal notranslate"><span class="pre">Space.Cosine</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#voyager.StorageDataType"><code class="docutils literal notranslate"><span class="pre">StorageDataType</span></code></a><ul>
+<li><a class="reference internal" href="#voyager.StorageDataType.Float8"><code class="docutils literal notranslate"><span class="pre">StorageDataType.Float8</span></code></a></li>
+<li><a class="reference internal" href="#voyager.StorageDataType.Float32"><code class="docutils literal notranslate"><span class="pre">StorageDataType.Float32</span></code></a></li>
+<li><a class="reference internal" href="#voyager.StorageDataType.E4M3"><code class="docutils literal notranslate"><span class="pre">StorageDataType.E4M3</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#utilities">Utilities</a><ul>
+<li><a class="reference internal" href="#voyager.LabelSetView"><code class="docutils literal notranslate"><span class="pre">LabelSetView</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/furo.js"></script>
+    <script src="_static/clipboard.min.js"></script>
+    <script src="_static/copybutton.js"></script>
+    </body>
+</html>

@@ -1,0 +1,5 @@
+pytest
+tox
+black
+clang-format
+zstd
