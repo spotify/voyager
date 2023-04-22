@@ -3,3 +3,5 @@ tox
 black
 clang-format
 zstd
+coverage
+pytest-cov
