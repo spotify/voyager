@@ -402,9 +402,10 @@ public:
           auto &result_tuple = result.top();
 
           dist_t distance = result_tuple.first;
+          hnswlib::labeltype label = result_tuple.second;
 
           distancePointer[row * k + i] = distance;
-          labelPointer[row * k + i] = result_tuple.second;
+          labelPointer[row * k + i] = label;
           result.pop();
         }
       });
@@ -431,9 +432,11 @@ public:
           auto &result_tuple = result.top();
 
           dist_t distance = result_tuple.first;
-          distancePointer[row * k + i] = ensureNotNegative<dist_t, data_t>(
-              result_tuple.first, result_tuple.second);
-          labelPointer[row * k + i] = result_tuple.second;
+          hnswlib::labeltype label = result_tuple.second;
+
+          distancePointer[row * k + i] =
+              ensureNotNegative<dist_t, data_t>(distance, label);
+          labelPointer[row * k + i] = label;
           result.pop();
         }
       });
