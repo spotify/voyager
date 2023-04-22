@@ -1,5 +1,6 @@
 import os
 import sys
+import platform
 
 import numpy as np
 import pybind11
@@ -21,12 +22,7 @@ ext_modules = [
     Extension(
         "voyager",
         ["./bindings.cpp"],
-        include_dirs=[
-            pybind11.get_include(),
-            np.get_include(),
-            VOYAGER_HEADERS_PATH,
-            "./cpp/",
-        ],
+        include_dirs=[pybind11.get_include(), np.get_include(), VOYAGER_HEADERS_PATH, "./cpp/"],
         libraries=[],
         language="c++",
         extra_objects=[],
@@ -52,33 +48,39 @@ def has_flag(compiler, flagname):
 
 
 DEBUG = int(os.environ.get("DEBUG", "0")) == 1
+USE_ASAN = int(os.environ.get("USE_ASAN", "0")) == 1
 
 
 class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
 
-    c_opts = {
+    compiler_flags = {
         "msvc": ["/EHsc", "/openmp", "/O2"],
         "unix": [
             "-O0" if DEBUG else "-O3",
         ]
-        + (["-g"] if DEBUG else []),
-    }
-    link_opts = {
-        "unix": [],
-        "msvc": [],
+        + (["-g"] if DEBUG else [])
+        + (["-fsanitize=address", "-fno-omit-frame-pointer"] if USE_ASAN else []),
     }
 
+    linker_flags = {"unix": [], "msvc": []}
+
     if sys.platform == "darwin":
-        c_opts["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
-        link_opts["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
+        compiler_flags["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
+        linker_flags["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
     else:
-        c_opts["unix"].append("-fopenmp")
-        link_opts["unix"].extend(["-fopenmp", "-pthread"])
+        compiler_flags["unix"].append("-fopenmp")
+        linker_flags["unix"].extend(["-fopenmp", "-pthread"])
+
+    if USE_ASAN:
+        linker_flags["unix"].append("-fsanitize=address")
+
+    if platform.system() == "Linux":
+        linker_flags["unix"].append("-shared-libasan")
 
     def build_extensions(self):
         ct = self.compiler.compiler_type
-        opts = self.c_opts.get(ct, [])
+        opts = self.compiler_flags.get(ct, [])
         if ct == "unix":
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
             opts.append("-std=c++17")
@@ -90,7 +92,7 @@ class BuildExt(build_ext):
 
         for ext in self.extensions:
             ext.extra_compile_args.extend(opts)
-            ext.extra_link_args.extend(self.link_opts.get(ct, []))
+            ext.extra_link_args.extend(self.linker_flags.get(ct, []))
 
         build_ext.build_extensions(self)
 
