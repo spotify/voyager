@@ -14,8 +14,7 @@
 template <typename T> inline const StorageDataType storageDataType();
 template <typename T> inline const std::string storageDataTypeName();
 
-template <>
-const StorageDataType storageDataType<int8_t>() {
+template <> const StorageDataType storageDataType<int8_t>() {
   return StorageDataType::Float8;
 }
 template <> const StorageDataType storageDataType<float>() {
@@ -25,16 +24,9 @@ template <> const StorageDataType storageDataType<struct E4M3>() {
   return StorageDataType::E4M3;
 }
 
-template <>
-const std::string storageDataTypeName<int8_t>() {
-  return "Float8";
-}
-template <>
-const std::string storageDataTypeName<float>() {
-  return "Float32";
-}
-template <>
-const std::string storageDataTypeName<struct E4M3>() {
+template <> const std::string storageDataTypeName<int8_t>() { return "Float8"; }
+template <> const std::string storageDataTypeName<float>() { return "Float32"; }
+template <> const std::string storageDataTypeName<struct E4M3>() {
   return "E4M3";
 }
 
@@ -360,7 +352,8 @@ public:
   query(NDArray<float, 2> floatQueryVectors, int k = 1, int numThreads = -1,
         long queryEf = -1) {
     if (queryEf > 0 && queryEf < k) {
-      throw std::runtime_error("queryEf must be equal to or greater than the requested number of neighbors");
+      throw std::runtime_error("queryEf must be equal to or greater than the "
+                               "requested number of neighbors");
     }
     int numRows = std::get<0>(floatQueryVectors.shape);
     int numFeatures = std::get<1>(floatQueryVectors.shape);
@@ -452,7 +445,8 @@ public:
   std::tuple<std::vector<hnswlib::labeltype>, std::vector<float>>
   query(std::vector<float> floatQueryVector, int k = 1, long queryEf = -1) {
     if (queryEf > 0 && queryEf < k) {
-      throw std::runtime_error("queryEf must be equal to or greater than the requested number of neighbors");
+      throw std::runtime_error("queryEf must be equal to or greater than the "
+                               "requested number of neighbors");
     }
 
     int numFeatures = floatQueryVector.size();
