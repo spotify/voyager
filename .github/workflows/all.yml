@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-    lint-python:
+  lint-python:
     defaults:
       run:
         working-directory: python
@@ -45,7 +45,7 @@ jobs:
         run: flake8 . --count --ignore=W503,E203 --exclude .git,dist,doc,build,vendors --show-source --statistics --max-line-length 100
       - name: Check Python formatting
         run: black voyager tests --line-length 100 --preview --diff --check
-        
+
   lint-cpp:
     runs-on: 'ubuntu-20.04'
     continue-on-error: true
