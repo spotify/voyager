@@ -147,7 +147,7 @@ jobs:
     defaults:
       run:
         working-directory: python
-    needs: [lint-python, lint-cpp]
+    needs: [lint-cpp]
     runs-on: ${{ matrix.os }}
     continue-on-error: false
     if: (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
