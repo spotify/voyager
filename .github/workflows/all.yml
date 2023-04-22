@@ -13,10 +13,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-python:
+    lint-python:
+    defaults:
+      run:
+        working-directory: python
     runs-on: ${{ matrix.os }}
     continue-on-error: true
-    working-directory: ./python
     strategy:
       matrix:
         python-version: ['3.11']
@@ -43,7 +45,7 @@ jobs:
         run: flake8 . --count --ignore=W503,E203 --exclude .git,dist,doc,build,vendors --show-source --statistics --max-line-length 100
       - name: Check Python formatting
         run: black voyager tests --line-length 100 --preview --diff --check
-
+        
   lint-cpp:
     runs-on: 'ubuntu-20.04'
     continue-on-error: true
@@ -60,7 +62,9 @@ jobs:
   run-python-tests:
     runs-on: ${{ matrix.os }}
     continue-on-error: false
-    working-directory: ./python
+    defaults:
+      run:
+        working-directory: python
     env:
       MINIMUM_COVERAGE_PERCENTAGE: 80
     strategy:
@@ -122,7 +126,9 @@ jobs:
           color: ${{ env.COVERAGE_COLOR }}
 
   run-python-tests-with-address-sanitizer:
-    working-directory: ./python
+    defaults:
+      run:
+        working-directory: python
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -161,7 +167,9 @@ jobs:
           pytest -v
 
   build-python-wheels:
-    working-directory: ./python
+    defaults:
+      run:
+        working-directory: python
     needs: [lint-python, lint-cpp]
     runs-on: ${{ matrix.os }}
     continue-on-error: false
@@ -252,7 +260,9 @@ jobs:
           path: ./wheelhouse/*.whl
 
   upload-pypi:
-    working-directory: ./python
+    defaults:
+      run:
+        working-directory: python
     needs: [build-wheels, run-tests-with-address-sanitizer, run-tests]
     runs-on: 'ubuntu-20.04'
     name: "Upload wheels to PyPI"
