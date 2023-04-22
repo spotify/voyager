@@ -59,8 +59,7 @@ class BuildExt(build_ext):
         "unix": [
             "-O0" if DEBUG else "-O3",
         ]
-        + (["-g"] if DEBUG else [])
-        + (["-fsanitize=address", "-fno-omit-frame-pointer"] if USE_ASAN else []),
+        + (["-g"] if DEBUG else []),
     }
 
     linker_flags = {"unix": [], "msvc": []}
@@ -73,10 +72,11 @@ class BuildExt(build_ext):
         linker_flags["unix"].extend(["-fopenmp", "-pthread"])
 
     if USE_ASAN:
+        compiler_flags["unix"].append("-fsanitize=address")
+        compiler_flags["unix"].append("-fno-omit-frame-pointer")
         linker_flags["unix"].append("-fsanitize=address")
-
-    if platform.system() == "Linux":
-        linker_flags["unix"].append("-shared-libasan")
+        if platform.system() == "Linux":
+            linker_flags["unix"].append("-shared-libasan")
 
     def build_extensions(self):
         ct = self.compiler.compiler_type
