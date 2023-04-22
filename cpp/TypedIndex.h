@@ -20,19 +20,17 @@ template <> const StorageDataType storageDataType<int8_t>() {
 template <> const StorageDataType storageDataType<float>() {
   return StorageDataType::Float32;
 }
-template <> const StorageDataType storageDataType<struct E4M3>() {
+template <> const StorageDataType storageDataType<E4M3>() {
   return StorageDataType::E4M3;
 }
 
 template <> const std::string storageDataTypeName<int8_t>() { return "Float8"; }
 template <> const std::string storageDataTypeName<float>() { return "Float32"; }
-template <> const std::string storageDataTypeName<struct E4M3>() {
-  return "E4M3";
-}
+template <> const std::string storageDataTypeName<E4M3>() { return "E4M3"; }
 
 template <typename dist_t, typename data_t>
 dist_t ensureNotNegative(dist_t distance, hnswlib::labeltype label) {
-  if constexpr (std::is_same_v<data_t, struct E4M3>) {
+  if constexpr (std::is_same_v<data_t, E4M3>) {
     // Allow for a very slight negative distance if using E4M3
     if (distance < 0 && distance >= -0.14) {
       return 0;

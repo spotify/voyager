@@ -6,7 +6,8 @@
  * An 8-bit floating point format with a 4-bit exponent and 3-bit mantissa.
  * Inspired by: https://arxiv.org/pdf/2209.05433.pdf
  */
-struct E4M3 {
+class E4M3 {
+public:
   uint8_t sign : 1, exponent : 4, mantissa : 3;
 
   E4M3() : E4M3(0, 0, 0) {}

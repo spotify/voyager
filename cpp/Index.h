@@ -22,7 +22,7 @@ enum SpaceType {
  * The datatype used to use when storing vectors on disk.
  * Affects precision and memory usage.
  */
-enum StorageDataType {
+enum class StorageDataType {
   Float8,
   Float32,
 
