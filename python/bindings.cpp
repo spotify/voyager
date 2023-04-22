@@ -259,7 +259,6 @@ inline void register_index_class(py::module &m, std::string className) {
   klass.def_property_readonly(
       "max_elements", &TypedIndex<dist_t, data_t, scalefactor>::getMaxElements);
 
-
   // TODO: Add getStorageDataType
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
