@@ -263,7 +263,7 @@ jobs:
     defaults:
       run:
         working-directory: python
-    needs: [build-wheels, run-tests-with-address-sanitizer, run-tests]
+    needs: [build-python-wheels, run-python-tests-with-address-sanitizer, run-python-tests]
     runs-on: 'ubuntu-20.04'
     name: "Upload wheels to PyPI"
     if: github.event_name == 'release' && github.event.action == 'published'
