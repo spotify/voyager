@@ -110,7 +110,7 @@ void floatToDataType(const float *inputPointer, data_t *outputPointer,
     std::memcpy(outputPointer, inputPointer, sizeof(float) * dimensions);
   } else if constexpr (std::is_same_v<data_t, E4M3>) {
     // Re-scale the input values by multiplying by `scalefactor`:
-    for (unsigned long i = 0; i < dimensions; i++) {
+    for (int i = 0; i < dimensions; i++) {
       outputPointer[i] = E4M3(inputPointer[i]);
     }
   } else {
@@ -125,7 +125,7 @@ void floatToDataType(const float *inputPointer, data_t *outputPointer,
     std::vector<data_t> output(dimensions);
 
     // Re-scale the input values by multiplying by `scalefactor`:
-    for (unsigned long i = 0; i < dimensions; i++) {
+    for (int i = 0; i < dimensions; i++) {
       if (inputPointer[i] > upperBound || inputPointer[i] < lowerBound) {
         throw std::domain_error(
             "One or more vectors contain values outside of [" +
@@ -248,7 +248,7 @@ template <typename dist_t, typename data_t = dist_t,
 std::string toFloatVectorString(data_t *vec, size_t size) {
   std::ostringstream ss;
   ss << "[";
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     if constexpr (scalefactor::num != scalefactor::den) {
       float point = (dist_t)(vec[i] * (dist_t)scalefactor::num) /
                     (dist_t)scalefactor::den;

@@ -210,7 +210,7 @@ public:
     std::vector<data_t> a(dimensions);
     std::vector<data_t> b(dimensions);
 
-    if (_a.size() != dimensions || _b.size() != dimensions) {
+    if ((int)_a.size() != dimensions || (int)_b.size() != dimensions) {
       throw std::runtime_error("Index has " + std::to_string(dimensions) +
                                " dimensions, but received vectors of size: " +
                                std::to_string(_a.size()) + " and " +
