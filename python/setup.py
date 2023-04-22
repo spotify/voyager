@@ -51,13 +51,6 @@ def has_flag(compiler, flagname):
     return True
 
 
-def cpp_flag(compiler):
-    """Return the -std=c++[11/14] compiler flag.
-    The c++14 is prefered over c++11 (when it is available).
-    """
-    return "-std=c++17"
-
-
 DEBUG = int(os.environ.get("DEBUG", "0")) == 1
 
 
@@ -68,9 +61,8 @@ class BuildExt(build_ext):
         "msvc": ["/EHsc", "/openmp", "/O2"],
         "unix": [
             "-O0" if DEBUG else "-O3",
-            # "-march=native",
         ]
-        + (["-g"] if DEBUG else []),  # , '-w'
+        + (["-g"] if DEBUG else []),
     }
     link_opts = {
         "unix": [],
@@ -89,11 +81,12 @@ class BuildExt(build_ext):
         opts = self.c_opts.get(ct, [])
         if ct == "unix":
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
-            opts.append(cpp_flag(self.compiler))
+            opts.append("-std=c++17")
             if has_flag(self.compiler, "-fvisibility=hidden"):
                 opts.append("-fvisibility=hidden")
         elif ct == "msvc":
             opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
+            opts.append("/std:c++17")
 
         for ext in self.extensions:
             ext.extra_compile_args.extend(opts)
@@ -105,10 +98,10 @@ class BuildExt(build_ext):
 setup(
     name="voyager",
     version=__version__,
-    description="Vector search library, based on hnswlib.",
+    description="Easy-to-use, fast, simple multi-platform search library.",
     author="Peter Sobot",
-    url="https://ghe.spotify.net/psobot/voyager",
-    long_description="""Vector search library based on hnswlib.""",
+    url="https://github.com/spotify/voyager",
+    long_description="Easy-to-use, fast, simple multi-platform search library.",
     ext_modules=ext_modules,
     install_requires=["numpy"],
     cmdclass={"build_ext": BuildExt},
