@@ -79,7 +79,14 @@ private:
 class SubprocessInputStream : public FileInputStream {
 public:
   SubprocessInputStream(const std::string &subprocessCommand) {
-    handle = popen(subprocessCommand.c_str(), "r");
+    handle =
+#ifdef _MSC_VER
+        _popen
+#else
+        popen
+#endif
+        (subprocessCommand.c_str(), "r");
+
     if (!handle) {
       throw std::runtime_error("Failed to open subprocess: " +
                                subprocessCommand);
@@ -91,7 +98,13 @@ public:
 
   virtual ~SubprocessInputStream() {
     if (handle) {
-      pclose(handle);
+#ifdef _MSC_VER
+      _pclose
+#else
+      pclose
+#endif
+          (handle);
+
       handle = nullptr;
     }
   }
