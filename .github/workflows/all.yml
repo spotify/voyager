@@ -42,7 +42,7 @@ jobs:
           pip install wheel
           pip install -r dev-requirements.txt
       - name: Lint Python code (with ruff!)
-        run: ruff python --exclude .git,dist,doc,build,vendors --show-source --line-length 100
+        run: ruff . --exclude .git,dist,doc,build,vendors --show-source --line-length 100
       - name: Check Python formatting
         run: black voyager tests --line-length 100 --preview --diff --check
 
@@ -97,7 +97,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel
-          pip install -r test-requirements.txt
+          pip install -r dev-requirements.txt
       - name: Install JQ for coverage badge on Linux
         run: sudo apt-get install -y jq
         if: runner.os == 'Linux'
@@ -155,7 +155,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel
-          pip install -r test-requirements.txt
+          pip install -r dev-requirements.txt
       - name: Build voyager locally
         env:
           DEBUG: "0"
@@ -245,7 +245,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_TEST_REQUIRES: -r test-requirements.txt
+          CIBW_TEST_REQUIRES: -r dev-requirements.txt
           CIBW_TEST_COMMAND: "pytest {project}/tests"
           CIBW_BUILD: ${{ matrix.build }}
           CIBW_ARCHS: auto64 # Only support building 64-bit wheels. It's 2022!
