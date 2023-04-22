@@ -279,7 +279,7 @@ void Java_com_spotify_voyager_jni_Index_nativeConstructor(
       break;
     case StorageDataType::E4M3:
       setHandle<Index>(env, self,
-                       new TypedIndex<float, struct E4M3>(
+                       new TypedIndex<float, E4M3>(
                            toSpaceType(env, spaceType), numDimensions, M,
                            efConstruction, randomSeed, maxElements));
       break;
@@ -699,7 +699,7 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(
     case StorageDataType::E4M3:
       setHandle<Index>(
           env, self,
-          new TypedIndex<float, struct E4M3>(
+          new TypedIndex<float, E4M3>(
               std::make_shared<FileInputStream>(toString(env, filename)),
               toSpaceType(env, spaceType), numDimensions));
       break;
@@ -730,7 +730,7 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(
       break;
     case StorageDataType::E4M3:
       setHandle<Index>(env, self,
-                       new TypedIndex<float, struct E4M3>(
+                       new TypedIndex<float, E4M3>(
                            std::make_shared<JavaInputStream>(env, inputStream),
                            toSpaceType(env, spaceType), numDimensions));
       break;
@@ -763,7 +763,7 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromSubprocess(
       break;
     case StorageDataType::E4M3:
       setHandle<Index>(env, self,
-                       new TypedIndex<float, struct E4M3>(
+                       new TypedIndex<float, E4M3>(
                            std::make_shared<SubprocessInputStream>(
                                toString(env, subprocessCommand)),
                            toSpaceType(env, spaceType), numDimensions));

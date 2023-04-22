@@ -387,17 +387,17 @@ PYBIND11_MODULE(voyager, m) {
              "al. (arXiv:2209.05433)")
       .export_values();
 
-  py::class_<struct E4M3>(
+  py::class_<E4M3>(
       m, "E4M3T",
       "An 8-bit floating point data type with reduced precision and range.")
       .def(py::init([](float input) {
-             struct E4M3 v(input);
+             E4M3 v(input);
              return v;
            }),
            "Create an E4M3 number given a floating-point value. If out of "
            "range, the value will be clipped.")
       .def(py::init([](int sign, int exponent, int mantissa) {
-             struct E4M3 v(sign, exponent, mantissa);
+             E4M3 v(sign, exponent, mantissa);
              return v;
            }),
            "Create an E4M3 number given a sign, exponent, and mantissa. If out "
@@ -408,15 +408,15 @@ PYBIND11_MODULE(voyager, m) {
             if (c > 255 || c < 0)
               throw std::range_error(
                   "Expected input to from_char to be on [0, 255]!");
-            struct E4M3 v(static_cast<uint8_t>(c));
+            E4M3 v(static_cast<uint8_t>(c));
             return v;
           },
           "Create an E4M3 number given a raw 8-bit value.", py::arg("value"))
       .def(
-          "__float__", [](struct E4M3 &self) { return (float)self; },
+          "__float__", [](E4M3 &self) { return (float)self; },
           "Cast the given E4M3 number to a float.")
       .def("__repr__",
-           [](struct E4M3 &self) {
+           [](E4M3 &self) {
              std::ostringstream ss;
              ss << "<voyager.E4M3";
              ss << " sign=" << (int)self.sign;
@@ -430,16 +430,16 @@ PYBIND11_MODULE(voyager, m) {
              return ss.str();
            })
       .def_property_readonly(
-          "sign", [](struct E4M3 &self) { return self.sign; },
+          "sign", [](E4M3 &self) { return self.sign; },
           "The sign bit from this E4M3 number.")
       .def_property_readonly(
-          "exponent", [](struct E4M3 &self) { return self.exponent; },
+          "exponent", [](E4M3 &self) { return self.exponent; },
           "The exponent bit from this E4M3 number.")
       .def_property_readonly(
-          "mantissa", [](struct E4M3 &self) { return self.mantissa; },
+          "mantissa", [](E4M3 &self) { return self.mantissa; },
           "The mantissa bit from this E4M3 number.")
       .def_property_readonly(
-          "size", [](struct E4M3 &self) { return sizeof(self); },
+          "size", [](E4M3 &self) { return sizeof(self); },
           "The number of bytes used to represent this (C++) instance in "
           "memory.");
 
@@ -454,7 +454,7 @@ PYBIND11_MODULE(voyager, m) {
   // An 8-bit floating-point index class that has even more reduced precision
   // over Float8, but allows values on the range [-448, 448]. Inspired by:
   // https://arxiv.org/pdf/2209.05433.pdf
-  register_index_class<float, struct E4M3>(m, "E4M3Index");
+  register_index_class<float, E4M3>(m, "E4M3Index");
 
   index.def_static(
       "__new__",
@@ -478,16 +478,16 @@ PYBIND11_MODULE(voyager, m) {
          const StorageDataType storageDataType) -> std::shared_ptr<Index> {
         py::gil_scoped_release release;
         switch (storageDataType) {
-        case E4M3:
-          return std::make_shared<TypedIndex<float, struct E4M3>>(
+        case StorageDataType::E4M3:
+          return std::make_shared<TypedIndex<float, E4M3>>(
               space, num_dimensions, M, ef_construction, random_seed,
               max_elements);
-        case Float8:
+        case StorageDataType::Float8:
           return std::make_shared<
               TypedIndex<float, int8_t, std::ratio<1, 127>>>(
               space, num_dimensions, M, ef_construction, random_seed,
               max_elements);
-        case Float32:
+        case StorageDataType::Float32:
           return std::make_shared<TypedIndex<float>>(space, num_dimensions, M,
                                                      ef_construction,
                                                      random_seed, max_elements);
@@ -508,16 +508,16 @@ PYBIND11_MODULE(voyager, m) {
         py::gil_scoped_release release;
 
         switch (storageDataType) {
-        case E4M3:
-          return std::make_shared<TypedIndex<float, struct E4M3>>(
+        case StorageDataType::E4M3:
+          return std::make_shared<TypedIndex<float, E4M3>>(
               std::make_shared<FileInputStream>(filename), space,
               num_dimensions);
-        case Float8:
+        case StorageDataType::Float8:
           return std::make_shared<
               TypedIndex<float, int8_t, std::ratio<1, 127>>>(
               std::make_shared<FileInputStream>(filename), space,
               num_dimensions);
-        case Float32:
+        case StorageDataType::Float32:
           return std::make_shared<TypedIndex<float>>(
               std::make_shared<FileInputStream>(filename), space,
               num_dimensions);
@@ -545,14 +545,14 @@ PYBIND11_MODULE(voyager, m) {
         py::gil_scoped_release release;
 
         switch (storageDataType) {
-        case E4M3:
-          return std::make_shared<TypedIndex<float, struct E4M3>>(
-              inputStream, space, num_dimensions);
-        case Float8:
+        case StorageDataType::E4M3:
+          return std::make_shared<TypedIndex<float, E4M3>>(inputStream, space,
+                                                           num_dimensions);
+        case StorageDataType::Float8:
           return std::make_shared<
               TypedIndex<float, int8_t, std::ratio<1, 127>>>(inputStream, space,
                                                              num_dimensions);
-        case Float32:
+        case StorageDataType::Float32:
           return std::make_shared<TypedIndex<float>>(inputStream, space,
                                                      num_dimensions);
         default:
@@ -574,16 +574,16 @@ PYBIND11_MODULE(voyager, m) {
         py::gil_scoped_release release;
 
         switch (storageDataType) {
-        case E4M3:
-          return std::make_shared<TypedIndex<float, struct E4M3>>(
+        case StorageDataType::E4M3:
+          return std::make_shared<TypedIndex<float, E4M3>>(
               std::make_shared<SubprocessInputStream>(subprocessCommand), space,
               num_dimensions);
-        case Float8:
+        case StorageDataType::Float8:
           return std::make_shared<
               TypedIndex<float, int8_t, std::ratio<1, 127>>>(
               std::make_shared<SubprocessInputStream>(subprocessCommand), space,
               num_dimensions);
-        case Float32:
+        case StorageDataType::Float32:
           return std::make_shared<TypedIndex<float>>(
               std::make_shared<SubprocessInputStream>(subprocessCommand), space,
               num_dimensions);
