@@ -10,7 +10,8 @@ from setuptools.command.build_ext import build_ext
 __version__ = "1.0.8"
 
 
-# When building via Tox, the headers are copied into the current directory and the parent is inaccessible:
+# When building via Tox, the headers are copied into the current directory
+# and the parent is inaccessible:
 VOYAGER_HEADERS_PATH = "./cpp/"
 if not os.path.exists(VOYAGER_HEADERS_PATH):
     VOYAGER_HEADERS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cpp/"))
