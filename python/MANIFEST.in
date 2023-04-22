@@ -1,0 +1,5 @@
+include *.txt tox.ini  *.md
+recursive-include tests *.py
+
+graft src
+graft voyager-headers
