@@ -33,8 +33,7 @@ T *getHandle(JNIEnv *env, jobject obj, bool allow_missing = false) {
   return pointer;
 }
 
-template <typename T>
-void setHandle(JNIEnv *env, jobject obj, T *t) {
+template <typename T> void setHandle(JNIEnv *env, jobject obj, T *t) {
   env->SetLongField(obj, getHandleFieldID(env, obj),
                     reinterpret_cast<jlong>(t));
 }
