@@ -1,0 +1,3 @@
+-r test-requirements.txt
+numpy
+pybind11
