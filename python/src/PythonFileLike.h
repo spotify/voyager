@@ -7,6 +7,7 @@
 
 #include <mutex>
 #include <optional>
+#include <string>
 
 namespace py = pybind11;
 
