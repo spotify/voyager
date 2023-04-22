@@ -22,4 +22,4 @@ public:
 
   virtual ~Space() {}
 };
-};
+}; // namespace hnswlib
