@@ -205,7 +205,8 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: "10.13"
       - uses: actions/upload-artifact@v2
         with:
-          path: ./wheelhouse/*.whl
+          if-no-files-found: error
+          path: ./python/wheelhouse/*.whl
 
   upload-pypi:
     defaults:
