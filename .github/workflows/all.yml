@@ -183,7 +183,7 @@ jobs:
         with:
           platforms: all
       - name: Build wheels
-        run: cd python && python -m cibuildwheel --output-dir ../wheelhouse
+        run: cp -r cpp python/cpp && cd python && python -m cibuildwheel --output-dir ../wheelhouse
         env:
           CIBW_TEST_REQUIRES: -r dev-requirements.txt
           CIBW_TEST_COMMAND: "pytest {project}/tests -x"
