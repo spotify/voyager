@@ -234,20 +234,10 @@ public:
       }
       size_t size = getListCount((linklistsizeint *)data);
       tableint *datal = (tableint *)(data + 1);
-#ifdef USE_SSE
-      _mm_prefetch((char *)(visited_array + *(data + 1)), _MM_HINT_T0);
-      _mm_prefetch((char *)(visited_array + *(data + 1) + 64), _MM_HINT_T0);
-      _mm_prefetch(getDataByInternalId(*datal), _MM_HINT_T0);
-      _mm_prefetch(getDataByInternalId(*(datal + 1)), _MM_HINT_T0);
-#endif
 
       for (size_t j = 0; j < size; j++) {
         tableint candidate_id = *(datal + j);
-//                    if (candidate_id == 0) continue;
-#ifdef USE_SSE
-        _mm_prefetch((char *)(visited_array + *(datal + j + 1)), _MM_HINT_T0);
-        _mm_prefetch(getDataByInternalId(*(datal + j + 1)), _MM_HINT_T0);
-#endif
+        //                    if (candidate_id == 0) continue;
         if (visited_array[candidate_id] == visited_array_tag)
           continue;
         visited_array[candidate_id] = visited_array_tag;
@@ -256,10 +246,6 @@ public:
         dist_t dist1 = fstdistfunc_(data_point, currObj1, dist_func_param_);
         if (top_candidates.size() < ef_construction_ || lowerBound > dist1) {
           candidateSet.emplace(-dist1, candidate_id);
-#ifdef USE_SSE
-          _mm_prefetch(getDataByInternalId(candidateSet.top().second),
-                       _MM_HINT_T0);
-#endif
 
           if (!isMarkedDeleted(candidate_id))
             top_candidates.emplace(dist1, candidate_id);
@@ -341,25 +327,9 @@ public:
         metric_distance_computations += size;
       }
 
-#ifdef USE_SSE
-      _mm_prefetch((char *)(visited_array + *(data + 1)), _MM_HINT_T0);
-      _mm_prefetch((char *)(visited_array + *(data + 1) + 64), _MM_HINT_T0);
-      _mm_prefetch(data_level0_memory_ +
-                       (*(data + 1)) * size_data_per_element_ + offsetData_,
-                   _MM_HINT_T0);
-      _mm_prefetch((char *)(data + 2), _MM_HINT_T0);
-#endif
-
       for (size_t j = 1; j <= size; j++) {
         int candidate_id = *(data + j);
-//                    if (candidate_id == 0) continue;
-#ifdef USE_SSE
-        _mm_prefetch((char *)(visited_array + *(data + j + 1)), _MM_HINT_T0);
-        _mm_prefetch(data_level0_memory_ +
-                         (*(data + j + 1)) * size_data_per_element_ +
-                         offsetData_,
-                     _MM_HINT_T0); ////////////
-#endif
+        //                    if (candidate_id == 0) continue;
         if (!(visited_array[candidate_id] == visited_array_tag)) {
 
           visited_array[candidate_id] = visited_array_tag;
@@ -369,14 +339,6 @@ public:
 
           if (top_candidates.size() < ef || lowerBound > dist) {
             candidate_set.emplace(-dist, candidate_id);
-#ifdef USE_SSE
-            _mm_prefetch(data_level0_memory_ +
-                             candidate_set.top().second *
-                                 size_data_per_element_ +
-                             offsetLevel0_, ///////////
-                         _MM_HINT_T0);      ////////////////////////
-#endif
-
             if (!has_deletions || !isMarkedDeleted(candidate_id))
               top_candidates.emplace(dist, candidate_id);
 
@@ -1164,13 +1126,7 @@ public:
           data = get_linklist_at_level(currObj, level);
           int size = getListCount(data);
           tableint *datal = (tableint *)(data + 1);
-#ifdef USE_SSE
-          _mm_prefetch(getDataByInternalId(*datal), _MM_HINT_T0);
-#endif
           for (int i = 0; i < size; i++) {
-#ifdef USE_SSE
-            _mm_prefetch(getDataByInternalId(*(datal + i + 1)), _MM_HINT_T0);
-#endif
             tableint cand = datal[i];
             dist_t d = fstdistfunc_(dataPoint, getDataByInternalId(cand),
                                     dist_func_param_);
