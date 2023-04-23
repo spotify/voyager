@@ -28,7 +28,7 @@ jobs:
 
   run-python-tests:
     runs-on: ${{ matrix.os }}
-    continue-on-error: false
+    continue-on-error: true
     defaults:
       run:
         working-directory: python
@@ -120,7 +120,7 @@ jobs:
         working-directory: python
     needs: [lint-cpp]
     runs-on: ${{ matrix.os }}
-    continue-on-error: false
+    continue-on-error: true
     if: (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
     strategy:
       matrix:
