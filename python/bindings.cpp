@@ -565,37 +565,4 @@ PYBIND11_MODULE(voyager, m) {
       "``read``, ``seek``, ``tell``, and ``seekable`` methods, and must "
       "return binary data (i.e.: ``open(..., \"w\")`` or ``io.BinaryIO``, "
       "etc.).");
-
-  index.def_static(
-      "load_from_subprocess",
-      [](const std::string subprocessCommand, const SpaceType space,
-         const int num_dimensions,
-         const StorageDataType storageDataType) -> std::shared_ptr<Index> {
-        py::gil_scoped_release release;
-
-        switch (storageDataType) {
-        case StorageDataType::E4M3:
-          return std::make_shared<TypedIndex<float, E4M3>>(
-              std::make_shared<SubprocessInputStream>(subprocessCommand), space,
-              num_dimensions);
-        case StorageDataType::Float8:
-          return std::make_shared<
-              TypedIndex<float, int8_t, std::ratio<1, 127>>>(
-              std::make_shared<SubprocessInputStream>(subprocessCommand), space,
-              num_dimensions);
-        case StorageDataType::Float32:
-          return std::make_shared<TypedIndex<float>>(
-              std::make_shared<SubprocessInputStream>(subprocessCommand), space,
-              num_dimensions);
-        default:
-          throw std::runtime_error("Unknown storage data type received!");
-        }
-      },
-      py::arg("subprocess_command"), py::arg("space"),
-      py::arg("num_dimensions"),
-      py::arg("storage_data_type") = StorageDataType::Float32,
-      "Load an index from the standard output stream of a subprocess "
-      "command. This can be used to load an index from a remote filesystem "
-      "(i.e.: S3, GCS, etc) extremely quickly, using all of the available "
-      "threads/cores on a machine, without downloading to disk first.");
 }

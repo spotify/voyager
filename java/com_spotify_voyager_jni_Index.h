@@ -38,17 +38,6 @@ Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(JNIEnv *, jobject,
 
 /*
  * Class:     com_spotify_voyager_jni_Index
- * Method:    nativeLoadFromSubprocess
- * Signature:
- * (Ljava/lang/String;Lcom/spotify/voyager/jni/Index/SpaceType;ILcom/spotify/voyager/jni/Index/StorageDataType;)V
- */
-JNIEXPORT void JNICALL
-Java_com_spotify_voyager_jni_Index_nativeLoadFromSubprocess(JNIEnv *, jobject,
-                                                            jstring, jobject,
-                                                            jint, jobject);
-
-/*
- * Class:     com_spotify_voyager_jni_Index
  * Method:    nativeDestructor
  * Signature: ()V
  */

@@ -243,33 +243,6 @@ public class Index implements Closeable {
   }
 
   /**
-   * Launch a subprocess and interpret the contents of its {@code stdout} stream as the contents of
-   * a Voyager index file. This can be used to stream an index from a third-party storage system
-   * (e.g.: {@code gsutil}, {@code boto}, etc). The contents of {@code subprocessCommand} should
-   * only include trusted data, as the command will be executed with the same privileges as the
-   * current JVM process.
-   *
-   * @param subprocessCommand The command to execute, whose {@code stdout} will provide the valid
-   *     bytes of a Voyager index.
-   * @param space The {@link Index.SpaceType} to use when loading the index.
-   * @param numDimensions The number of dimensions per vector.
-   * @param storageDataType The {@link Index.StorageDataType} used by the index being loaded.
-   * @return An {@link Index} whose contents have been initialized with the data provided by the
-   *     subprocess.
-   * @throws RuntimeException if the index cannot be loaded from the subprocess output, or the data
-   *     is invalid.
-   */
-  public static Index loadFromSubprocess(
-      String subprocessCommand,
-      SpaceType space,
-      int numDimensions,
-      StorageDataType storageDataType) {
-    Index index = new Index();
-    index.nativeLoadFromSubprocess(subprocessCommand, space, numDimensions, storageDataType);
-    return index;
-  }
-
-  /**
    * Close this {@link Index} and release any memory held by it. Note that this method must be
    * called to release the memory backing this {@link Index}; failing to do so may cause a memory
    * leak.
@@ -298,12 +271,6 @@ public class Index implements Closeable {
 
   private native void nativeLoadFromInputStream(
       InputStream inputStream, SpaceType space, int numDimensions, StorageDataType storageDataType);
-
-  private native void nativeLoadFromSubprocess(
-      String subprocessCommand,
-      SpaceType space,
-      int numDimensions,
-      StorageDataType storageDataType);
 
   private native void nativeDestructor();
 
