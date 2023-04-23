@@ -11,18 +11,21 @@ from setuptools.command.build_ext import build_ext
 __version__ = "1.0.8"
 
 
-# When building via Tox, the headers are copied into the current directory
-# and the parent is inaccessible:
-VOYAGER_HEADERS_PATH = "./cpp/"
-if not os.path.exists(VOYAGER_HEADERS_PATH):
-    VOYAGER_HEADERS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cpp/"))
+# Find the "cpp" folder depending on where this script is run from:
+for search_path in ["./cpp/", "../cpp/", "../../cpp/"]:
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), search_path))
+    if os.path.exists(path):
+        VOYAGER_HEADERS_PATH = path
+        break
+else:
+    raise OSError("Unable to find the 'cpp' folder to build voyager.")
 
 
 ext_modules = [
     Extension(
         "voyager",
         ["./bindings.cpp"],
-        include_dirs=[pybind11.get_include(), np.get_include(), VOYAGER_HEADERS_PATH, "./cpp/"],
+        include_dirs=[pybind11.get_include(), np.get_include(), VOYAGER_HEADERS_PATH],
         libraries=[],
         language="c++",
         extra_objects=[],
