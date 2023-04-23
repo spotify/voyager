@@ -124,7 +124,7 @@ class FileOutputStream : public OutputStream {
 public:
   FileOutputStream(const std::string &filename) {
     errno = 0;
-    handle = fopen(filename.c_str(), "w");
+    handle = fopen(filename.c_str(), "wb");
     if (!handle) {
       throw std::runtime_error("Failed to open file for writing (errno " +
                                std::to_string(errno) + "): " + filename);
