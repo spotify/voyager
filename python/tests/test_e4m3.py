@@ -16,24 +16,21 @@ RANGES_AND_EXPECTED_ERRORS = [
 VALID_E4M3_VALUES = set([float(E4M3T.from_char(x)) for x in range(256)])
 
 
-@pytest.mark.parametrize(
-    "_input,expected_error",
-    [
+def test_range():
+    for _input, expected_error in [
         (v, error)
         for (_min, _max, step), error in RANGES_AND_EXPECTED_ERRORS
         for v in np.arange(_min, _max, step)
-    ],
-)
-def test_range(_input: float, expected_error: float):
-    v = E4M3T(_input)
-    roundtrip_value = float(v)
-    assert not np.isnan(roundtrip_value)
-    error = abs(roundtrip_value - _input)
-    assert error <= expected_error, repr(v)
-    if _input < 0 and roundtrip_value != 0.0:
-        assert roundtrip_value < 0
-    elif _input > 0 and roundtrip_value != 0.0:
-        assert roundtrip_value > 0
+    ]:
+        v = E4M3T(_input)
+        roundtrip_value = float(v)
+        assert not np.isnan(roundtrip_value)
+        error = abs(roundtrip_value - _input)
+        assert error <= expected_error, repr(v)
+        if _input < 0 and roundtrip_value != 0.0:
+            assert roundtrip_value < 0
+        elif _input > 0 and roundtrip_value != 0.0:
+            assert roundtrip_value > 0
 
 
 @pytest.mark.parametrize("_input", list(range(256)))
@@ -62,43 +59,42 @@ def test_rounding_near_actual_values(_input: int, offset: float):
         )
 
 
-@pytest.mark.parametrize(
-    "_input",
-    list(np.arange(-1.1, 1.1, 0.001))
-    + [(2**-7 * (1 + x / 8)) for x in range(8)]
-    + list(np.arange(-448, 448, 1.0))
-    + [0.04890749],
-)
-def test_rounding(_input: float):
-    closest_above = min(
-        VALID_E4M3_VALUES, key=lambda v: (abs(v - _input) if v >= _input else 10000)
-    )
-    closest_below = min(
-        VALID_E4M3_VALUES, key=lambda v: (abs(v - _input) if v <= _input else 10000)
-    )
-    expected = min([closest_above, closest_below], key=lambda v: abs(v - _input))
-    if closest_above != closest_below and abs(closest_above - _input) == abs(
-        closest_below - _input
+def test_rounding():
+    for _input in (
+        list(np.arange(-1.1, 1.1, 0.001))
+        + [(2**-7 * (1 + x / 8)) for x in range(8)]
+        + list(np.arange(-448, 448, 1.0))
+        + [0.04890749]
     ):
-        # Round to nearest, ties to even:
-        above_is_even = E4M3T(closest_above).mantissa % 2 == 0
-        below_is_even = E4M3T(closest_below).mantissa % 2 == 0
-        if above_is_even and below_is_even:
-            raise NotImplementedError(
-                "Both numbers above and below the target are even!"
-                f" {E4M3T(closest_above)} vs {E4M3T(closest_below)}"
-            )
-        elif above_is_even:
-            expected = closest_above
-        else:
-            expected = closest_below
-    converted = E4M3T(_input)
-    actual = float(converted)
-    assert actual == expected, (
-        f"Expected {_input} to round to {expected} ({E4M3T(expected)}) when converting"
-        f" to E4M3 but found {actual} ({converted}) (closest above option was"
-        f" {closest_above}, closest below option was {closest_below})"
-    )
+        closest_above = min(
+            VALID_E4M3_VALUES, key=lambda v: (abs(v - _input) if v >= _input else 10000)
+        )
+        closest_below = min(
+            VALID_E4M3_VALUES, key=lambda v: (abs(v - _input) if v <= _input else 10000)
+        )
+        expected = min([closest_above, closest_below], key=lambda v: abs(v - _input))
+        if closest_above != closest_below and abs(closest_above - _input) == abs(
+            closest_below - _input
+        ):
+            # Round to nearest, ties to even:
+            above_is_even = E4M3T(closest_above).mantissa % 2 == 0
+            below_is_even = E4M3T(closest_below).mantissa % 2 == 0
+            if above_is_even and below_is_even:
+                raise NotImplementedError(
+                    "Both numbers above and below the target are even!"
+                    f" {E4M3T(closest_above)} vs {E4M3T(closest_below)}"
+                )
+            elif above_is_even:
+                expected = closest_above
+            else:
+                expected = closest_below
+        converted = E4M3T(_input)
+        actual = float(converted)
+        assert actual == expected, (
+            f"Expected {_input} to round to {expected} ({E4M3T(expected)}) when converting"
+            f" to E4M3 but found {actual} ({converted}) (closest above option was"
+            f" {closest_above}, closest below option was {closest_below})"
+        )
 
 
 @pytest.mark.parametrize("_input", [0.04890749])
@@ -148,17 +144,18 @@ def test_out_of_range(_input: float):
         E4M3T(_input)
 
 
-@pytest.mark.parametrize("a,b", [(a, a + 1e-2) for a in np.arange(-448, 448, 1e-2)])
-def test_monotonically_increasing(a: float, b: float):
-    assert float(E4M3T(a)) <= float(E4M3T(b))
+def test_monotonically_increasing():
+    for a in np.arange(-448, 448, 1e-2):
+        b = a + 1e-2
+        assert float(E4M3T(a)) <= float(E4M3T(b))
 
 
 def normalized(vec: np.ndarray) -> np.ndarray:
     return np.array(vec).astype(np.float32) / (
         np.sqrt(
-            np.sum(
-                np.power(np.array(vec).astype(np.float32), 2).astype(np.float32)
-            ).astype(np.float32)
+            np.sum(np.power(np.array(vec).astype(np.float32), 2).astype(np.float32)).astype(
+                np.float32
+            )
         ).astype(np.float32)
         + 1e-30
     ).astype(np.float32)
@@ -247,9 +244,7 @@ def test_cosine():
         0.7264220118522644,
         0.4370560348033905,
     ]
-    index = Index(
-        Space.Cosine, num_dimensions=80, storage_data_type=StorageDataType.E4M3
-    )
+    index = Index(Space.Cosine, num_dimensions=80, storage_data_type=StorageDataType.E4M3)
     index.add_item(REAL_WORLD_VECTOR)
     normalized_vector = normalized(REAL_WORLD_VECTOR)
     expected = np.array([float(E4M3T(x)) for x in normalized_vector])
