@@ -72,45 +72,6 @@ private:
 };
 
 /**
- * An input stream that wraps a subprocess command.
- * Useful when loading a Voyager index from a remote filesystem
- * or other object storage directly into memory.
- */
-class SubprocessInputStream : public FileInputStream {
-public:
-  SubprocessInputStream(const std::string &subprocessCommand) {
-    handle =
-#ifdef _MSC_VER
-        _popen
-#else
-        popen
-#endif
-        (subprocessCommand.c_str(), "r");
-
-    if (!handle) {
-      throw std::runtime_error("Failed to open subprocess: " +
-                               subprocessCommand);
-    }
-  }
-
-  virtual bool isSeekable() { return false; }
-  virtual long long getTotalLength() { return -1; }
-
-  virtual ~SubprocessInputStream() {
-    if (handle) {
-#ifdef _MSC_VER
-      _pclose
-#else
-      pclose
-#endif
-          (handle);
-
-      handle = nullptr;
-    }
-  }
-};
-
-/**
  * Like std::ostream, but custom with fewer methods to implement.
  */
 class OutputStream {
