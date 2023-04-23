@@ -115,9 +115,6 @@ jobs:
           pytest -v -x -s
 
   build-python-wheels:
-    defaults:
-      run:
-        working-directory: python
     needs: [lint-cpp]
     runs-on: ${{ matrix.os }}
     continue-on-error: true
@@ -186,7 +183,7 @@ jobs:
         with:
           platforms: all
       - name: Build wheels
-        run: python -m cibuildwheel --output-dir wheelhouse
+        run: cd python && python -m cibuildwheel --output-dir ../wheelhouse
         env:
           CIBW_TEST_REQUIRES: -r dev-requirements.txt
           CIBW_TEST_COMMAND: "pytest {project}/tests -x"
@@ -206,7 +203,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
-          path: ./python/wheelhouse/*.whl
+          path: ./wheelhouse/*.whl
 
   upload-pypi:
     defaults:
