@@ -66,6 +66,7 @@ target/classes/mac-aarch64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 target/classes/win-x64/$(WIN_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/win-x64/
 	$(CC) $(CXXFLAGS) $(SOURCE)
+	cp com_spotify_voyager_jni_Index.dll $@
 
 test: $(ALL_OBJS)
 	mvn test
