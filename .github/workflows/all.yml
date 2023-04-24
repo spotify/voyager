@@ -60,6 +60,8 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'corretto'
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
       - name: Compile
         run: make
       - name: Run Tests
