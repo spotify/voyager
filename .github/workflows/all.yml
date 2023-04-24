@@ -60,7 +60,9 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'corretto'
-      - name: Compile and Run Tests
+      - name: Compile
+        run: make
+      - name: Run Tests
         run: mvn --batch-mode verify
 
   run-python-tests:
