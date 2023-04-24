@@ -593,8 +593,9 @@ jlongArray Java_com_spotify_voyager_jni_Index_getIDs(JNIEnv *env,
 
     std::vector<hnswlib::labeltype> ids = index->getIDs();
 
-    static_assert(std::is_same<hnswlib::labeltype, unsigned long>::value,
-                  "getIDs expects hnswlib::labeltype to be an unsigned long.");
+    static_assert(std::is_same<hnswlib::labeltype, uint64_t>::value ||
+                      std::is_same<hnswlib::labeltype, int64_t>::value,
+                  "getIDs expects hnswlib::labeltype to be a 64-bit integer.");
 
     jclass longArrayClass = env->FindClass("[J");
     if (!longArrayClass) {
