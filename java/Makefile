@@ -8,20 +8,22 @@ MAC_SOBJ    := libvoyager.dylib
 LINUX_SOBJ  := libvoyager.so
 CPP_SRC_DIR := ../cpp/
 
-CC        ?= clang++
 SOURCE    := com_spotify_voyager_jni_Index.cpp
 HEADERS   := $(SOURCE:.cpp=.h)
 JAVA_SRC  := ./src/main/java
 
 ifeq ($(UNAME_S),Linux)
+CC        := clang++
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/linux
 ALL_OBJS  := target/classes/linux-x64/$(LINUX_SOBJ) target/classes/linux-aarch64/$(LINUX_SOBJ)
 CXXFLAGS  := -I. -lc -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
 else ifeq ($(UNAME_S),Darwin)
+CC        := clang++
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/darwin
 ALL_OBJS  := target/classes/mac-x64/$(MAC_SOBJ) target/classes/mac-aarch64/$(MAC_SOBJ)
 CXXFLAGS  := -I. -lc++ -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
 else ifdef OS # Windows:
+CC        := msvc.exe
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/win32
 ALL_OBJS  := target/classes/win-x64/$(MAC_SOBJ)
 CXXFLAGS  := /I. /std:c++17 /I.\include $(addprefix -I,$(JAVA_INC)) /I $(CPP_SRC_DIR) /O2
