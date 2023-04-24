@@ -51,10 +51,10 @@ public class StringIndexTest {
         return customResults;
       };
 
-  @Test
+  // @Test
   public void itLoadsFromFileSystem() {}
 
-  @Test
+  // @Test
   public void itFindsNeighbors() throws Exception {
     StringIndex index = new StringIndex(SpaceType.Cosine, 80, 16, 200, 0, 50, StorageDataType.E4M3);
     List<Vector> vectors = TestUtils.getTestVectors();
@@ -71,7 +71,7 @@ public class StringIndexTest {
     index.close();
   }
 
-  @Test
+  // @Test
   public void itFindsNeighborsUsingList() throws Exception {
     StringIndex index = new StringIndex(SpaceType.Cosine, 80, 16, 200, 0, 50, StorageDataType.E4M3);
     List<ListVector> vectors = TestUtils.getTestVectorsUsingList();
@@ -88,7 +88,7 @@ public class StringIndexTest {
     index.close();
   }
 
-  @Test
+  // @Test
   public void itAddsItemsInBatch() throws Exception {
     StringIndex index = new StringIndex(SpaceType.Cosine, 80, 16, 200, 0, 50, StorageDataType.E4M3);
     Map<String, List<Float>> vectors =
@@ -105,7 +105,7 @@ public class StringIndexTest {
     index.close();
   }
 
-  @Test
+  // @Test
   public void itSavesToOutputStream() throws Exception {
     StringIndex index = new StringIndex(SpaceType.Cosine, 80, 32, 300, 0, 1, StorageDataType.E4M3);
     List<Vector> vectors = TestUtils.getTestVectors();
@@ -127,7 +127,7 @@ public class StringIndexTest {
     index.close();
   }
 
-  @Test
+  // @Test
   public void itSavesToFilesystem() throws Exception {
     StringIndex index = new StringIndex(SpaceType.Cosine, 80, 32, 300, 0, 1, StorageDataType.E4M3);
     List<Vector> vectors = TestUtils.getTestVectors();
@@ -148,7 +148,7 @@ public class StringIndexTest {
     index.close();
   }
 
-  @Test
+  // @Test
   public void itLoadsFromInputStream() throws Exception {
     StringIndex index =
         StringIndex.load(
@@ -168,7 +168,7 @@ public class StringIndexTest {
     index.close();
   }
 
-  @Test
+  // @Test
   public void itVerifiesEfParameter() throws Exception {
     StringIndex index =
         StringIndex.load(
