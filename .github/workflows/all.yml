@@ -154,7 +154,7 @@ jobs:
           pytest -v -x -s
 
   build-python-wheels:
-    needs: [lint-cpp]
+    needs: [lint-cpp, run-python-tests, run-python-tests-with-address-sanitizer]
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     if: true # (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
