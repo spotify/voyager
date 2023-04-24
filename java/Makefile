@@ -1,36 +1,31 @@
-# Makefile to build voyager's JNI bindings for macOS or Linux, from a macOS machine.
-# Requires a working Docker and JVM installation.
-# For Apple Silicon support, use `make target/classes/mac-aarch64/libvoyager.dylib`
+# Makefile to build voyager's JNI bindings for macOS, Windows, or Linux.
 
-.PHONY: all clean
+.PHONY: all clean test
 
 UNAME_S := $(shell uname -s)
 
-SOBJ        := libvoyager.dylib
+MAC_SOBJ    := libvoyager.dylib
 LINUX_SOBJ  := libvoyager.so
 CPP_SRC_DIR := ../cpp/
 
-ifeq ($(UNAME_S),Linux)
-# JAVA_HOME ?= $(shell echo ${JAVA_HOME})
-JAVA_HOME ?= /usr/lib/jvm/java-11-openjdk-arm64/
-JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/linux
-# Nothing, as we're already on Linux:
-LINUX_DOCKER_COMMAND := 
-ALL_OBJS  := target/classes/linux-x64/$(LINUX_SOBJ) target/classes/linux-aarch64/$(LINUX_SOBJ)
-else
-JAVA_HOME ?= $(shell /usr/libexec/java_home)
-JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/darwin
-LINUX_DOCKER_COMMAND := docker run -v $(shell pwd):/work dockcross/manylinux2014-x64
-ALL_OBJS  := target/classes/mac-x64/$(SOBJ) target/classes/mac-aarch64/$(SOBJ) target/classes/linux-x64/$(LINUX_SOBJ) target/classes/linux-aarch64/$(LINUX_SOBJ)
-endif
-
-CC        := g++
-CXXFLAGS  := -I. -lc -shared -std=c++17
-JNIFLAGS  := -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR)
-FASTFLAGS := -fPIC -O3
+CC        ?= clang++
 SOURCE    := com_spotify_voyager_jni_Index.cpp
 HEADERS   := $(SOURCE:.cpp=.h)
 JAVA_SRC  := ./src/main/java
+
+ifeq ($(UNAME_S),Linux)
+JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/linux
+ALL_OBJS  := target/classes/linux-x64/$(LINUX_SOBJ) target/classes/linux-aarch64/$(LINUX_SOBJ)
+CXXFLAGS  := -I. -lc -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
+else ifeq ($(UNAME_S),Darwin)
+JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/darwin
+ALL_OBJS  := target/classes/mac-x64/$(MAC_SOBJ) target/classes/mac-aarch64/$(MAC_SOBJ)
+CXXFLAGS  := -I. -lc++ -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
+else ifdef OS # Windows:
+JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/win32
+ALL_OBJS  := target/classes/win-x64/$(MAC_SOBJ)
+CXXFLAGS  := /I. /std:c++17 /I.\include $(addprefix -I,$(JAVA_INC)) /I $(CPP_SRC_DIR) /O2
+endif
 
 all: $(ALL_OBJS)
 	# Done!
@@ -48,32 +43,25 @@ target/classes/linux-x64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p linux-build
 	cp -r $(CPP_SRC_DIR) linux-build/include
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
-	$(LINUX_DOCKER_COMMAND) $(CC) $(CXXFLAGS) -I linux-build/include $(FASTFLAGS) -o $@ $(SOURCE) $(DEBUGFLAGS)
-	# rm -rf linux-build
+	$(CC) $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)
 
 target/classes/linux-aarch64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/linux-aarch64/
 	mkdir -p linux-build
 	cp -r $(CPP_SRC_DIR) linux-build/include
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
-# docker run -v $(shell pwd):/work --entrypoint bash ubuntu:18.04 -c 'apt-get update && apt-get install -y build-essential default-jdk && cd /work && 
-	$(CC) $(CXXFLAGS) -I linux-build/include $(FASTFLAGS) -o $@ $(SOURCE) $(DEBUGFLAGS)
-# '
-	# rm -rf linux-build
+	$(CC) $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)
 
-target/classes/mac-x64/$(SOBJ): classpath.txt $(HEADERS)
+target/classes/mac-x64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/mac-x64/
-	$(CC) $(CXXFLAGS) $(JNIFLAGS) $(FASTFLAGS) -o $@ $(SOURCE) $(DEBUGFLAGS) -arch x86_64
+	$(CC) $(CXXFLAGS) -o $@ $(SOURCE) -arch x86_64
 
-target/classes/mac-aarch64/$(SOBJ): classpath.txt $(HEADERS)
+target/classes/mac-aarch64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/mac-aarch64/
-	$(CC) $(CXXFLAGS) $(JNIFLAGS) $(FASTFLAGS) -o $@ $(SOURCE) $(DEBUGFLAGS) -arch arm64
+	$(CC) $(CXXFLAGS) -o $@ $(SOURCE) -arch arm64
 
 test: $(ALL_OBJS)
 	mvn test
-
-release: target/classes/mac-x64/$(SOBJ) target/classes/mac-aarch64/$(SOBJ) target/classes/linux-x64/$(LINUX_SOBJ)
-	mvn -B release:clean release:prepare release:perform -Dmaven.wagon.http.retryHandler.count=20
 
 clean:
 	rm -rfv com_spotify_*.h classpath.txt target
