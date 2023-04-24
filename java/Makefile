@@ -6,6 +6,7 @@ UNAME_S := $(shell uname -s)
 
 MAC_SOBJ    := libvoyager.dylib
 LINUX_SOBJ  := libvoyager.so
+WIN_SOBJ    := libvoyager.dll
 CPP_SRC_DIR := ../cpp/
 
 SOURCE    := com_spotify_voyager_jni_Index.cpp
@@ -25,7 +26,7 @@ CXXFLAGS  := -I. -lc++ -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC
 else ifdef OS # Windows:
 CC        := msvc.exe
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/win32
-ALL_OBJS  := target/classes/win-x64/$(MAC_SOBJ)
+ALL_OBJS  := target/classes/win-x64/$(WIN_SOBJ)
 CXXFLAGS  := /I. /std:c++17 /I.\include $(addprefix -I,$(JAVA_INC)) /I $(CPP_SRC_DIR) /O2
 endif
 
@@ -61,6 +62,10 @@ target/classes/mac-x64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 target/classes/mac-aarch64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/mac-aarch64/
 	$(CC) $(CXXFLAGS) -o $@ $(SOURCE) -arch arm64
+
+target/classes/win-x64/$(WIN_SOBJ): classpath.txt $(HEADERS)
+	mkdir -p target/classes/win-x64/
+	$(CC) $(CXXFLAGS) /Fo $@ $(SOURCE)
 
 test: $(ALL_OBJS)
 	mvn test
