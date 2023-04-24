@@ -34,7 +34,7 @@ all: $(ALL_OBJS)
 	# Done!
 
 classpath.txt:
-	mvn dependency:build-classpath | grep '\.jar[;:]' > $@
+	mvn dependency:build-classpath | grep '\.jar[;:]' | tr ';' ':' > $@
 
 %.h: %.cpp classpath.txt
 	# For each Java JNI .cpp file, we need a corresponding header to be generated.
