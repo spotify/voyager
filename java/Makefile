@@ -65,7 +65,7 @@ target/classes/mac-aarch64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 
 target/classes/win-x64/$(WIN_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/win-x64/
-	$(CC) $(CXXFLAGS) $(SOURCE) /OUT:$@
+	$(CC) $(CXXFLAGS) $(SOURCE)
 
 test: $(ALL_OBJS)
 	mvn test
