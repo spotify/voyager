@@ -34,6 +34,8 @@ all: $(ALL_OBJS)
 	# Done!
 
 classpath.txt:
+	mvn dependency:build-classpath
+	mvn dependency:build-classpath | grep '\.jar:'
 	mvn dependency:build-classpath | grep '\.jar:' > $@
 
 %.h: %.cpp classpath.txt
