@@ -251,7 +251,7 @@ jfloatArray toFloatArray(JNIEnv *env, std::vector<float> floatArray) {
 std::vector<size_t> toUnsignedStdVector(JNIEnv *env, jlongArray longArray) {
   jsize numElements = env->GetArrayLength(longArray);
   std::vector<size_t> input(numElements);
-  env->GetLongArrayRegion(longArray, 0, numElements, (int64_t *)input.data());
+  env->GetLongArrayRegion(longArray, 0, numElements, (jlong *)input.data());
   return input;
 }
 
@@ -381,7 +381,7 @@ jobject Java_com_spotify_voyager_jni_Index_query___3FIJ(JNIEnv *env,
     //  This may overflow if we have more than... 2^63 = 9.223372037e18
     //  elements. We're probably safe doing this.
     env->SetLongArrayRegion(labels, 0, numNeighbors,
-                            (int64_t *)std::get<0>(queryResults).data());
+                            (jlong *)std::get<0>(queryResults).data());
 
     jfloatArray distances = env->NewFloatArray(numNeighbors);
     env->SetFloatArrayRegion(distances, 0, numNeighbors,
@@ -435,7 +435,7 @@ jobjectArray Java_com_spotify_voyager_jni_Index_query___3_3FIIJ(
       //  This may overflow if we have more than... 2^63 = 9.223372037e18
       //  elements. We're probably safe doing this.
       env->SetLongArrayRegion(labels, 0, numNeighbors,
-                              (int64_t *)std::get<0>(queryResults)[i]);
+                              (jlong *)std::get<0>(queryResults)[i]);
 
       jfloatArray distances = env->NewFloatArray(numNeighbors);
       env->SetFloatArrayRegion(distances, 0, numNeighbors,
@@ -593,8 +593,7 @@ jlongArray Java_com_spotify_voyager_jni_Index_getIDs(JNIEnv *env,
 
     std::vector<hnswlib::labeltype> ids = index->getIDs();
 
-    static_assert(std::is_same<hnswlib::labeltype, uint64_t>::value ||
-                      std::is_same<hnswlib::labeltype, int64_t>::value,
+    static_assert(sizeof(hnswlib::labeltype) == sizeof(jlong),
                   "getIDs expects hnswlib::labeltype to be a 64-bit integer.");
 
     jclass longArrayClass = env->FindClass("[J");
@@ -605,7 +604,7 @@ jlongArray Java_com_spotify_voyager_jni_Index_getIDs(JNIEnv *env,
     // Allocate a Java long array for the IDs:
     jlongArray javaIds = env->NewLongArray(ids.size());
 
-    env->SetLongArrayRegion(javaIds, 0, ids.size(), (int64_t *)ids.data());
+    env->SetLongArrayRegion(javaIds, 0, ids.size(), (jlong *)ids.data());
 
     return javaIds;
   } catch (std::exception const &e) {
