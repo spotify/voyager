@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <numeric>
 #include <vector>
 
 #include "E4M3.h"
@@ -21,7 +22,7 @@ public:
   const std::array<int, Dims> strides;
 
   NDArray(std::array<int, Dims> shape)
-      : data(accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>())),
+      : data(std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>())),
         shape(shape), strides(computeStrides()) {}
 
   NDArray(std::vector<T> data, std::array<int, Dims> shape)
