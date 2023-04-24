@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
 
 public class StringIndexTest {
   private static final Function<QueryResults, List<CustomResult>> RESULT_MAPPER =
