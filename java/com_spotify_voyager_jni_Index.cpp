@@ -251,7 +251,7 @@ jfloatArray toFloatArray(JNIEnv *env, std::vector<float> floatArray) {
 std::vector<size_t> toUnsignedStdVector(JNIEnv *env, jlongArray longArray) {
   jsize numElements = env->GetArrayLength(longArray);
   std::vector<size_t> input(numElements);
-  env->GetLongArrayRegion(longArray, 0, numElements, (size_t *)input.data());
+  env->GetLongArrayRegion(longArray, 0, numElements, (int64_t *)input.data());
   return input;
 }
 
