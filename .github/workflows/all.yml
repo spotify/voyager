@@ -44,7 +44,7 @@ jobs:
 
   run-java-tests:
     continue-on-error: true
-    name: Run Java Tests
+    name: Test with Java ${{ matrix.java-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
