@@ -63,11 +63,8 @@ class BuildExt(build_ext):
     """A custom build extension for adding compiler-specific options."""
 
     compiler_flags = {
-        "msvc": ["/EHsc", "/openmp", "/O2"],
-        "unix": [
-            "-O0" if DEBUG else "-O3",
-        ]
-        + (["-g"] if DEBUG else []),
+        "msvc": ["/EHsc", "/O2"],
+        "unix": ["-O0" if DEBUG else "-O3"] + (["-g"] if DEBUG else []),
     }
 
     linker_flags = {"unix": [], "msvc": []}
@@ -75,9 +72,6 @@ class BuildExt(build_ext):
     if sys.platform == "darwin":
         compiler_flags["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
         linker_flags["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
-    else:
-        compiler_flags["unix"].append("-fopenmp")
-        linker_flags["unix"].extend(["-fopenmp", "-pthread"])
 
     if USE_ASAN:
         compiler_flags["unix"].append("-fsanitize=address")
