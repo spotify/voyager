@@ -27,7 +27,7 @@ else ifdef OS # Windows:
 CC        := cl.exe
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/win32
 ALL_OBJS  := target/classes/win-x64/$(WIN_SOBJ)
-CXXFLAGS  := /I. /std:c++17 /I.\include $(addprefix -I,$(JAVA_INC)) /I $(CPP_SRC_DIR) /O2
+CXXFLAGS  := /I. /EHsc /DLL /LD /std:c++17 /I.\include $(addprefix -I,$(JAVA_INC)) /I $(CPP_SRC_DIR) /O2
 endif
 
 all: $(ALL_OBJS)
@@ -65,7 +65,7 @@ target/classes/mac-aarch64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 
 target/classes/win-x64/$(WIN_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/win-x64/
-	$(CC) $(CXXFLAGS) /Fo $@ $(SOURCE)
+	$(CC) $(CXXFLAGS) /OUT:$@ $(SOURCE)
 
 test: $(ALL_OBJS)
 	mvn test
