@@ -65,6 +65,7 @@ public class JniLibExtractor {
       return "win-" + osArch;
     }
 
-    throw new RuntimeException("com.spotify.voyager currently only runs on macOS, Linux, and Windows.");
+    throw new RuntimeException(
+        "com.spotify.voyager currently only runs on macOS, Linux, and Windows.");
   }
 }
