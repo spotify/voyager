@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"com.spotify.voyager.jni","l":"Index"},{"p":"com.spotify.voyager.jni","l":"Index.QueryResults"},{"p":"com.spotify.voyager.jni","l":"Index.SpaceType"},{"p":"com.spotify.voyager.jni","l":"Index.StorageDataType"}]
