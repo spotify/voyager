@@ -232,6 +232,7 @@ jobs:
           CIBW_ARCHS: auto64 # Only support building 64-bit wheels. It's 2022!
           CIBW_ARCHS_LINUX: auto64 aarch64 # Useful for building linux images with Apple Silicon
           CIBW_ARCHS_MACOS: x86_64 universal2 arm64 # Support Apple Silicon
+          CIBW_ARCHS_WINDOWS: AMD64 ARM64
           # on macOS and with Python 3.10: building NumPy from source fails without these options:
           CIBW_ENVIRONMENT: NPY_BLAS_ORDER="" NPY_LAPACK_ORDER=""
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: pip install auditwheel-symbols && (auditwheel repair -w {dest_dir} {wheel} || auditwheel-symbols --manylinux 2010 {wheel})
