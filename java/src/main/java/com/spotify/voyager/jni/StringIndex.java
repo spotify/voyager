@@ -20,19 +20,13 @@
 
 package com.spotify.voyager.jni;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.voyager.jni.Index.SpaceType;
 import com.spotify.voyager.jni.Index.StorageDataType;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.spotify.voyager.jni.utils.TinyJSON;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -45,7 +39,6 @@ import java.util.Map.Entry;
  * index ID to a provided String.
  */
 public class StringIndex implements Closeable {
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final String INDEX_FILE_NAME = "index.hnsw";
   private static final String NAMES_LIST_FILE_NAME = "names.json";
   private final Index hnswIndex;
@@ -122,10 +115,10 @@ public class StringIndex implements Closeable {
       int numDimensions,
       StorageDataType storageDataType) {
     Index index = Index.load(indexFilename, spaceType, numDimensions, storageDataType);
+
     List<String> names;
     try {
-      names =
-          OBJECT_MAPPER.readValue(new File(nameListFilename), new TypeReference<List<String>>() {});
+      names = TinyJSON.readStringList(Files.newInputStream(Paths.get(nameListFilename)));
     } catch (IOException e) {
       throw new RuntimeException("Error reading names list from: " + nameListFilename, e);
     }
@@ -151,16 +144,11 @@ public class StringIndex implements Closeable {
       SpaceType spaceType,
       int numDimensions,
       StorageDataType storageDataType) {
+
     // use buffered stream to keep read speeds high, reading up to 100MB at once
     BufferedInputStream inputStream = new BufferedInputStream(indexInputStream, 1024 * 1024 * 100);
     Index index = Index.load(inputStream, spaceType, numDimensions, storageDataType);
-
-    List<String> names;
-    try {
-      names = OBJECT_MAPPER.readValue(nameListInputStream, new TypeReference<List<String>>() {});
-    } catch (IOException e) {
-      throw new RuntimeException("unable to read names list");
-    }
+    List<String> names = TinyJSON.readStringList(nameListInputStream);
 
     return new StringIndex(index, names);
   }
@@ -177,10 +165,10 @@ public class StringIndex implements Closeable {
     this.hnswIndex.saveIndex(indexFilename);
 
     String namesListFilename = outputDirectory + "/" + NAMES_LIST_FILE_NAME;
-    BufferedWriter writer = new BufferedWriter(new FileWriter(namesListFilename));
-    writer.write(OBJECT_MAPPER.writeValueAsString(this.names));
-    writer.flush();
-    writer.close();
+    final OutputStream outputStream = Files.newOutputStream(Paths.get(namesListFilename));
+    TinyJSON.writeStringList(this.names, outputStream);
+    outputStream.flush();
+    outputStream.close();
   }
 
   /**
@@ -195,7 +183,7 @@ public class StringIndex implements Closeable {
     BufferedOutputStream outputStream =
         new BufferedOutputStream(indexOutputStream, 1024 * 1024 * 100);
     this.hnswIndex.saveIndex(outputStream);
-    namesListOutputStream.write(OBJECT_MAPPER.writeValueAsBytes(this.names));
+    TinyJSON.writeStringList(this.names, namesListOutputStream);
 
     outputStream.flush();
     outputStream.close();
