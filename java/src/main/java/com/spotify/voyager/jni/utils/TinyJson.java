@@ -20,7 +20,11 @@
 
 package com.spotify.voyager.jni.utils;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -29,7 +33,7 @@ import java.util.Scanner;
  * A dependency-free, super tiny JSON serde class that only
  * supports reading and writing lists of strings.
  */
-public class TinyJSON {
+public class TinyJson {
     public static List<String> readStringList(InputStream stream) {
         Scanner scanner = new Scanner(stream).useDelimiter("\"");
 

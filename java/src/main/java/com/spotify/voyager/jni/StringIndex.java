@@ -22,7 +22,7 @@ package com.spotify.voyager.jni;
 
 import com.spotify.voyager.jni.Index.SpaceType;
 import com.spotify.voyager.jni.Index.StorageDataType;
-import com.spotify.voyager.jni.utils.TinyJSON;
+import com.spotify.voyager.jni.utils.TinyJson;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -118,7 +118,7 @@ public class StringIndex implements Closeable {
 
     List<String> names;
     try {
-      names = TinyJSON.readStringList(Files.newInputStream(Paths.get(nameListFilename)));
+      names = TinyJson.readStringList(Files.newInputStream(Paths.get(nameListFilename)));
     } catch (IOException e) {
       throw new RuntimeException("Error reading names list from: " + nameListFilename, e);
     }
@@ -148,7 +148,7 @@ public class StringIndex implements Closeable {
     // use buffered stream to keep read speeds high, reading up to 100MB at once
     BufferedInputStream inputStream = new BufferedInputStream(indexInputStream, 1024 * 1024 * 100);
     Index index = Index.load(inputStream, spaceType, numDimensions, storageDataType);
-    List<String> names = TinyJSON.readStringList(nameListInputStream);
+    List<String> names = TinyJson.readStringList(nameListInputStream);
 
     return new StringIndex(index, names);
   }
@@ -166,7 +166,7 @@ public class StringIndex implements Closeable {
 
     String namesListFilename = outputDirectory + "/" + NAMES_LIST_FILE_NAME;
     final OutputStream outputStream = Files.newOutputStream(Paths.get(namesListFilename));
-    TinyJSON.writeStringList(this.names, outputStream);
+    TinyJson.writeStringList(this.names, outputStream);
     outputStream.flush();
     outputStream.close();
   }
@@ -183,7 +183,7 @@ public class StringIndex implements Closeable {
     BufferedOutputStream outputStream =
         new BufferedOutputStream(indexOutputStream, 1024 * 1024 * 100);
     this.hnswIndex.saveIndex(outputStream);
-    TinyJSON.writeStringList(this.names, namesListOutputStream);
+    TinyJson.writeStringList(this.names, namesListOutputStream);
 
     outputStream.flush();
     outputStream.close();
