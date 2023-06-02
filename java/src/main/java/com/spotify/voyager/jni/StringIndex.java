@@ -217,7 +217,7 @@ public class StringIndex implements Closeable {
   public void addItems(Map<String, List<Float>> vectors) {
     int numVectors = vectors.size();
 
-    List<String> newNames = new ArrayList(numVectors);
+    List<String> newNames = new ArrayList<>(numVectors);
     float[][] primitiveVectors = new float[numVectors][];
     long[] labels = new long[numVectors];
 
