@@ -47,6 +47,8 @@ public class TinyJSON {
                     insideString = true;
                 } else if (token.equals("]") || token.equals("[]")) {
                     break;
+                } else {
+                    throw new IllegalArgumentException("Unexpected token found when parsing JSON list: " + token);
                 }
             }
         }
