@@ -30,56 +30,58 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * A dependency-free, super tiny JSON serde class that only
- * supports reading and writing lists of strings.
+ * A dependency-free, super tiny JSON serde class that only supports reading and writing lists of
+ * strings.
  */
 public class TinyJson {
-    public static List<String> readStringList(InputStream stream) {
-        Scanner scanner = new Scanner(stream).useDelimiter("\"");
+  public static List<String> readStringList(InputStream stream) {
+    Scanner scanner = new Scanner(stream).useDelimiter("\"");
 
-        List<String> outputList = new ArrayList<>();
+    List<String> outputList = new ArrayList<>();
 
-        boolean insideString = false;
-        while (true) {
-            String token = scanner.next();
-            if (insideString) {
-                outputList.add(token);
-                insideString = false;
-            } else {
-                token = token.trim();
-                if (token.equals(",") || token.equals("[")) {
-                    insideString = true;
-                } else if (token.equals("]") || token.equals("[]")) {
-                    break;
-                } else {
-                    throw new IllegalArgumentException("Unexpected token found when parsing JSON list: " + token);
-                }
-            }
+    boolean insideString = false;
+    while (true) {
+      String token = scanner.next();
+      if (insideString) {
+        outputList.add(token);
+        insideString = false;
+      } else {
+        token = token.trim();
+        if (token.equals(",") || token.equals("[")) {
+          insideString = true;
+        } else if (token.equals("]") || token.equals("[]")) {
+          break;
+        } else {
+          throw new IllegalArgumentException(
+              "Unexpected token found when parsing JSON list: " + token);
         }
-
-        return outputList;
+      }
     }
 
-    public static void writeStringList(final Iterable<String> items, final OutputStream stream) throws IOException {
-        BufferedWriter output = new BufferedWriter(new OutputStreamWriter(stream));
-        output.write("[");
-        boolean isFirst = true;
-        for (final String item : items) {
-            if (!isFirst) {
-                output.write(',');
-            }
-            isFirst = false;
-            output.write('"');
-            if (item.contains("\\") || item.contains("\"")) {
-                throw new IllegalArgumentException(
-                        "Voyager string keys may not contain backslashes " +
-                                "or double quotes, but found key: " + item
-                );
-            }
-            output.write(item);
-            output.write('"');
-        }
-        output.write("]");
-        output.flush();
+    return outputList;
+  }
+
+  public static void writeStringList(final Iterable<String> items, final OutputStream stream)
+      throws IOException {
+    BufferedWriter output = new BufferedWriter(new OutputStreamWriter(stream));
+    output.write("[");
+    boolean isFirst = true;
+    for (final String item : items) {
+      if (!isFirst) {
+        output.write(',');
+      }
+      isFirst = false;
+      output.write('"');
+      if (item.contains("\\") || item.contains("\"")) {
+        throw new IllegalArgumentException(
+            "Voyager string keys may not contain backslashes "
+                + "or double quotes, but found key: "
+                + item);
+      }
+      output.write(item);
+      output.write('"');
     }
+    output.write("]");
+    output.flush();
+  }
 }

@@ -24,7 +24,12 @@ import com.spotify.voyager.jni.Index.SpaceType;
 import com.spotify.voyager.jni.Index.StorageDataType;
 import com.spotify.voyager.jni.utils.TinyJson;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
