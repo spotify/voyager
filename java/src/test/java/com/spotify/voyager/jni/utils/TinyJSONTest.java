@@ -10,6 +10,7 @@ import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class TinyJSONTest {
     @Test
@@ -31,5 +32,35 @@ public class TinyJSONTest {
         final ByteArrayInputStream is = new ByteArrayInputStream("[\"a\", \"b\",\n\n \"c\"]".getBytes(UTF_8));
         List<String> result = TinyJSON.readStringList(is);
         assertEquals(Arrays.asList("a", "b", "c"), result);
+    }
+
+    @Test
+    public void testDeserializeNonList() {
+        final ByteArrayInputStream is = new ByteArrayInputStream("{}".getBytes(UTF_8));
+        try {
+            TinyJSON.readStringList(is);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
+    @Test
+    public void testDeserializeNonStringList() {
+        final ByteArrayInputStream is = new ByteArrayInputStream("[\"a\", 1]".getBytes(UTF_8));
+        try {
+            TinyJSON.readStringList(is);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
+    @Test
+    public void testDeserializeInvalidList() {
+        final ByteArrayInputStream is = new ByteArrayInputStream("[\"a\"}".getBytes(UTF_8));
+        try {
+            TinyJSON.readStringList(is);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 }
