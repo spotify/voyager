@@ -23,7 +23,6 @@ package com.spotify.voyager.jni;
 import com.spotify.voyager.jni.Index.SpaceType;
 import com.spotify.voyager.jni.Index.StorageDataType;
 import com.spotify.voyager.jni.utils.TinyJson;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
@@ -41,11 +40,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Wrapper around com.spotify.voyager.jni.Index with a simplified interface which maps the
- * index ID to a provided String.
+ * Wrapper around com.spotify.voyager.jni.Index with a simplified interface which maps the index ID
+ * to a provided String.
  *
- * StringIndex can only accommodate up to 2^31 - 1 (2.1M) items, despite typical Voyager
- * indices allowing up to 2^63 - 1 (9e18) items.
+ * <p>StringIndex can only accommodate up to 2^31 - 1 (2.1M) items, despite typical Voyager indices
+ * allowing up to 2^63 - 1 (9e18) items.
  */
 public class StringIndex implements Closeable {
   private static final String INDEX_FILE_NAME = "index.hnsw";
@@ -155,13 +154,14 @@ public class StringIndex implements Closeable {
       final SpaceType spaceType,
       final int numDimensions,
       final StorageDataType storageDataType) {
-    Index index = Index.load(
-        new BufferedInputStream(indexInputStream, DEFAULT_BUFFER_SIZE),
-        spaceType,
-        numDimensions,
-        storageDataType);
-    List<String> names = TinyJson.readStringList(
-        new BufferedInputStream(nameListInputStream, DEFAULT_BUFFER_SIZE));
+    Index index =
+        Index.load(
+            new BufferedInputStream(indexInputStream, DEFAULT_BUFFER_SIZE),
+            spaceType,
+            numDimensions,
+            storageDataType);
+    List<String> names =
+        TinyJson.readStringList(new BufferedInputStream(nameListInputStream, DEFAULT_BUFFER_SIZE));
     return new StringIndex(index, names);
   }
 
@@ -254,15 +254,14 @@ public class StringIndex implements Closeable {
    * Find the nearest neighbors of the provided embedding.
    *
    * @param queryVector The vector to center the search around.
-   * @param numNeighbors The number of neighbors to return.
-   *                     The number of results returned may be smaller than
-   *                     this value if the index does not contain enough items.
+   * @param numNeighbors The number of neighbors to return. The number of results returned may be
+   *     smaller than this value if the index does not contain enough items.
    * @param ef How many neighbors to explore during search when looking for nearest neighbors.
-   *           Increasing this value can improve recall (up to a point) at the cost of increased search
-   *           latency. The minimum value of this parameter is the requested number of neighbors, and the maximum
-   *           value is the number of items in the index.
-   * @return a QueryResults object, containing the names of the neighbors and each neighbor's distance from the
-   *         query vector, sorted in ascending order of distance
+   *     Increasing this value can improve recall (up to a point) at the cost of increased search
+   *     latency. The minimum value of this parameter is the requested number of neighbors, and the
+   *     maximum value is the number of items in the index.
+   * @return a QueryResults object, containing the names of the neighbors and each neighbor's
+   *     distance from the query vector, sorted in ascending order of distance
    */
   public QueryResults query(float[] queryVector, int numNeighbors, int ef) {
     String[] resultNames = new String[numNeighbors];
@@ -273,9 +272,10 @@ public class StringIndex implements Closeable {
       float dist = idxResults.getDistances()[i];
       if (indexId > Integer.MAX_VALUE || indexId < Integer.MIN_VALUE) {
         throw new ArrayIndexOutOfBoundsException(
-                "Voyager index returned a label (" + indexId + ") which is out of range for StringIndex. " +
-                        "This index may not be compatible with Voyager's Java bindings, or the index file may be corrupt."
-        );
+            "Voyager index returned a label ("
+                + indexId
+                + ") which is out of range for StringIndex. "
+                + "This index may not be compatible with Voyager's Java bindings, or the index file may be corrupt.");
       }
       String name = names.get((int) indexId);
       resultNames[i] = name;
@@ -290,9 +290,7 @@ public class StringIndex implements Closeable {
     index.close();
   }
 
-  /**
-   * A wrapper class for nearest neighbor query results.
-   */
+  /** A wrapper class for nearest neighbor query results. */
   public static class QueryResults {
     private final String[] names;
     private final float[] distances;
@@ -310,7 +308,6 @@ public class StringIndex implements Closeable {
       return this.distances;
     }
 
-
     public String getName(int index) {
       return this.names[index];
     }
@@ -319,14 +316,18 @@ public class StringIndex implements Closeable {
       return this.distances[index];
     }
 
-    public int getNumResults() { return this.names.length; }
+    public int getNumResults() {
+      return this.names.length;
+    }
 
     @Override
     public String toString() {
-      return "QueryResults{" +
-              "names=" + Arrays.toString(names) +
-              ", distances=" + Arrays.toString(distances) +
-              '}';
+      return "QueryResults{"
+          + "names="
+          + Arrays.toString(names)
+          + ", distances="
+          + Arrays.toString(distances)
+          + '}';
     }
   }
 }

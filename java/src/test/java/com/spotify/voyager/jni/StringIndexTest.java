@@ -56,65 +56,92 @@ public class StringIndexTest {
   @Test
   public void itFindsNeighbors() throws Exception {
     List<Vector> testVectors = TestUtils.getTestVectors();
-    try (final StringIndex index = new StringIndex(
-            SpaceType.Cosine, testVectors.get(0).vector.length, 20, testVectors.size(), 0, testVectors.size(), StorageDataType.E4M3)) {
+    try (final StringIndex index =
+        new StringIndex(
+            SpaceType.Cosine,
+            testVectors.get(0).vector.length,
+            20,
+            testVectors.size(),
+            0,
+            testVectors.size(),
+            StorageDataType.E4M3)) {
       for (Vector v : testVectors) {
         index.addItem(v.name, v.vector);
       }
 
-      List<CustomResult> results = RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
+      List<CustomResult> results =
+          RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
       assertThat(results)
-              .extracting(CustomResult::getName)
-              .containsExactly("my-vector-78", "my-vector-93");
+          .extracting(CustomResult::getName)
+          .containsExactly("my-vector-78", "my-vector-93");
     }
   }
 
   @Test
   public void itAddsItemsInBatch() throws Exception {
     List<Vector> testVectors = TestUtils.getTestVectors();
-    try (final StringIndex index = new StringIndex(
-            SpaceType.Cosine, testVectors.get(0).vector.length, 16, testVectors.size(), 0, testVectors.size(), StorageDataType.E4M3)) {
+    try (final StringIndex index =
+        new StringIndex(
+            SpaceType.Cosine,
+            testVectors.get(0).vector.length,
+            16,
+            testVectors.size(),
+            0,
+            testVectors.size(),
+            StorageDataType.E4M3)) {
 
       Map<String, List<Float>> vectors =
-              TestUtils.getTestVectors().stream()
-                      .collect(Collectors.toMap(vec -> vec.name, vec -> convert(vec.vector)));
+          TestUtils.getTestVectors().stream()
+              .collect(Collectors.toMap(vec -> vec.name, vec -> convert(vec.vector)));
       index.addItems(vectors);
 
-      List<CustomResult> results = RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
+      List<CustomResult> results =
+          RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
       assertThat(results)
-              .extracting(CustomResult::getName)
-              .containsExactly("my-vector-78", "my-vector-93");
+          .extracting(CustomResult::getName)
+          .containsExactly("my-vector-78", "my-vector-93");
     }
   }
 
   @Test
   public void itSavesToOutputStream() throws Exception {
     List<Vector> testVectors = TestUtils.getTestVectors();
-    try (final StringIndex index = new StringIndex(SpaceType.Cosine, testVectors.get(0).vector.length, 32, testVectors.size(), 0, testVectors.size(), StorageDataType.E4M3)) {
+    try (final StringIndex index =
+        new StringIndex(
+            SpaceType.Cosine,
+            testVectors.get(0).vector.length,
+            32,
+            testVectors.size(),
+            0,
+            testVectors.size(),
+            StorageDataType.E4M3)) {
       for (Vector v : testVectors) {
         index.addItem(v.name, v.vector);
       }
 
       File tempDir = new File(TEMP_DIR_NAME);
-      if (!tempDir.mkdirs()) throw new RuntimeException("Failed to make temporary directory in test!");
+      if (!tempDir.mkdirs())
+        throw new RuntimeException("Failed to make temporary directory in test!");
 
       try {
         index.saveIndex(
-                Files.newOutputStream(Paths.get(TEMP_DIR_NAME, EXPECTED_INDEX_FILE_NAME)),
-                Files.newOutputStream(Paths.get(TEMP_DIR_NAME, EXPECTED_NAME_FILE_NAME)));
+            Files.newOutputStream(Paths.get(TEMP_DIR_NAME, EXPECTED_INDEX_FILE_NAME)),
+            Files.newOutputStream(Paths.get(TEMP_DIR_NAME, EXPECTED_NAME_FILE_NAME)));
         assertThat(Paths.get(TEMP_DIR_NAME, EXPECTED_INDEX_FILE_NAME).toFile()).exists();
         assertThat(Paths.get(TEMP_DIR_NAME, EXPECTED_NAME_FILE_NAME).toFile()).exists();
 
-        final StringIndex reloadedIndex = StringIndex.load(
+        final StringIndex reloadedIndex =
+            StringIndex.load(
                 Files.newInputStream(Paths.get(TEMP_DIR_NAME, EXPECTED_INDEX_FILE_NAME)),
                 Files.newInputStream(Paths.get(TEMP_DIR_NAME, EXPECTED_NAME_FILE_NAME)),
                 SpaceType.Cosine,
                 testVectors.get(0).vector.length,
                 StorageDataType.E4M3);
-        List<CustomResult> results = RESULT_MAPPER.apply(reloadedIndex.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
+        List<CustomResult> results =
+            RESULT_MAPPER.apply(reloadedIndex.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
         assertThat(results)
-                .extracting(CustomResult::getName)
-                .containsExactly("my-vector-78", "my-vector-93");
+            .extracting(CustomResult::getName)
+            .containsExactly("my-vector-78", "my-vector-93");
       } finally {
         FileUtils.deleteDirectory(tempDir);
       }
@@ -123,7 +150,8 @@ public class StringIndexTest {
 
   @Test
   public void itSavesToFiles() throws Exception {
-    try (final StringIndex index = new StringIndex(SpaceType.Cosine, 80, 32, 300, 0, 1, StorageDataType.E4M3)) {
+    try (final StringIndex index =
+        new StringIndex(SpaceType.Cosine, 80, 32, 300, 0, 1, StorageDataType.E4M3)) {
       List<Vector> vectors = TestUtils.getTestVectors();
 
       for (Vector v : vectors) {
@@ -131,7 +159,8 @@ public class StringIndexTest {
       }
 
       File tempDir = new File(TEMP_DIR_NAME);
-      if (!tempDir.mkdirs()) throw new RuntimeException("Failed to make temporary directory in test!");
+      if (!tempDir.mkdirs())
+        throw new RuntimeException("Failed to make temporary directory in test!");
 
       try {
         index.saveIndex(TEMP_DIR_NAME);
@@ -145,7 +174,8 @@ public class StringIndexTest {
 
   @Test
   public void itLoadsFromInputStream() throws Exception {
-    try (final StringIndex index = StringIndex.load(
+    try (final StringIndex index =
+        StringIndex.load(
             Resources.getResource(EXPECTED_INDEX_FILE_NAME).openStream(),
             Resources.getResource(EXPECTED_NAME_FILE_NAME).openStream(),
             SpaceType.Cosine,
@@ -155,8 +185,8 @@ public class StringIndexTest {
       List<CustomResult> results = RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, 100));
 
       assertThat(results)
-              .extracting(CustomResult::getName)
-              .containsExactly("my-vector-78", "my-vector-93");
+          .extracting(CustomResult::getName)
+          .containsExactly("my-vector-78", "my-vector-93");
     }
   }
 
