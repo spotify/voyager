@@ -43,8 +43,8 @@ import java.util.Map.Entry;
  * Wrapper around com.spotify.voyager.jni.Index with a simplified interface which maps the index ID
  * to a provided String.
  *
- * <p>StringIndex can only accommodate up to 2^31 - 1 (2.1M) items, despite typical Voyager indices
- * allowing up to 2^63 - 1 (9e18) items.
+ * <p>StringIndex can only accommodate up to 2^31 - 1 (2.1B) items, despite typical Voyager indices
+ * allowing up to 2^63 - 1 (9e18) items.</p>
  */
 public class StringIndex implements Closeable {
   private static final String INDEX_FILE_NAME = "index.hnsw";
