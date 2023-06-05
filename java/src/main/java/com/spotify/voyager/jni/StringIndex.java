@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,13 +40,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Wrapper around com.spotify.voyager.jni.Index with a simplified interface which maps the HNSW
- * index ID to a provided String.
+ * Wrapper around com.spotify.voyager.jni.Index with a simplified interface which maps the index ID
+ * to a provided String.
+ *
+ * <p>StringIndex can only accommodate up to 2^31 - 1 (2.1B) items, despite typical Voyager indices
+ * allowing up to 2^63 - 1 (9e18) items.</p>
  */
 public class StringIndex implements Closeable {
   private static final String INDEX_FILE_NAME = "index.hnsw";
   private static final String NAMES_LIST_FILE_NAME = "names.json";
-  private final Index hnswIndex;
+  private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024 * 100;
+
+  private final Index index;
   private final List<String> names;
 
   /**
@@ -56,12 +62,12 @@ public class StringIndex implements Closeable {
    * @param numDimensions Number of dimensions of each embedding stored in the underlying HNSW index
    */
   public StringIndex(SpaceType spaceType, int numDimensions) {
-    this.hnswIndex = new Index(spaceType, numDimensions);
+    this.index = new Index(spaceType, numDimensions);
     this.names = new ArrayList<>();
   }
 
   /**
-   * Instantiate an empty index with the specified HNSW parameters
+   * Instantiate an empty index with the specified index parameters
    *
    * @param spaceType Type of space and distance calculation used when determining distance between
    *     embeddings in the index, @see com.spotify.voyager.jni.Index.SpaceType
@@ -83,7 +89,7 @@ public class StringIndex implements Closeable {
       long randomSeed,
       long maxElements,
       StorageDataType storageDataType) {
-    this.hnswIndex =
+    this.index =
         new Index(
             spaceType,
             numDimensions,
@@ -95,8 +101,8 @@ public class StringIndex implements Closeable {
     this.names = new ArrayList<>();
   }
 
-  private StringIndex(Index hnswIndex, List<String> names) {
-    this.hnswIndex = hnswIndex;
+  private StringIndex(Index index, List<String> names) {
+    this.index = index;
     this.names = names;
   }
 
@@ -113,11 +119,11 @@ public class StringIndex implements Closeable {
    * @return reference to the loaded StringIndex
    */
   public static StringIndex load(
-      String indexFilename,
-      String nameListFilename,
-      SpaceType spaceType,
-      int numDimensions,
-      StorageDataType storageDataType) {
+      final String indexFilename,
+      final String nameListFilename,
+      final SpaceType spaceType,
+      final int numDimensions,
+      final StorageDataType storageDataType) {
     Index index = Index.load(indexFilename, spaceType, numDimensions, storageDataType);
 
     List<String> names;
@@ -143,36 +149,44 @@ public class StringIndex implements Closeable {
    * @return reference to the loaded StringIndex
    */
   public static StringIndex load(
-      InputStream indexInputStream,
-      InputStream nameListInputStream,
-      SpaceType spaceType,
-      int numDimensions,
-      StorageDataType storageDataType) {
-
-    // use buffered stream to keep read speeds high, reading up to 100MB at once
-    BufferedInputStream inputStream = new BufferedInputStream(indexInputStream, 1024 * 1024 * 100);
-    Index index = Index.load(inputStream, spaceType, numDimensions, storageDataType);
-    List<String> names = TinyJson.readStringList(nameListInputStream);
-
+      final InputStream indexInputStream,
+      final InputStream nameListInputStream,
+      final SpaceType spaceType,
+      final int numDimensions,
+      final StorageDataType storageDataType) {
+    Index index =
+        Index.load(
+            new BufferedInputStream(indexInputStream, DEFAULT_BUFFER_SIZE),
+            spaceType,
+            numDimensions,
+            storageDataType);
+    List<String> names =
+        TinyJson.readStringList(new BufferedInputStream(nameListInputStream, DEFAULT_BUFFER_SIZE));
     return new StringIndex(index, names);
   }
 
   /**
-   * Save the underlying HNSW index and JSON encoded names list to the provided output directory
+   * Save the underlying index and JSON encoded name list to the provided output directory
    *
    * @param outputDirectory directory to output files to
    * @throws IOException when there is an error writing to JSON or saving to disk
    */
-  public void saveIndex(String outputDirectory) throws IOException {
-    // TODO: the JNI index does not yet implement this method, this will fail for now
-    String indexFilename = outputDirectory + "/" + INDEX_FILE_NAME;
-    this.hnswIndex.saveIndex(indexFilename);
+  public void saveIndex(final String outputDirectory) throws IOException {
+    Path indexPath = Paths.get(outputDirectory, INDEX_FILE_NAME);
+    Path namesPath = Paths.get(outputDirectory, NAMES_LIST_FILE_NAME);
+    try {
+      this.index.saveIndex(indexPath.toString());
 
-    String namesListFilename = outputDirectory + "/" + NAMES_LIST_FILE_NAME;
-    final OutputStream outputStream = Files.newOutputStream(Paths.get(namesListFilename));
-    TinyJson.writeStringList(this.names, outputStream);
-    outputStream.flush();
-    outputStream.close();
+      final OutputStream outputStream = Files.newOutputStream(namesPath);
+      TinyJson.writeStringList(this.names, outputStream);
+
+      outputStream.flush();
+      outputStream.close();
+    } catch (Exception e) {
+      Files.deleteIfExists(indexPath);
+      Files.deleteIfExists(namesPath);
+      throw e;
+    }
   }
 
   /**
@@ -186,7 +200,7 @@ public class StringIndex implements Closeable {
       throws IOException {
     BufferedOutputStream outputStream =
         new BufferedOutputStream(indexOutputStream, 1024 * 1024 * 100);
-    this.hnswIndex.saveIndex(outputStream);
+    this.index.saveIndex(outputStream);
     TinyJson.writeStringList(this.names, namesListOutputStream);
 
     outputStream.flush();
@@ -197,62 +211,72 @@ public class StringIndex implements Closeable {
 
   public void addItem(String name, float[] vector) {
     int nextIndex = names.size();
-    hnswIndex.addItem(vector, nextIndex);
+    index.addItem(vector, nextIndex);
     names.add(name);
   }
 
   public void addItem(String name, List<Float> vector) {
-    float[] vectorVals = toPrimitive(vector);
-    addItem(name, vectorVals);
+    addItem(name, toPrimitive(vector));
   }
 
   public void addItems(Map<String, List<Float>> vectors) {
     int numVectors = vectors.size();
 
     List<String> newNames = new ArrayList<>(numVectors);
-    float[][] primitiveVectors = new float[numVectors][];
+    float[][] primitiveVectors = new float[numVectors][index.getNumDimensions()];
     long[] labels = new long[numVectors];
 
     Iterator<Entry<String, List<Float>>> iterator = vectors.entrySet().iterator();
     for (int i = 0; i < numVectors; i++) {
       Entry<String, List<Float>> nextVector = iterator.next();
       newNames.add(nextVector.getKey());
-      primitiveVectors[i] = toPrimitive(nextVector.getValue());
+      assignPrimitive(nextVector.getValue(), primitiveVectors[i]);
       labels[i] = names.size() + i;
     }
 
     names.addAll(newNames);
-    hnswIndex.addItems(primitiveVectors, labels, -1);
+    index.addItems(primitiveVectors, labels, -1);
   }
 
   private float[] toPrimitive(List<Float> vector) {
-    float[] vectorVals = new float[vector.size()];
-    for (int i = 0; i < vectorVals.length; i++) {
-      vectorVals[i] = vector.get(i);
-    }
+    float[] vectorValues = new float[vector.size()];
+    assignPrimitive(vector, vectorValues);
+    return vectorValues;
+  }
 
-    return vectorVals;
+  private void assignPrimitive(List<Float> vector, float[] target) {
+    for (int i = 0; i < target.length; i++) {
+      target[i] = vector.get(i);
+    }
   }
 
   /**
-   * Find the approximate nearest neighbors to the provided embedding
+   * Find the nearest neighbors of the provided embedding.
    *
-   * @param queryVector the vector to search near
-   * @param numNeighbors the number of requested neighbors
-   * @param ef how many neighbors to explore during search when looking for nearest neighbors.
+   * @param queryVector The vector to center the search around.
+   * @param numNeighbors The number of neighbors to return. The number of results returned may be
+   *     smaller than this value if the index does not contain enough items.
+   * @param ef How many neighbors to explore during search when looking for nearest neighbors.
    *     Increasing this value can improve recall (up to a point) at the cost of increased search
-   *     latency. Minimum value is the requested number of neighbors, maximum value is the number of
-   *     items in the index.
-   * @return a list of Result objects with their names and distances from the query vector, sorted
-   *     by distance
+   *     latency. The minimum value of this parameter is the requested number of neighbors, and the
+   *     maximum value is the number of items in the index.
+   * @return a QueryResults object, containing the names of the neighbors and each neighbor's
+   *     distance from the query vector, sorted in ascending order of distance
    */
   public QueryResults query(float[] queryVector, int numNeighbors, int ef) {
     String[] resultNames = new String[numNeighbors];
     float[] distances = new float[numNeighbors];
-    Index.QueryResults idxResults = hnswIndex.query(queryVector, numNeighbors, ef);
+    Index.QueryResults idxResults = index.query(queryVector, numNeighbors, ef);
     for (int i = 0; i < idxResults.getLabels().length; i++) {
       long indexId = idxResults.getLabels()[i];
       float dist = idxResults.getDistances()[i];
+      if (indexId > Integer.MAX_VALUE || indexId < Integer.MIN_VALUE) {
+        throw new ArrayIndexOutOfBoundsException(
+            "Voyager index returned a label ("
+                + indexId
+                + ") which is out of range for StringIndex. "
+                + "This index may not be compatible with Voyager's Java bindings, or the index file may be corrupt.");
+      }
       String name = names.get((int) indexId);
       resultNames[i] = name;
       distances[i] = dist;
@@ -263,9 +287,10 @@ public class StringIndex implements Closeable {
 
   @Override
   public void close() throws IOException {
-    hnswIndex.close();
+    index.close();
   }
 
+  /** A wrapper class for nearest neighbor query results. */
   public static class QueryResults {
     private final String[] names;
     private final float[] distances;
@@ -283,12 +308,26 @@ public class StringIndex implements Closeable {
       return this.distances;
     }
 
+    public String getName(int index) {
+      return this.names[index];
+    }
+
+    public float getDistance(int index) {
+      return this.distances[index];
+    }
+
+    public int getNumResults() {
+      return this.names.length;
+    }
+
     @Override
     public String toString() {
-      return "names: "
-          + Arrays.toString(this.names)
-          + "; distances: "
-          + Arrays.toString(this.distances);
+      return "QueryResults{"
+          + "names="
+          + Arrays.toString(names)
+          + ", distances="
+          + Arrays.toString(distances)
+          + '}';
     }
   }
 }
