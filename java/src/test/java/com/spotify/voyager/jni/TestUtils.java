@@ -32,89 +32,26 @@ public class TestUtils {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   public static final float[] TEST_VECTOR =
       new float[] {
-        0.20396f,
-        -0.193801f,
-        0.010341f,
-        -0.29898f,
-        0.193092f,
-        -0.269439f,
-        0.010436f,
-        -0.308213f,
-        -0.007512f,
-        0.331032f,
-        -0.375417f,
-        0.543712f,
-        0.319875f,
-        0.013286f,
-        0.114932f,
-        0.086575f,
-        0.150309f,
-        -0.650505f,
-        0.561702f,
-        0.059486f,
-        -0.202891f,
-        0.110894f,
-        0.31372f,
-        0.067179f,
-        0.129272f,
-        0.279586f,
-        0.414332f,
-        0.007588f,
-        -0.323548f,
-        -0.236852f,
-        -0.126816f,
-        -0.124074f,
-        -0.163504f,
-        -0.049097f,
-        -0.1344f,
-        0.00867f,
-        0.359106f,
-        0.069655f,
-        -0.098123f,
-        0.17702f,
-        0.1217f,
-        0.090834f,
-        -0.073075f,
-        0.486793f,
-        -0.059276f,
-        -0.069669f,
-        -0.009353f,
-        -0.333826f,
-        0.09415f,
-        0.107344f,
-        -0.385969f,
-        -0.110482f,
-        0.242096f,
-        -0.102329f,
-        -0.074761f,
-        -0.36569f,
-        -0.173448f,
-        -0.04389f,
-        0.00386f,
-        -0.353121f,
-        -0.378965f,
-        -0.209415f,
-        0.085403f,
-        0.006092f,
-        0.240077f,
-        0.542227f,
-        0.171934f,
-        0.322737f,
-        -0.505381f,
-        -0.195394f,
-        -0.029179f,
-        0.017475f,
-        0.020546f,
-        0.026908f,
-        0.147108f,
-        -0.206746f,
-        0.264154f,
-        0.213047f,
-        -0.244341f,
-        0.038912f
+              -0.28231781f, -0.09139011f, -0.41196093f, -0.2113353f,  0.66429873f,
+              0.07280658f, -0.63757154f, -0.22123309f, -0.59409645f,  0.66991585f,
+              0.39258104f,  0.75523863f, -0.12859088f,  0.7143025f,  0.12983862f,
+              -0.57323257f,  0.83325341f,  0.97469045f,  0.61992435f,  0.96652926f,
+              0.68755475f,  0.84308006f,  0.90231355f, -0.40115609f, -0.80228974f,
+              0.18687592f,  0.47477202f,  0.96544036f,  0.83686646f, -0.5014816f,
+              0.19722942f,  0.70090812f,  0.47494767f, -0.60224063f, -0.69739047f,
+              0.21127793f,  0.10483031f,  0.95733437f, -0.75831836f,  0.01516447f,
+              0.00345499f,  0.97712514f,  0.37446441f, -0.38833984f,  0.7659764f,
+              -0.62995721f, -0.08325211f, -0.53427205f, -0.76960611f,  0.76637826f,
+              -0.43707066f,  0.85080152f,  0.45881989f,  0.07228225f,  0.64695033f,
+              0.60221812f, -0.50135875f, -0.42800623f, -0.93639702f, -0.03963584f,
+              -0.2378898f, -0.01320721f,  0.96205932f,  0.34840291f, -0.94909593f,
+              0.23807241f, -0.66140576f,  0.34590523f, -0.88397052f,  0.50043365f,
+              0.55017077f, -0.04407538f, -0.69994084f,  0.55148539f,  0.75811802f,
+              -0.78514799f,  0.77547708f, -0.49400604f, -0.88250679f, -0.45649873f
       };
 
   private static final Random random = new Random();
+
   /**
    * Generate a random floating-point vector whose values are on (-1, 1).
    *
@@ -172,31 +109,16 @@ public class TestUtils {
 
   public static List<Vector> getTestVectors() throws IOException {
     return OBJECT_MAPPER.readValue(
-        Resources.getResource("sample-vectors.json"), new TypeReference<List<Vector>>() {});
-  }
-
-  public static List<ListVector> getTestVectorsUsingList() throws IOException {
-    return OBJECT_MAPPER.readValue(
-        Resources.getResource("sample-vectors.json"), new TypeReference<List<ListVector>>() {});
+        Resources.getResource("test-vectors.json"), new TypeReference<List<Vector>>() {});
   }
 
   public static class Vector {
-    public String uri;
+    public String name;
     public float[] vector;
 
     @Override
     public String toString() {
-      return "uri: " + uri + "; vectorVals: [" + Arrays.toString(vector) + "]";
-    }
-  }
-
-  public static class ListVector {
-    public String uri;
-    public List<Float> vector;
-
-    @Override
-    public String toString() {
-      return "uri: " + uri + "; vectorVals: [" + vector + "]";
+      return "name: " + name + "; vectorVals: [" + Arrays.toString(vector) + "]";
     }
   }
 }
