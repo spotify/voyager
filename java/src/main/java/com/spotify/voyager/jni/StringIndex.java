@@ -44,7 +44,7 @@ import java.util.Map.Entry;
  * to a provided String.
  *
  * <p>StringIndex can only accommodate up to 2^31 - 1 (2.1B) items, despite typical Voyager indices
- * allowing up to 2^63 - 1 (9e18) items.</p>
+ * allowing up to 2^63 - 1 (9e18) items.
  */
 public class StringIndex implements Closeable {
   private static final String INDEX_FILE_NAME = "index.hnsw";
