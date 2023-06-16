@@ -317,7 +317,7 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_DEPLOY_TOKEN }}
 
-  upload-pypi:
+  upload-maven:
     name: Upload to Maven Central
     runs-on: ubuntu-latest
     needs: combine-java-jars
