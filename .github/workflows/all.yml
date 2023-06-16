@@ -282,6 +282,7 @@ jobs:
   combine-java-jars:
     name: Combine JARs
     runs-on: ubuntu-latest
+    needs: build-java-jars
     steps:
       - uses: actions/download-artifact@v3
         with:
