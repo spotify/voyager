@@ -276,7 +276,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
-          path: /home/runner/work/voyager/voyager/java/target/voyager-*.jar
+          path: java/target/voyager-*.jar
 
   upload-pypi:
     defaults:
