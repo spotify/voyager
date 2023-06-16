@@ -271,11 +271,12 @@ jobs:
       - name: Compile
         run: make
       - name: Package
-        run: mvn --batch-mode package
+        # We've already run tests independently, don't bother re-testing here:
+        run: mvn --batch-mode package -Dmaven.test.skip
       - uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
-          path: ./target/*.jar
+          path: /home/runner/work/voyager/voyager/java/target/voyager-*.jar
 
   upload-pypi:
     defaults:
