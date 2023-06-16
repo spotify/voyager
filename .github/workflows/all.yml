@@ -246,11 +246,12 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
+          name: python-${{ matrix.build }}
           path: ./wheelhouse/*.whl
 
   build-java-jars:
     continue-on-error: true
-    name: Build with Java ${{ matrix.java-version }} on ${{ matrix.os }}
+    name: Build JAR with on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -271,11 +272,11 @@ jobs:
       - name: Compile
         run: make
       - name: Package
-        # We've already run tests independently, don't bother re-testing here:
-        run: mvn --batch-mode package -Dmaven.test.skip
+        run: mvn --batch-mode package
       - uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
+          name: java-${{ matrix.os }}
           path: java/target/voyager-*.jar
 
   upload-pypi:
