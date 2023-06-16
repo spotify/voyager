@@ -279,6 +279,25 @@ jobs:
           name: java-${{ matrix.os }}
           path: java/target/voyager-*.jar
 
+  combine-java-jars:
+    name: Combine JARs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - name: Unpack and Repack JARs
+        shell: bash
+        working-directory: artifacts
+        run: |
+          for artifact in java-*; do unzip -o $artifact/*.jar -d combined-jar; done
+          zip -r $(ls java-* | grep jar | tail -n 1) combined-jar/*
+      - uses: actions/upload-artifact@v3
+        with:
+          if-no-files-found: error
+          name: java-all-platforms
+          path: artifacts/*.jar
+
   upload-pypi:
     defaults:
       run:
