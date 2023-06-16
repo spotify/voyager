@@ -345,6 +345,7 @@ jobs:
         run: |
           # Copy the native artifacts built for each platform into the appropriate place:
           unzip ../combined-jar/*.jar -d ../
+          mkdir -p target/classes/
           cp -r ../combined-jar/linux* target/classes/
           cp -r ../combined-jar/mac* target/classes/
           cp -r ../combined-jar/win* target/classes/
