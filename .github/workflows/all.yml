@@ -338,10 +338,10 @@ jobs:
       - name: Deploy
         # Note: this will re-run the build even though we already have the JAR file ready to deploy
         run: |
-          unzip combined-jar/*.jar
-          cp -r combined-jar/linux* target/classes/
-          cp -r combined-jar/mac* target/classes/
-          cp -r combined-jar/win* target/classes/
+          unzip ../combined-jar/*.jar
+          cp -r ../combined-jar/linux* target/classes/
+          cp -r ../combined-jar/mac* target/classes/
+          cp -r ../combined-jar/win* target/classes/
           # TODO: Change back from package to deploy
           mvn --batch-mode package -Dmaven.test.skip=true
       - uses: actions/upload-artifact@v3
