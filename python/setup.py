@@ -101,7 +101,7 @@ class BuildExt(build_ext):
 
 
 this_directory = Path(__file__).resolve().parent
-long_description = (this_directory.parent / "README.md").read_text()
+long_description = (this_directory.parent / "README.md").read_text("utf-8")
 
 setup(
     name="voyager",
