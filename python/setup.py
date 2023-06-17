@@ -100,8 +100,12 @@ class BuildExt(build_ext):
         build_ext.build_extensions(self)
 
 
-this_directory = Path(__file__).resolve().parent
-long_description = (this_directory.parent / "README.md").read_text("utf-8")
+project_root = Path(__file__).resolve().parent.parent
+# Just for GitHub Actions and cibuildwheel:
+cibuildwheel_project_root = Path("/home/runner/work/voyager/voyager")
+if not project_root.exists() and cibuildwheel_project_root.exists():
+    project_root = cibuildwheel_project_root
+long_description = (project_root / "README.md").read_text("utf-8")
 
 setup(
     name="voyager",
