@@ -1,6 +1,7 @@
 import os
 import sys
 import platform
+from pathlib import Path
 
 import numpy as np
 import pybind11
@@ -99,13 +100,16 @@ class BuildExt(build_ext):
         build_ext.build_extensions(self)
 
 
+this_directory = Path(__file__).resolve().parent
+long_description = (this_directory.parent / "README.md").read_text()
+
 setup(
     name="voyager",
     version=__version__,
-    description="Easy-to-use, fast, simple multi-platform search library.",
+    description="Easy-to-use, fast, simple multi-platform approximate nearest-neighbor search.",
     author="Peter Sobot",
     url="https://github.com/spotify/voyager",
-    long_description="Easy-to-use, fast, simple multi-platform search library.",
+    long_description=long_description,
     ext_modules=ext_modules,
     install_requires=["numpy"],
     cmdclass={"build_ext": BuildExt},

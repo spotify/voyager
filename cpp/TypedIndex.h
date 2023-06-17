@@ -228,27 +228,34 @@ public:
     return spaceImpl->get_dist_func()(a.data(), b.data(), dimensions);
   }
 
-  void addItem(std::vector<float> vector, std::optional<size_t> id) {
+  hnswlib::labeltype addItem(std::vector<float> vector,
+                             std::optional<hnswlib::labeltype> id) {
     std::vector<size_t> ids;
 
     if (id) {
       ids.push_back(*id);
     }
 
-    addItems(NDArray<float, 2>(vector, {1, (int)vector.size()}), ids);
+    return addItems(NDArray<float, 2>(vector, {1, (int)vector.size()}), ids)[0];
   }
 
-  void addItems(NDArray<float, 2> floatInput, std::vector<size_t> ids = {},
-                int numThreads = -1) {
+  std::vector<hnswlib::labeltype>
+  addItems(NDArray<float, 2> floatInput,
+           std::vector<hnswlib::labeltype> ids = {}, int numThreads = -1) {
     if (numThreads <= 0)
       numThreads = numThreadsDefault;
 
     size_t rows = std::get<0>(floatInput.shape);
     size_t features = std::get<1>(floatInput.shape);
 
-    if (features != (size_t)dimensions)
-      throw std::runtime_error("Provided features per vector does not match "
-                               "this index's dimensionality.");
+    if (features != (size_t)dimensions) {
+      throw std::domain_error(
+          "The provided vector(s) have " + std::to_string(features) +
+          " dimensions, but this index expects vectors with " +
+          std::to_string(dimensions) + " dimensions.");
+    }
+
+    std::vector<hnswlib::labeltype> idsToReturn(rows);
 
     // avoid using threads when the number of searches is small:
     if (rows <= ((size_t)numThreads * 4)) {
@@ -256,7 +263,11 @@ public:
     }
 
     if (!ids.empty() && (unsigned long)ids.size() != rows) {
-      throw std::runtime_error("Provided IDs don't match number of vectors.");
+      throw std::runtime_error(
+          std::to_string(rows) + " vectors were provided, but " +
+          std::to_string(ids.size()) +
+          " IDs were provided. If providing IDs along with vectors, the number "
+          "of provided IDs must match the number of vectors.");
     }
 
     // TODO: Should we always double the number of elements instead? Maybe use
@@ -281,6 +292,7 @@ public:
       algorithmImpl->addPoint(convertedVector.data(), (size_t)id);
       start = 1;
       ep_added = true;
+      idsToReturn[0] = id;
     }
 
     if (!normalize) {
@@ -291,6 +303,7 @@ public:
             floatInput[row], (convertedArray.data() + startIndex), dimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
         algorithmImpl->addPoint(convertedArray.data() + startIndex, id);
+        idsToReturn[row] = id;
       });
     } else {
       std::vector<data_t> normalizedArray(numThreads * dimensions);
@@ -300,10 +313,13 @@ public:
             floatInput[row], (normalizedArray.data() + startIndex), dimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
         algorithmImpl->addPoint(normalizedArray.data() + startIndex, id);
+        idsToReturn[row] = id;
       });
     };
 
     currentLabel += rows;
+
+    return idsToReturn;
   }
 
   std::vector<data_t> getRawVector(hnswlib::labeltype id) {

@@ -11,6 +11,7 @@ var/
 .vscode/
 *.class
 *.pyc
+.DS_Store
 target
 java_bindings/com_*.h
 java_bindings/classpath.txt

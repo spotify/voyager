@@ -71,9 +71,11 @@ public:
 
   virtual float getDistance(std::vector<float> a, std::vector<float> b) = 0;
 
-  virtual void addItem(std::vector<float> vector, std::optional<size_t> id) = 0;
-  virtual void addItems(NDArray<float, 2> input, std::vector<size_t> ids = {},
-                        int numThreads = -1) = 0;
+  virtual hnswlib::labeltype addItem(std::vector<float> vector,
+                                     std::optional<hnswlib::labeltype> id) = 0;
+  virtual std::vector<hnswlib::labeltype>
+  addItems(NDArray<float, 2> input, std::vector<hnswlib::labeltype> ids = {},
+           int numThreads = -1) = 0;
 
   virtual std::vector<float> getVector(hnswlib::labeltype id) = 0;
   virtual NDArray<float, 2> getVectors(std::vector<hnswlib::labeltype> ids) = 0;

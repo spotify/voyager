@@ -60,7 +60,10 @@ def test_create_and_query(
 
     index.ef = num_elements
 
-    index.add_items(input_data, ids)
+    assert index.add_items(input_data, ids) == ids
+
+    assert len(index) == num_elements
+    assert len(index) == index.num_elements
 
     labels, distances = index.query(input_data, k=1)
     matches = np.sum(labels[:, 0] == np.arange(len(input_data)))
