@@ -100,12 +100,19 @@ class BuildExt(build_ext):
         build_ext.build_extensions(self)
 
 
-project_root = Path(__file__).resolve().parent.parent
-# Just for GitHub Actions and cibuildwheel:
-cibuildwheel_project_root = Path("/home/runner/work/voyager/voyager")
-if str(project_root.resolve()) == "/":
-    project_root = cibuildwheel_project_root
-long_description = (project_root / "README.md").read_text("utf-8")
+current_directory = Path(__file__).resolve()
+search_directory = current_directory
+search_paths = []
+for _ in range(10):
+    search_paths.append(str(search_directory))
+    readme = search_directory / "README.md"
+    if readme.exists():
+        break
+    search_directory = search_directory.parent
+else:
+    raise ValueError(f"Unable to find README.md. Searched: {search_paths}")
+
+long_description = readme.read_text("utf-8")
 
 setup(
     name="voyager",
