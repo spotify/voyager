@@ -102,9 +102,9 @@ html_theme_options = {
     ],
 }
 
-ogp_site_url = "https://spotify.github.io/voyager/"
+ogp_site_url = "https://spotify.github.io/voyager/python/"
 ogp_image = (
-    "https://repository-images.githubusercontent.com/383471193/0f79b949-9b91-4436-bfc4-05d30ef384cc"
+    "https://github.com/spotify/pedalboard/assets/213293/07eb4ce7-11c7-4bda-9ba0-d43f719525f2"
 )
 ogp_image_alt = "🛰️ Documentation for Voyager: A nearest-neighbor search library."
 ogp_site_name = html_title
