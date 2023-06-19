@@ -1,40 +1,35 @@
-The ``voyager`` API
-======================
+:og:title: Voyager Documentation
+:og:description: 🛰️ Documentation for Voyager: A nearest-neighbor search library.
 
-This module provides classes and functions for creating indices of vector data.
+.. # define a hard line break for HTML
+.. |br| raw:: html
 
-A quick example on how to get started::
+   <br />
 
-   import numpy as np
-   from voyager import Index, Space
+|br|
 
-   # Create an empty Index object that can store vectors:
-   index = Index(Space.Euclidean, num_dimensions=5)
-   id_a = index.add_item([1, 2, 3, 4, 5])
-   id_b = index.add_item([6, 7, 8, 9, 10])
+.. image:: voyager_logo_roundrect_black.png
+  :width: 700
+  :alt: The word "Voyager" in white on a black background.
 
-   id_a = index.query([1, 2, 3, 4, 5])
-   id_b = index.add_item([6, 7, 8, 9, 10])
+**Voyager** is a library for performing fast approximate nearest-neighbor searches on an in-memory collection of vectors.
 
-   # blah blah blah
+Voyager features bindings to both Python and Java, with feature parity and index compatibility between both languages.
+It uses the HNSW algorithm, based on `the open-source hnswlib package <https://github.com/nmslib/hnswlib>`_,
+with numerous features added for convenience and speed. Voyager is used extensively in production at Spotify,
+and is queried hundreds of millions of times per day to power numerous user-facing features.
 
-.. autoclass:: voyager.Index
-   :members:
-   :inherited-members:
-   :special-members: __contains__, __len__
+Think of Voyager like `Sparkey <https://github.com/spotify/sparkey>`_, but for vector/embedding data;
+or like `Annoy <https://github.com/spotify/annoy>`_, but with `much higher recall <https://ann-benchmarks.com>`_.
+It got its name because it searches through (embedding) space(s), much like
+`the Voyager interstellar probes <https://en.wikipedia.org/wiki/Voyager_program>`_ launched by NASA in 1977.
 
-Enums
------
-.. autoclass:: voyager.Space
-   :members:
-   :inherited-members:
 
-.. autoclass:: voyager.StorageDataType
-   :members:
-   :inherited-members:
+.. toctree::
+   :maxdepth: 1
 
-Utilities
----------
-.. autoclass:: voyager.LabelSetView
-   :members:
-   :inherited-members:
+   Python API Reference <reference>
+
+.. toctree::
+   Java Documentation </java#http://>
+   GitHub Repo <http://github.com/spotify/voyager>

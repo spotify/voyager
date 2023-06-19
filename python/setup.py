@@ -9,8 +9,6 @@ import setuptools
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-__version__ = "1.0.8"
-
 
 # Find the "cpp" folder depending on where this script is run from:
 for search_path in ["./cpp/", "../cpp/", "../../cpp/"]:
@@ -100,7 +98,7 @@ class BuildExt(build_ext):
         build_ext.build_extensions(self)
 
 
-current_directory = Path(__file__).resolve()
+current_directory = Path(__file__).resolve().parent
 search_directory = current_directory
 search_paths = []
 for _ in range(10):
@@ -114,10 +112,16 @@ else:
 
 long_description = readme.read_text("utf-8")
 
+# read the contents of the version.py
+version = {}
+exec((current_directory / "voyager" / "version.py").read_text(), version)
+
 setup(
     name="voyager",
-    version=__version__,
-    description="Easy-to-use, fast, simple multi-platform approximate nearest-neighbor search.",
+    version=version["__version__"],
+    description=(
+        "Easy-to-use, fast, simple multi-platform approximate nearest-neighbor search library."
+    ),
     author="Peter Sobot",
     url="https://github.com/spotify/voyager",
     long_description=long_description,

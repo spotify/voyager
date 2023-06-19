@@ -197,9 +197,15 @@ PYBIND11_MODULE(voyager, m) {
       .value("InnerProduct", SpaceType::InnerProduct, "Inner product distance.")
       .export_values();
 
-  py::enum_<StorageDataType>(
-      m, "StorageDataType",
-      "The datatype used to store vectors in memory and on-disk.")
+  py::enum_<StorageDataType>(m, "StorageDataType",
+                             R"(
+The data type used to store vectors in memory and on-disk.
+
+The :py:class:`StorageDataType` used for an :py:class:`Index` directly determines
+its memory usage, disk space usage, and recall. Both :py:class:`Float8` and
+:py:class:`E4M3` data types use 8 bits (1 byte) per dimension per vector, reducing
+memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
+)")
       .value("Float8", StorageDataType::Float8,
              "8-bit fixed-point decimal values. All values must be within [-1, "
              "1.00787402].")
@@ -285,7 +291,27 @@ PYBIND11_MODULE(voyager, m) {
   auto index = py::class_<Index, std::shared_ptr<Index>>(m, "Index",
                                                          R"(
 A nearest-neighbor search index containing vector data (i.e. lists of 
-floating-point values, each list tagged with an integer ID).
+floating-point values, each list labeled with a single integer ID).
+
+Think of a Voyager :py:class:`Index` as a ``Dict[int, List[float]]``
+(a dictionary mapping integers to lists of floats), where a
+:py:meth:`query` method allows finding the *k* nearest ``int`` keys
+to a provided ``List[float]`` query vector.
+
+.. warning::
+    Voyager is an **approximate** nearest neighbor index package, which means
+    that each call to the :py:meth:`query` method may return results that
+    are *approximately* correct. The metric used to gauge the accuracy
+    of a Voyager :py:meth:`query` is called
+    `recall <https://en.wikipedia.org/wiki/Precision_and_recall>`_. Recall
+    measures the percentage of correct results returned per
+    :py:meth:`query`.
+    
+    Various parameters documented below (like ``M``, ``ef_construction``,
+    and ``ef``) may affect the recall of queries. Usually, increasing recall
+    requires either increasing query latency, increasing memory usage,
+    increasing index creation time, or all of the above.
+
 
 Voyager indices support insertion, lookup, and deletion of vectors.
 
@@ -299,7 +325,6 @@ of three classes:
 Args:
     space:
         The :py:class:`Space` to use to calculate the distance between vectors,
-        such as :py:class:`Space.Euclidean` (Euclidean distance) or
         :py:class:`Space.Cosine` (cosine distance).
 
         The choice of distance to use usually depends on the kind of vector
@@ -311,9 +336,9 @@ Args:
         Each vector in the index must have the same number of dimensions.
 
     M:
-        The number of connetions between nodes. Larger values give better recall,
-        but use more memory. This parameter cannot be changed after the index is
-        instantiated.
+        The number of connections between nodes in the tree's internal data structure.
+        Larger values give better recall, but use more memory. This parameter cannot
+        be changed after the index is instantiated.
 
     ef_construction:
         The number of vectors to search through when inserting a new vector into
@@ -359,6 +384,10 @@ Args:
 
 Returns:
     The ID that was assigned to this vector (either auto-generated or provided).
+
+.. warning::
+    If calling :py:meth:`add_item` in a loop, consider batching your
+    calls by using :py:meth:`add_items` instead, which will be faster.
 )");
 
   index.def(
@@ -372,7 +401,33 @@ Returns:
         return index.addItems(ndArray, (_ids ? *_ids : empty), num_threads);
       },
       py::arg("vectors"), py::arg("ids") = py::none(),
-      py::arg("num_threads") = -1);
+      py::arg("num_threads") = -1,
+      R"(
+Add multiple vectors to this index simultaneously.
+
+This method may be faster than calling :py:meth:`add_items` multiple times,
+as passing a batch of vectors helps avoid Python's Global Interpreter Lock.
+
+Args:
+    vectors: A 32-bit floating-point NumPy array, with shape ``(num_vectors, num_dimensions)``.
+
+        If using the :py:class:`Space.Cosine` :py:class:`Space`, these vectors will be normalized
+        before insertion. If using a :py:class:`StorageDataType` other than
+        :py:class:`StorageDataType.Float32`, these vectors will be converted to the lower-precision
+        data type *after* normalization.
+
+    id: An optional list of IDs to assign to these vectors.
+        If provided, this list must be identical in length to the first dimension of ``vectors``.
+        If not provided, each vector's ID will automatically be generated based on the
+        number of elements already in this index.
+
+    num_threads: Up to ``num_threads`` will be started to perform insertions in parallel.
+                 If ``vectors`` contains only one query vector, ``num_threads`` will have no effect.
+                 By default, one thread will be spawned per CPU core.
+Returns:
+    The IDs that were assigned to the provided vectors (either auto-generated or provided), in the
+    same order as the provided vectors.
+)");
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Querying
@@ -474,34 +529,49 @@ Query with multiple vectors simultaneously::
                               "Return the :py:class:`Space` used to calculate "
                               "distances between vectors.");
 
-  index.def_property_readonly("num_dimensions", &Index::getNumDimensions);
+  index.def_property_readonly("num_dimensions", &Index::getNumDimensions, R"(
+The number of dimensions in each vector stored by this index.
+)");
 
-  index.def_property_readonly("M", &Index::getM);
+  index.def_property_readonly("M", &Index::getM, R"(
+The number of connections between nodes in the tree's internal data structure.
 
-  index.def_property_readonly("ef_construction", &Index::getEfConstruction);
+Larger values give better recall, but use more memory. This parameter cannot be changed
+after the index is instantiated.)");
 
-  index.def_property_readonly("max_elements", &Index::getMaxElements, R"(
+  index.def_property_readonly("ef_construction", &Index::getEfConstruction, R"(
+The number of vectors that this index searches through when inserting a new vector into
+the index. Higher values make index construction slower, but give better recall. This
+parameter cannot be changed after the index is instantiated.)");
+
+  index.def_property("max_elements", &Index::getMaxElements,
+                     &Index::resizeIndex, R"(
 The maximum number of elements that can be stored in this index.
 
 If :py:attr:`max_elements` is much larger than
 :py:attr:`num_elements`, this index may use more memory
-than necessary. (Call :py:meth:`resize_index` to reduce the
+than necessary. (Call :py:meth:`resize` to reduce the
 memory footprint of this index.)
 
 This is a **soft limit**; if a call to :py:meth:`add_item` or
 :py:meth:`add_items` would cause :py:attr:`num_elements` to exceed
 :py:attr:`max_elements`, the index will automatically be resized
 to accommodate the new elements.
+
+Note that assigning to this property is functionally identical to
+calling :py:meth:`resize`.
 )");
 
-  // TODO: Add getStorageDataType
+  index.def_property_readonly("storage_data_type", &Index::getStorageDataType,
+                              R"(
+The :py:class:`StorageDataType` used to store vectors in this :py:class:`Index`.
+)");
 
   index.def_property_readonly("num_elements", &Index::getNumElements, R"(
 The number of elements (vectors) currently stored in this index.
 
 Note that the number of elements will not decrease if any elements are
-deleted from the index; those deleted elements simply become invisible.
-)");
+deleted from the index; those deleted elements simply become invisible.)");
 
   index.def(
       "get_vector",
@@ -523,14 +593,23 @@ If no such vector exists, a :py:exc:`KeyError` will be thrown.
     originally added to this index.
 )");
 
-  index.attr("__subscript__") = index.attr("get_vector");
+  index.attr("__getitem__") = index.attr("get_vector");
 
   index.def(
       "get_vectors",
       [](Index &index, std::vector<size_t> _ids) {
         return ndArrayToPyArray<float, 2>(index.getVectors(_ids));
       },
-      py::arg("ids"));
+      py::arg("ids"), R"(
+Get one or more vectors stored in this index at the provided integer IDs.
+If one or more of the provided IDs cannot be found in the index, a
+:py:exc:`KeyError` will be thrown.
+
+.. warning::
+    If using the :py:class:`Cosine` :py:class:`Space`, this method
+    will return normalized versions of the vector that were
+    originally added to this index.
+)");
 
   index.def_property_readonly(
       "ids",
@@ -568,18 +647,84 @@ Get the distance between two provided vectors. The vectors must share the dimens
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Index Modifier Methods/Attributes
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  index.def_property("ef", &Index::getEF, &Index::setEF);
+  index.def_property("ef", &Index::getEF, &Index::setEF, R"(
+The default number of vectors to search through when calling :py:meth:`query`.
 
-  index.def("mark_deleted", &Index::markDeleted, py::arg("label"));
+Higher values make queries slower, but give better recall.
 
-  index.def("unmark_deleted", &Index::unmarkDeleted, py::arg("label"));
+.. warning::
+  Changing this parameter affects all calls to :py:meth:`query` made after this
+  change is made.
 
-  index.def("resize_index", &Index::resizeIndex, py::arg("new_size"));
+  This parameter can be overridden on a per-query basis when calling :py:meth:`query`
+  by passing the ``query_ef`` parameter, allowing finer-grained control over query
+  speed and recall.
+
+)");
+
+  index.def("mark_deleted", &Index::markDeleted, py::arg("id"), R"(
+Mark an ID in this index as deleted.
+
+Deleted IDs will not show up in the results of calls to :py:meth:`query`,
+but will still take up space in the index, and will slow down queries.
+
+.. note::
+    To delete one or more vectors from a :py:class:`Index` without
+    incurring any query-time performance penalty, recreate the index
+    from scratch without the vectors you want to remove::
+        
+        original: Index = ...
+        ids_to_remove: Set[int] = ...
+
+        recreated = Index(
+          original.space,
+          original.num_dimensions,
+          original.M,
+          original.ef_construction,
+          max_elements=len(original),
+          storage_data_type=original.storage_data_type
+        )
+        ordered_ids = list(set(original.ids) - ids_to_remove)
+        recreated.add_items(original.get_vectors(ordered_ids), ordered_ids)
+
+.. note::
+    This method can also be called by using the ``del`` operator::
+
+        index: voyager.Index = ...
+        del index[1234]  # deletes the ID 1234
+)");
+
+  index.attr("__delitem__") = index.attr("mark_deleted");
+
+  index.def("unmark_deleted", &Index::unmarkDeleted, py::arg("id"), R"(
+Unmark an ID in this index as deleted.
+
+Once unmarked as deleted, an existing ID will show up in the results of
+calls to :py:meth:`query` again.
+)");
+
+  index.def("resize", &Index::resizeIndex, py::arg("new_size"), R"(
+Resize this index, allocating space for up to ``new_size`` elements to
+be stored. This changes the :py:attr:`max_elements` property and may
+cause this :py:class:`Index` object to use more memory. This is a fairly
+expensive operation and prevents queries from taking place while the
+resize is in process.
+
+Note that the size of an index is a **soft limit**; if a call to
+:py:meth:`add_item` or :py:meth:`add_items` would cause
+:py:attr:`num_elements` to exceed :py:attr:`max_elements`, the
+index will automatically be resized to accommodate the new elements.
+
+Calling :py:meth:`resize` *once* before adding vectors to the
+index will speed up index creation if the number of elements is known
+in advance, as subsequent calls to :py:meth:`add_items` will not need
+to resize the index on-the-fly.
+)");
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Save Index
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  static constexpr const char *SAVE_INDEX_DOCSTRING = R"(
+  static constexpr const char *SAVE_DOCSTRING = R"(
 Save this index to the provided file path or file-like object.
 
 If provided a file path, Voyager will release Python's Global Interpreter Lock (GIL)
@@ -589,22 +734,22 @@ If provided a file-like object, Voyager will *not* release the GIL, but will pas
 one or more chunks of data (of up to 100MB each) to the provided object for writing.
   )";
   index.def(
-      "save_index",
+      "save",
       [](Index &index, std::string filePath) {
         py::gil_scoped_release release;
         index.saveIndex(filePath);
       },
-      py::arg("output_path"), SAVE_INDEX_DOCSTRING);
+      py::arg("output_path"), SAVE_DOCSTRING);
 
   index.def(
-      "save_index",
+      "save",
       [](Index &index, py::object filelike) {
         auto outputStream = std::make_shared<PythonOutputStream>(filelike);
 
         py::gil_scoped_release release;
         index.saveIndex(outputStream);
       },
-      py::arg("file_like"), SAVE_INDEX_DOCSTRING);
+      py::arg("file_like"), SAVE_DOCSTRING);
 
   index.def(
       "as_bytes",
@@ -717,6 +862,8 @@ Use the ``len`` operator to call this method::
       py::arg("storage_data_type") = StorageDataType::Float32,
       R"(
 Create a new Voyager nearest-neighbor search index with the provided arguments.
+
+See documentation for :py:meth:`Index.__init__` for details on required arguments.
 )");
 
   static constexpr const char *LOAD_DOCSTRING = R"(

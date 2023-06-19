@@ -18,13 +18,14 @@
 # -- Project information -----------------------------------------------------
 
 import datetime
+from voyager.version import __version__
 
 project = "Voyager"
 copyright = f"2022-{datetime.date.today().year}, Spotify AB"
 author = "Peter Sobot"
 
 # The full version, including alpha/beta/rc tags
-release = f"v1.0.0"
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -75,6 +76,7 @@ html_static_path = ["_static"]
 html_title = f"{project} {release} Python Documentation"
 html_favicon = "_static/favicon.ico"
 html_logo = "voyager_logo_roundrect_black_small.png"
+html_baseurl = "python/"
 
 octocat_points = (
     "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38"
