@@ -86,14 +86,14 @@ def test_create_and_query(
         assert distances[0] < (distance_tolerance * num_dimensions)
 
     output_file = tmp_path / "index.voy"
-    index.save_index(str(output_file))
+    index.save(str(output_file))
     assert output_file.stat().st_size > 0
     assert len(index.as_bytes()) > 0
     assert len(bytes(index)) > 0
     assert index.as_bytes() == output_file.read_bytes()
 
     with BytesIO() as f:
-        index.save_index(f)
+        index.save(f)
         assert index.as_bytes() == f.getvalue()
 
 

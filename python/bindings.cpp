@@ -769,7 +769,7 @@ into memory again.
 
 .. warning::
     This may be extremely large (many gigabytes) if the index is sufficiently large.
-    To save to disk without allocating this entire bytestring, use :py:meth:`save_index`.
+    To save to disk without allocating this entire bytestring, use :py:meth:`save`.
 
 .. note::
     This method can also be called by passing this object to the ``bytes(...)``
