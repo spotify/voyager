@@ -8,7 +8,7 @@
 
 |br|
 
-.. image:: voyager_logo_roundrect_black.png
+.. image:: voyager-black-roundrect-rectangle.png
   :width: 700
   :alt: The word "Voyager" in white on a black background.
 
@@ -31,5 +31,5 @@ It got its name because it searches through (embedding) space(s), much like
    Python API Reference <reference>
 
 .. toctree::
-   Java Documentation </java#http://>
+   Java Documentation </voyager/java#http://>
    GitHub Repo <http://github.com/spotify/voyager>

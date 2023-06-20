@@ -92,7 +92,7 @@ html_static_path = ["_static"]
 
 html_title = f"{project} {release} Python Documentation"
 html_favicon = "_static/favicon.ico"
-html_logo = "voyager_logo_roundrect_black_small.png"
+html_logo = "voyager-black-roundrect-icon.png"
 html_baseurl = "voyager/python/"
 
 octocat_points = (
@@ -122,8 +122,6 @@ html_theme_options = {
 }
 
 ogp_site_url = "https://spotify.github.io/voyager/python/"
-ogp_image = (
-    "https://github.com/spotify/pedalboard/assets/213293/07eb4ce7-11c7-4bda-9ba0-d43f719525f2"
-)
+ogp_image = "https://github.com/spotify/voyager/assets/213293/190c07bf-bf43-43d3-a46b-ed71232bbcdd"
 ogp_image_alt = "🛰️ Documentation for Voyager: A nearest-neighbor search library."
 ogp_site_name = html_title
