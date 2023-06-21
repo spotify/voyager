@@ -60,12 +60,16 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'corretto'
+          gpg-private-key: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
       - name: Compile
         run: make
       - name: Run Tests
         run: mvn --batch-mode verify
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
 
   run-python-tests:
     runs-on: ${{ matrix.os }}
@@ -264,12 +268,16 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'corretto'
+          gpg-private-key: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
       - name: Compile
         run: make
       - name: Package
         run: mvn --batch-mode package
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
       - uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
