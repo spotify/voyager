@@ -296,6 +296,8 @@ jobs:
         shell: bash
         working-directory: artifacts
         run: |
+          rm *-sources.jar
+          rm *-javadoc.jar
           for artifact in java-*; do unzip -o $artifact/*.jar -d combined-jar; done
           zip -r $(ls java-* | grep jar | tail -n 1) combined-jar/*
       - uses: actions/upload-artifact@v3
