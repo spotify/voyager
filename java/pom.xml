@@ -12,7 +12,7 @@
 
   <name>voyager</name>
   <artifactId>voyager</artifactId>
-  <version>1.2.2</version>
+  <version>1.2.3</version>
 
   <scm>
     <url>https://github.com/spotify/voyager</url>
