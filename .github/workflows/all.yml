@@ -318,6 +318,7 @@ jobs:
     name: Upload to Maven Central
     runs-on: ubuntu-latest
     needs: combine-java-jars
+    if: github.event_name == 'release' && github.event.action == 'published'
     defaults:
       run:
         working-directory: java
@@ -346,14 +347,8 @@ jobs:
           cp -r ../combined-jar/linux* target/classes/
           cp -r ../combined-jar/mac* target/classes/
           cp -r ../combined-jar/win* target/classes/
-          # TODO: Change back from package to deploy
-          mvn --batch-mode package -Dmaven.test.skip=true
+          mvn --batch-mode deploy -Dmaven.test.skip=true
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
-      - uses: actions/upload-artifact@v3
-        with:
-          if-no-files-found: error
-          name: java-final-for-deployment
-          path: java/target/voyager-*.jar
