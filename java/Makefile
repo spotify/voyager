@@ -53,14 +53,14 @@ target/classes/linux-x64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
 	# Why use Dockcross if we're already building on x86?
 	# We need to use an older version of GLIBC and GLIBCXX to ensure wide compatibility on Linux.
-	docker run -v $(shell realpath ../):/work dockcross/linux-x64 bash -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
+	docker run -v $(shell realpath ../):/work dockcross/linux-x64 bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
 
 target/classes/linux-aarch64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/linux-aarch64/
 	mkdir -p linux-build
 	cp -r $(CPP_SRC_DIR) linux-build/include
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
-	docker run -v $(shell realpath ../):/work dockcross/linux-arm64 bash -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
+	docker run -v $(shell realpath ../):/work dockcross/linux-arm64 bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
 
 target/classes/mac-x64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/mac-x64/
