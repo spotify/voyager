@@ -14,10 +14,10 @@ HEADERS   := $(SOURCE:.cpp=.h)
 JAVA_SRC  := ./src/main/java
 
 ifeq ($(UNAME_S),Linux)
-CC        := clang++
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/linux
 ALL_OBJS  := target/classes/linux-x64/$(LINUX_SOBJ) target/classes/linux-aarch64/$(LINUX_SOBJ)
 CXXFLAGS  := -I. -lc -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
+PREBUILD_COMMAND := sudo apt-get update && sudo apt-get install -y ca-certificates-java openjdk-11-jre-headless; { curl https://dlcdn.apache.org/maven/maven-3/3.9.2/binaries/apache-maven-3.9.2-bin.tar.gz | sudo tar -xvzf - -C /opt ; }; export M2_HOME=/opt/apache-maven-3.9.2 && export PATH=\"${M2_HOME}/bin:${PATH}\"
 else ifeq ($(UNAME_S),Darwin)
 CC        := clang++
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/darwin
@@ -51,14 +51,16 @@ target/classes/linux-x64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p linux-build
 	cp -r $(CPP_SRC_DIR) linux-build/include
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
-	$(CC) $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)
+	# Why use Dockcross if we're already building on x86?
+	# We need to use an older version of GLIBC and GLIBCXX to ensure wide compatibility on Linux.
+	docker run -v $(shell realpath ../):/work dockcross/linux-x64 bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
 
 target/classes/linux-aarch64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/linux-aarch64/
 	mkdir -p linux-build
 	cp -r $(CPP_SRC_DIR) linux-build/include
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
-	$(CC) $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)
+	docker run -v $(shell realpath ../):/work dockcross/linux-arm64 bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
 
 target/classes/mac-x64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/mac-x64/
