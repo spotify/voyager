@@ -60,7 +60,7 @@ target/classes/linux-aarch64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p linux-build
 	cp -r $(CPP_SRC_DIR) linux-build/include
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
-	docker run -v $(shell realpath ../):/work dockcross/linux-arm64 bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
+	docker run -v $(shell realpath ../):/work dockcross/linux-arm64-lts bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
 
 target/classes/mac-x64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/mac-x64/

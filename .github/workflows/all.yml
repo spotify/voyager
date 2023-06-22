@@ -313,6 +313,17 @@ jobs:
           file combined-jar/linux-aarch64/libvoyager.so | grep aarch64
           echo "Checking mac-aarch64/libvoyager.dylib for arm64 architecture..."
           file combined-jar/mac-aarch64/libvoyager.dylib | grep arm64
+
+          # Check the Linux JARs to ensure a sufficiently old required GLIBC and GLIBCXX version:
+          echo "Checking linux-aarch64/libvoyager.so for GLIBC 2.27..."
+          objdump -T combined-jar/linux-aarch64/libvoyager.so | grep GLIBC | sed 's/.*GLIBC_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 2\.27
+          echo "Checking linux-aarch64/libvoyager.so for GLIBCXX 3.4.22..."
+          objdump -T combined-jar/linux-aarch64/libvoyager.so | grep GLIBCXX | sed 's/.*GLIBCXX_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 3\.4\.22
+          echo "Checking linux-x64/libvoyager.so for GLIBC 2.27..."
+          objdump -T combined-jar/linux-x64/libvoyager.so | grep GLIBC | sed 's/.*GLIBC_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 2\.27
+          echo "Checking linux-x64/libvoyager.so for GLIBCXX 3.4.22..."
+          objdump -T combined-jar/linux-x64/libvoyager.so | grep GLIBCXX | sed 's/.*GLIBCXX_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 3\.4\.22
+
           zip -r $(ls java-* | grep jar | tail -n 1) combined-jar/*
       - uses: actions/upload-artifact@v3
         with:
