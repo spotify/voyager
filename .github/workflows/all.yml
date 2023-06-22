@@ -270,6 +270,11 @@ jobs:
           distribution: 'corretto'
           gpg-private-key: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Set up QEMU for aarch64 on Linux
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: all
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
       - name: Compile
@@ -299,6 +304,11 @@ jobs:
           rm -fv java-*/*-sources.jar
           rm -fv java-*/*-javadoc.jar
           for artifact in java-*; do unzip -o $artifact/*.jar -d combined-jar; done
+          # Quick test that the JARs were built for the correct architectures
+          file combined-jar/linux-x64/libvoyager.so | grep x86
+          file combined-jar/macos-x64/libvoyager.so | grep x86
+          file combined-jar/linux-aarch64/libvoyager.so | grep aarch64
+          file combined-jar/macos-aarch64/libvoyager.so | grep arm64
           zip -r $(ls java-* | grep jar | tail -n 1) combined-jar/*
       - uses: actions/upload-artifact@v3
         with:
