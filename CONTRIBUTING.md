@@ -16,13 +16,14 @@ To compile Voyager from scratch, the following packages will need to be installe
 ```shell
 git clone git@github.com:spotify/voyager.git
 cd voyager
-pip3 install pybind11 tox
+pip3 install -r python/dev-requirements.txt
 pip3 install .
 ```
 
 To compile a debug build of `voyager` that allows using a debugger (like gdb or lldb), use the following command to build the package locally and install a symbolic link for debugging:
 ```shell
-DEBUG=1 python3 setup.py build develop
+cd python
+DEBUG=1 python3 python/setup.py build develop
 ```
 
 Then, you can `import voyager` from Python (or run the tests with `tox`) to test out your local changes.
