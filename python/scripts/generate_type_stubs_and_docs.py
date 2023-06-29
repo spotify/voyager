@@ -319,8 +319,9 @@ def main():
                 )
         # Re-run this same script in a fresh interpreter, but with skip_regenerating_type_hints
         # enabled:
+        interpreter = shutil.which("python3") or psutil.Process(os.getpid()).exe()
         subprocess.check_call(
-            [psutil.Process(os.getpid()).exe()] + sys.argv + ["--skip-regenerating-type-hints"]
+            [interpreter] + sys.argv + ["--skip-regenerating-type-hints"]
         )
         return
 
