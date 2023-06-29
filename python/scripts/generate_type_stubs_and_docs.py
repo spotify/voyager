@@ -92,7 +92,7 @@ def patch_pybind11_stubgen():
             self.enum_docstrings = []
 
         def get_involved_modules_names(self):
-            return []
+            return set()
 
         def parse(self):
             self.doc_string = self.klass.__doc__ or ""
