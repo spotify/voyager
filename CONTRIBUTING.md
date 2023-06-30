@@ -46,6 +46,10 @@ Then, you can `import voyager` from Python (or run the tests with `tox`) to test
 > rm -rf build && CC="ccache clang" CXX="scripts/ccache_clang++" DEBUG=1 python3 setup.py build -j8 develop
 > ```
 
+### Updating Documentation
+If you notice that the documentation is out of date, feel free to run these commands in order to update the docs and make a PR with the changes.
+
+#### Python
 While `voyager` is mostly C++ code, it ships with `.pyi` files to allow for type hints in text editors and via MyPy. To update the Python type hint files, use the following commands:
 
 ```shell
@@ -53,6 +57,16 @@ cd python
 python3 -m scripts.generate_type_stubs_and_docs
 # Documentation will be dumped into ../docs/python/
 ```
+
+#### Java
+To update the javadocs for the java bindings, you can simply run:
+
+```shell
+cd java
+mvn package
+```
+
+this will update the java documentation located in [docs/java/](https://github.com/spotify/voyager/tree/main/docs/java).
 
 ## Workflow
 
