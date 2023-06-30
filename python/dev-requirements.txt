@@ -1,4 +1,8 @@
 -r test-requirements.txt
 numpy
 pybind11
+pybind11-stubgen
 ruff
+psutil
+mypy
+sphinx
