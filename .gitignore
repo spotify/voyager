@@ -13,7 +13,7 @@ var/
 *.pyc
 .DS_Store
 target
-java_bindings/com_*.h
-java_bindings/classpath.txt
-java_bindings/linux-build/include/*
-python_bindings/voyager-headers
+java/com_*.h
+java/classpath.txt
+java/linux-build/include/*
+python/voyager-headers

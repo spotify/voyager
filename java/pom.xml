@@ -172,6 +172,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <source>8</source>
+          <outputDirectory>../docs/java</outputDirectory>
         </configuration>
         <executions>
           <execution>
