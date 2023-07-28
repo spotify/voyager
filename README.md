@@ -1,4 +1,4 @@
-<!-- ![The word Voyager in white, on a black background](https://github.com/spotify/voyager/assets/213293/c31d89e2-011d-4e35-ae7a-deb980039235) -->
+![The word Voyager in white, on a black background](https://github.com/spotify/voyager/assets/213293/c31d89e2-011d-4e35-ae7a-deb980039235)
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/spotify/voyager/blob/master/LICENSE)
 [![Documentation](https://img.shields.io/badge/Documentation-on%20github.io-brightgreen)](https://spotify.github.io/voyager)
@@ -24,8 +24,7 @@ Think of Voyager like [Sparkey](https://github.com/spotify/sparkey), but for vec
 #### Python
 
 ```shell
-# pip install voyager
-# pending https://github.com/pypi/support/issues/2951
+pip install voyager
 ```
 
 #### Java
