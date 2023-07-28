@@ -140,6 +140,7 @@ setup(
     author="Peter Sobot",
     url="https://github.com/spotify/voyager",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     ext_modules=ext_modules,
     install_requires=["numpy"],
     cmdclass={"build_ext": BuildExt},
