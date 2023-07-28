@@ -338,7 +338,7 @@ jobs:
     needs: [build-python-wheels, run-python-tests-with-address-sanitizer, run-python-tests]
     runs-on: 'ubuntu-latest'
     name: "Upload wheels to PyPI"
-    if: false && github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/download-artifact@v3
         with:
