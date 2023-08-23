@@ -23,8 +23,8 @@
 #include <stdlib.h>
 #include <thread>
 
-#include "src/PythonInputStream.h"
-#include "src/PythonOutputStream.h"
+#include "../src/PythonInputStream.h"
+#include "../src/PythonOutputStream.h"
 #include <TypedIndex.h>
 
 namespace py = pybind11;
@@ -208,7 +208,7 @@ inline void register_index_class(py::module &m, std::string className,
   });
 };
 
-PYBIND11_MODULE(voyager, m) {
+PYBIND11_MODULE(voyager_core, m) {
   init_LabelSetView(m);
 
   py::enum_<SpaceType>(

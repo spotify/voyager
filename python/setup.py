@@ -42,8 +42,8 @@ else:
 
 ext_modules = [
     Extension(
-        "voyager",
-        ["./bindings.cpp"],
+        "voyager_core",
+        ["./voyager/bindings.cpp"],
         include_dirs=[pybind11.get_include(), np.get_include(), VOYAGER_HEADERS_PATH],
         libraries=[],
         language="c++",
@@ -134,6 +134,7 @@ exec((current_directory / "voyager" / "version.py").read_text(), version)
 setup(
     name="voyager",
     version=version["__version__"],
+    packages=["voyager", "voyager_core"],
     description=(
         "Easy-to-use, fast, simple multi-platform approximate nearest-neighbor search library."
     ),
