@@ -277,6 +277,15 @@ public class Index implements Closeable {
     nativeDestructor();
   }
 
+  @Override
+  protected void finalize() throws Throwable {
+    try {
+      nativeDestructor();
+    } finally {
+      super.finalize();
+    }
+  }
+
   private native void nativeConstructor(
       SpaceType space,
       int numDimensions,
