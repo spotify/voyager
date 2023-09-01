@@ -766,7 +766,8 @@ void Java_com_spotify_voyager_jni_Index_nativeDestructor(JNIEnv *env,
                                                          jobject self) {
   try {
     if (Index *index = getHandle<Index>(env, self, true)) {
-      free(index);
+      delete index;
+      setHandle<Index>(env, self, nullptr);
     }
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
