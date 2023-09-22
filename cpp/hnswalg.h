@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "Metadata.h"
 #include "Spaces/Space.h"
 #include "hnswlib.h"
 #include "visited_list_pool.h"
@@ -165,6 +166,8 @@ public:
 
   std::default_random_engine level_generator_;
   std::default_random_engine update_probability_generator_;
+
+  std::unique_ptr<voyager::AbstractMetadata> metadata;
 
   inline labeltype getExternalLabel(tableint internal_id) const {
     labeltype return_label;
@@ -678,6 +681,8 @@ public:
   }
 
   void saveIndex(std::shared_ptr<OutputStream> output) {
+    if (metadata)
+      metadata->serializeToStream(output);
     writeBinaryPOD(output, offsetLevel0_);
     writeBinaryPOD(output, max_elements_);
     writeBinaryPOD(output, cur_element_count);
@@ -713,7 +718,16 @@ public:
       totalFileSize = inputStream->getTotalLength();
     }
 
-    readBinaryPOD(inputStream, offsetLevel0_);
+    std::unique_ptr<voyager::AbstractMetadata> metadata =
+        voyager::Metadata::loadFromStream(inputStream);
+
+    if (voyager::Metadata::PreVoyager *preVoyager =
+            dynamic_cast<voyager::Metadata::PreVoyager *>(metadata.get())) {
+      offsetLevel0_ = preVoyager->getOffsetLevel0();
+    } else {
+      readBinaryPOD(inputStream, offsetLevel0_);
+    }
+
     readBinaryPOD(inputStream, max_elements_);
     readBinaryPOD(inputStream, cur_element_count);
 

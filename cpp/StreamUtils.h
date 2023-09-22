@@ -144,3 +144,21 @@ public:
 private:
   std::ostringstream outputStream;
 };
+
+template <typename T>
+static void writeBinaryPOD(std::shared_ptr<OutputStream> out, const T &podRef) {
+  if (!out->write((char *)&podRef, sizeof(T))) {
+    throw std::runtime_error("Failed to write " + std::to_string(sizeof(T)) +
+                             " bytes to stream!");
+  }
+}
+
+template <typename T>
+static void readBinaryPOD(std::shared_ptr<InputStream> in, T &podRef) {
+  long long bytesRead = in->read((char *)&podRef, sizeof(T));
+  if (bytesRead != sizeof(T)) {
+    throw std::runtime_error("Failed to read " + std::to_string(sizeof(T)) +
+                             " bytes from stream! Got " +
+                             std::to_string(bytesRead) + ".");
+  }
+}
