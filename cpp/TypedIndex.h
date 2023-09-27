@@ -95,10 +95,13 @@ private:
 
   bool ep_added;
   bool normalize = false;
+  bool useOrderPreservingTransform = false;
   int numThreadsDefault;
   hnswlib::labeltype currentLabel;
   std::unique_ptr<hnswlib::HierarchicalNSW<dist_t, data_t>> algorithmImpl;
   std::unique_ptr<hnswlib::Space<dist_t, data_t>> spaceImpl;
+
+  dist_t max_norm = 0.0;
 
 public:
   /**
@@ -115,7 +118,8 @@ public:
       break;
     case InnerProduct:
       spaceImpl = std::make_unique<
-          hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(dimensions);
+          hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(dimensions + 1);
+      useOrderPreservingTransform = true;
       break;
     case Cosine:
       spaceImpl = std::make_unique<
@@ -151,6 +155,7 @@ public:
   TypedIndex(const std::string &indexFilename, const SpaceType space,
              const int dimensions, bool searchOnly = false)
       : TypedIndex(space, dimensions) {
+    // TODO: set max_norm and useOrderPreservingTransform from file header
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), indexFilename, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -163,6 +168,7 @@ public:
   TypedIndex(std::shared_ptr<InputStream> inputStream, const SpaceType space,
              const int dimensions, bool searchOnly = false)
       : TypedIndex(space, dimensions) {
+    // TODO: set max_norm and useOrderPreservingTransform from file header
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -215,6 +221,7 @@ public:
    * Save this index to the provided file path on disk.
    */
   void saveIndex(const std::string &pathToIndex) {
+    // TODO: write max_norm and useOrderPreservingTransform to file header
     algorithmImpl->saveIndex(pathToIndex);
   }
 
@@ -224,6 +231,7 @@ public:
    * TypedIndex constructor to reload this index.
    */
   void saveIndex(std::shared_ptr<OutputStream> outputStream) {
+    // TODO: write max_norm and useOrderPreservingTransform to file header
     algorithmImpl->saveIndex(outputStream);
   }
 
@@ -238,6 +246,15 @@ public:
                                std::to_string(_b.size()) + ".");
     }
 
+    int actualDimensions = useOrderPreservingTransform ? dimensions + 1 : dimensions;
+
+    if (useOrderPreservingTransform) {
+      size_t dotFactorA = getDotFactor(a.data());
+      a.push_back(dotFactorA);
+      size_t dotFactorB = getDotFactor(b.data());
+      b.push_back(dotFactorB);
+    }
+
     if (normalize) {
       normalizeVector<dist_t, data_t, scalefactor>(_a.data(), a.data(),
                                                    a.size());
@@ -248,7 +265,7 @@ public:
       floatToDataType<data_t, scalefactor>(_b.data(), b.data(), b.size());
     }
 
-    return spaceImpl->get_dist_func()(a.data(), b.data(), dimensions);
+    return spaceImpl->get_dist_func()(a.data(), b.data(), actualDimensions);
   }
 
   hnswlib::labeltype addItem(std::vector<float> vector,
@@ -299,10 +316,17 @@ public:
       resizeIndex(getNumElements() + rows);
     }
 
+    int actualDimensions = useOrderPreservingTransform ? dimensions + 1 : dimensions;
+
     int start = 0;
     if (!ep_added) {
       size_t id = ids.size() ? ids.at(0) : (currentLabel);
-      std::vector<data_t> convertedVector(dimensions);
+      std::vector<data_t> convertedVector(actualDimensions);
+      if (useOrderPreservingTransform) {
+        dist_t dotFactor = getDotFactor(floatInput[0])
+        // how to add dimension to input array without copying??
+        // want to do something like floatInput[0].push_back(dotFactor)
+      }
 
       if (normalize) {
         normalizeVector<dist_t, data_t, scalefactor>(
@@ -319,21 +343,33 @@ public:
     }
 
     if (!normalize) {
-      std::vector<data_t> convertedArray(numThreads * dimensions);
+      std::vector<data_t> convertedArray(numThreads * actualDimensions);
       ParallelFor(start, rows, numThreads, [&](size_t row, size_t threadId) {
+        if (useOrderPreservingTransform) {
+          dist_t dotFactor = getDotFactor(floatInput[row])
+          // how to add dimension to input array without copying??
+          // want to do something like floatInput[0].push_back(dotFactor)
+        }
+
         size_t startIndex = threadId * dimensions;
         floatToDataType<data_t, scalefactor>(
-            floatInput[row], (convertedArray.data() + startIndex), dimensions);
+            floatInput[row], (convertedArray.data() + startIndex), actualDimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
         algorithmImpl->addPoint(convertedArray.data() + startIndex, id);
         idsToReturn[row] = id;
       });
     } else {
-      std::vector<data_t> normalizedArray(numThreads * dimensions);
+      std::vector<data_t> normalizedArray(numThreads * actualDimensions);
       ParallelFor(start, rows, numThreads, [&](size_t row, size_t threadId) {
+        if (useOrderPreservingTransform) {
+          dist_t dotFactor = getDotFactor(floatInput[row])
+          // how to add dimension to input array without copying??
+          // want to do something like floatInput[0].push_back(dotFactor)
+        }
+
         size_t startIndex = threadId * dimensions;
         normalizeVector<dist_t, data_t, scalefactor>(
-            floatInput[row], (normalizedArray.data() + startIndex), dimensions);
+            floatInput[row], (normalizedArray.data() + startIndex), actualDimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
         algorithmImpl->addPoint(normalizedArray.data() + startIndex, id);
         idsToReturn[row] = id;
@@ -343,6 +379,17 @@ public:
     currentLabel += rows;
 
     return idsToReturn;
+  }
+
+  // get the extra dimension to reduce MIS to NN. See https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/XboxInnerProduct.pdf
+  dist_t getDotFactor(const data_t *data) {
+    dist_t norm = getNorm<dist_t, data_t, scalefactor>(data, dimensions);
+    if (norm > max_norm) {
+      max_norm = norm;
+      return 0.0;
+    }
+    
+    return sqrt((max_norm * max_norm) - (norm * norm));
   }
 
   std::vector<data_t> getRawVector(hnswlib::labeltype id) {
@@ -416,13 +463,18 @@ public:
       numThreads = 1;
     }
 
+    int actualDimensions = useOrderPreservingTransform ? dimensions + 1 : dimensions;
+
     if (normalize == false) {
       std::vector<data_t> convertedArray(numThreads * numFeatures);
       ParallelFor(0, numRows, numThreads, [&](size_t row, size_t threadId) {
+        // how to add element w/o copy?? want to do something like:
+        // floatQueryVectors[row].push_back(0);
+
         size_t start_idx = threadId * dimensions;
         floatToDataType<data_t, scalefactor>(
             floatQueryVectors[row], (convertedArray.data() + start_idx),
-            dimensions);
+            actualDimensions);
 
         std::priority_queue<std::pair<dist_t, hnswlib::labeltype>> result =
             algorithmImpl->searchKnn((convertedArray.data() + start_idx), k,
@@ -449,10 +501,13 @@ public:
     } else {
       std::vector<data_t> norm_array(numThreads * numFeatures);
       ParallelFor(0, numRows, numThreads, [&](size_t row, size_t threadId) {
+        // how to add element w/o copy?? want to do something like:
+        // floatQueryVectors[row].push_back(0);
+
         size_t start_idx = threadId * dimensions;
         normalizeVector<dist_t, data_t, scalefactor>(
             floatQueryVectors[row], (norm_array.data() + start_idx),
-            dimensions);
+            actualDimensions);
 
         std::priority_queue<std::pair<dist_t, hnswlib::labeltype>> result =
             algorithmImpl->searchKnn(norm_array.data() + start_idx, k, nullptr,
@@ -496,6 +551,12 @@ public:
           "Query vector expected to share dimensionality with index.");
     }
 
+    int actualDimensions = dimensions;
+    if (useOrderPreservingTransform) {
+      actualDimensions = dimensions + 1;
+      floatQueryVector.push_back(0.0);
+    }
+
     std::vector<hnswlib::labeltype> labels(k);
     std::vector<dist_t> distances(k);
 
@@ -525,7 +586,7 @@ public:
     } else {
       std::vector<data_t> norm_array(numFeatures);
       normalizeVector<dist_t, data_t, scalefactor>(
-          floatQueryVector.data(), norm_array.data(), dimensions);
+          floatQueryVector.data(), norm_array.data(), actualDimensions);
 
       std::priority_queue<std::pair<dist_t, hnswlib::labeltype>> result =
           algorithmImpl->searchKnn(norm_array.data(), k, nullptr, queryEf);
