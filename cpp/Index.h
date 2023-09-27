@@ -25,32 +25,10 @@
 #include <ratio>
 #include <stdlib.h>
 
+#include "Enums.h"
 #include "StreamUtils.h"
 #include "array_utils.h"
 #include "hnswlib.h"
-
-/**
- * The space (i.e. distance metric) to use for searching.
- */
-enum SpaceType {
-  Euclidean,
-  InnerProduct,
-  Cosine,
-};
-
-/**
- * The datatype used to use when storing vectors on disk.
- * Affects precision and memory usage.
- */
-enum class StorageDataType {
-  Float8,
-  Float32,
-
-  // An 8-bit floating point format that uses
-  // four bits for exponent, 3 bits for mantissa,
-  // allowing representation of values from 2e-9 to 448.
-  E4M3,
-};
 
 /**
  * A C++ wrapper class for a Voyager index, which accepts

@@ -30,6 +30,7 @@
 
 #include "E4M3.h"
 #include "Index.h"
+#include "Metadata.h"
 #include "array_utils.h"
 #include "hnswlib.h"
 #include "std_utils.h"
@@ -99,6 +100,7 @@ private:
   hnswlib::labeltype currentLabel;
   std::unique_ptr<hnswlib::HierarchicalNSW<dist_t, data_t>> algorithmImpl;
   std::unique_ptr<hnswlib::Space<dist_t, data_t>> spaceImpl;
+  std::unique_ptr<voyager::Metadata::V1> metadata;
 
 public:
   /**
@@ -107,7 +109,10 @@ public:
   TypedIndex(const SpaceType space, const int dimensions, const size_t M = 12,
              const size_t efConstruction = 200, const size_t randomSeed = 1,
              const size_t maxElements = 1)
-      : space(space), dimensions(dimensions) {
+      : space(space), dimensions(dimensions),
+        metadata(std::make_unique<voyager::Metadata::V1>(
+            dimensions, space, getStorageDataType())) {
+
     switch (space) {
     case Euclidean:
       spaceImpl = std::make_unique<
@@ -168,6 +173,18 @@ public:
     currentLabel = algorithmImpl->cur_element_count;
   }
 
+  /**
+   * Load an index from the given input stream, interpreting
+   * it as the given Space and number of dimensions.
+   */
+  TypedIndex(std::unique_ptr<voyager::Metadata::V1> metadata,
+             std::shared_ptr<InputStream> inputStream, bool searchOnly = false)
+      : TypedIndex(metadata->getSpaceType(), metadata->getNumDimensions()) {
+    algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
+        spaceImpl.get(), inputStream, 0, searchOnly);
+    currentLabel = algorithmImpl->cur_element_count;
+  }
+
   int getNumDimensions() const { return dimensions; }
 
   SpaceType getSpace() const { return space; }
@@ -215,7 +232,7 @@ public:
    * Save this index to the provided file path on disk.
    */
   void saveIndex(const std::string &pathToIndex) {
-    algorithmImpl->saveIndex(pathToIndex);
+    saveIndex(std::make_shared<FileOutputStream>(pathToIndex));
   }
 
   /**
@@ -224,6 +241,7 @@ public:
    * TypedIndex constructor to reload this index.
    */
   void saveIndex(std::shared_ptr<OutputStream> outputStream) {
+    metadata->serializeToStream(outputStream);
     algorithmImpl->saveIndex(outputStream);
   }
 
@@ -572,3 +590,39 @@ public:
 
   size_t getM() const { return algorithmImpl->M_; }
 };
+
+std::unique_ptr<Index>
+loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
+  std::unique_ptr<voyager::Metadata::V1> metadata =
+      voyager::Metadata::loadFromStream(inputStream);
+
+  if (!metadata) {
+    throw std::domain_error(
+        "The provided file contains no Voyager parameter metadata. Please "
+        "specify the number of dimensions, SpaceType, and StorageDataType that "
+        "this index contains.");
+  } else if (voyager::Metadata::V1 *v1 =
+                 dynamic_cast<voyager::Metadata::V1 *>(metadata.get())) {
+    // We have enough information to create a TypedIndex!
+    switch (v1->getStorageDataType()) {
+    case StorageDataType::Float32:
+      return std::make_unique<TypedIndex<float>>(
+          std::unique_ptr<voyager::Metadata::V1>(
+              (voyager::Metadata::V1 *)metadata.release()),
+          inputStream);
+      break;
+    case StorageDataType::Float8:
+      return std::make_unique<TypedIndex<float, int8_t, std::ratio<1, 127>>>(
+          std::unique_ptr<voyager::Metadata::V1>(
+              (voyager::Metadata::V1 *)metadata.release()),
+          inputStream);
+      break;
+    case StorageDataType::E4M3:
+      return std::make_unique<TypedIndex<float, E4M3>>(
+          std::unique_ptr<voyager::Metadata::V1>(
+              (voyager::Metadata::V1 *)metadata.release()),
+          inputStream);
+      break;
+    }
+  }
+}

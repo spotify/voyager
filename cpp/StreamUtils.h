@@ -41,11 +41,12 @@ public:
   virtual bool advanceBy(long long numBytes) {
     return setPosition(getPosition() + numBytes);
   }
+  virtual uint32_t peek() = 0;
 };
 
 class FileInputStream : public InputStream {
 public:
-  FileInputStream(const std::string &filename) {
+  FileInputStream(const std::string &filename) : filename(filename) {
     handle = fopen(filename.c_str(), "r");
     if (!handle) {
       throw std::runtime_error("Failed to open file for reading: " + filename);
@@ -74,6 +75,19 @@ public:
   virtual bool advanceBy(long long bytes) {
     return fseek(handle, bytes, SEEK_CUR) == 0;
   }
+  virtual uint32_t peek() {
+    uint32_t result = 0;
+    long long lastPosition = getPosition();
+    if (read((char *)&result, sizeof(result)) == sizeof(result)) {
+      setPosition(lastPosition);
+      return result;
+    } else {
+      throw std::runtime_error(
+          "Failed to peek " + std::to_string(sizeof(result)) +
+          " bytes from file \"" + filename + "\" at index " +
+          std::to_string(lastPosition) + ".");
+    }
+  }
 
   virtual ~FileInputStream() {
     if (handle) {
@@ -85,6 +99,7 @@ public:
 protected:
   FileInputStream() {}
   FILE *handle = nullptr;
+  std::string filename;
 
 private:
   bool isRegularFile = false;

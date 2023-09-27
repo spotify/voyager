@@ -1,3 +1,4 @@
+#pragma once
 /*-
  * -\-\-
  * voyager
@@ -21,82 +22,71 @@
  * -/-/-
  */
 
+#include "Enums.h"
 #include "StreamUtils.h"
 
 namespace voyager {
-/**
- * @brief A custom metadata structure used to store index-specific parameters
- * (like number of dimensions in the index, the type of space used, etc).
- *
- * The `Metadata` structure is an abstract parent class, while the nested
- * classes contain logic for setting, accessing, serializing, and deserializing
- * the actual values.
- */
-class AbstractMetadata {
-public:
-  virtual void serializeToStream(std::shared_ptr<OutputStream> outputStream) {
-    outputStream->write("VOYA", 4);
-    writeBinaryPOD(outputStream, version());
-  };
-  virtual int version() const = 0;
-};
-
 namespace Metadata {
-class PreVoyager : public AbstractMetadata {
+/**
+ * @brief A basic metadata class that stores the number of dimensions,
+ * the SpaceType, StorageDataType, and number of dimensions.
+ */
+class V1 {
 public:
-  PreVoyager(size_t offsetLevel0) : offsetLevel0(offsetLevel0) {}
+  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType)
+      : numDimensions(numDimensions), spaceType(spaceType),
+        storageDataType(storageDataType) {}
 
-  virtual int version() const override { return 0; }
+  V1() {}
 
-  size_t getOffsetLevel0() { return offsetLevel0; }
-
-  virtual void serializeToStream(std::shared_ptr<OutputStream> stream){};
-
-  virtual void loadFromStream(std::shared_ptr<InputStream> stream){};
-
-private:
-  size_t offsetLevel0;
-};
-
-class V1 : public AbstractMetadata {
-public:
-  virtual int version() const override { return 1; }
+  int version() const { return 1; }
 
   int getNumDimensions() { return numDimensions; }
+
+  StorageDataType getStorageDataType() { return storageDataType; }
+
+  SpaceType getSpaceType() { return spaceType; }
 
   void setNumDimensions(int newNumDimensions) {
     numDimensions = newNumDimensions;
   }
 
+  void setStorageDataType(StorageDataType newStorageDataType) {
+    storageDataType = newStorageDataType;
+  }
+
+  void setSpaceType(SpaceType newSpaceType) { spaceType = newSpaceType; }
+
   virtual void serializeToStream(std::shared_ptr<OutputStream> stream) {
-    AbstractMetadata::serializeToStream(stream);
+    stream->write("VOYA", 4);
+    writeBinaryPOD(stream, version());
     writeBinaryPOD(stream, numDimensions);
+    writeBinaryPOD(stream, spaceType);
+    writeBinaryPOD(stream, storageDataType);
   };
 
   virtual void loadFromStream(std::shared_ptr<InputStream> stream) {
+    // Version has already been loaded before we get here!
     readBinaryPOD(stream, numDimensions);
+    readBinaryPOD(stream, spaceType);
+    readBinaryPOD(stream, storageDataType);
   };
 
 private:
   int numDimensions;
+  SpaceType spaceType;
+  StorageDataType storageDataType;
 };
 
-static std::unique_ptr<AbstractMetadata>
+static std::unique_ptr<Metadata::V1>
 loadFromStream(std::shared_ptr<InputStream> inputStream) {
-  // Note: this is 8 on purpose! If the header isn't a match, we
-  // read the next four bytes and parse this as a size_t
-
-  char header[8];
-  inputStream->read(header, 4);
-  bool headerMatch = header[0] == 'V' && header[1] == 'O' && header[2] == 'Y' &&
-                     header[3] == 'A';
-  if (!headerMatch) {
-    inputStream->read(header + 4, 4);
-    size_t *offsetLevel0 = (size_t *)&header[0];
-    std::unique_ptr<Metadata::PreVoyager> metadata =
-        std::make_unique<Metadata::PreVoyager>(*offsetLevel0);
-    return metadata;
+  uint32_t header = inputStream->peek();
+  if (header != 'AYOV') {
+    return nullptr;
   }
+
+  // Actually read instead of just peeking:
+  inputStream->read((char *)&header, sizeof(header));
 
   int version;
   readBinaryPOD(inputStream, version);
@@ -117,9 +107,8 @@ loadFromStream(std::shared_ptr<InputStream> inputStream) {
                         resultAsHex + "\".";
 
     if (version < 20) {
-      error += " A newer version of the Voyager library may be able to "
-               "read this "
-               "index.";
+      error += " A newer version of the Voyager library may be able to read "
+               "this index.";
     } else {
       error += " This index may be corrupted (or not a Voyager index).";
     }

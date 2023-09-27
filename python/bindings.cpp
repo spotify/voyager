@@ -928,6 +928,16 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
 
   index.def_static(
       "load",
+      [](const std::string filename) -> std::shared_ptr<Index> {
+        py::gil_scoped_release release;
+
+        return loadTypedIndexFromStream(
+            std::make_shared<FileInputStream>(filename));
+      },
+      py::arg("filename"), LOAD_DOCSTRING);
+
+  index.def_static(
+      "load",
       [](const py::object filelike, const SpaceType space,
          const int num_dimensions,
          const StorageDataType storageDataType) -> std::shared_ptr<Index> {
@@ -940,6 +950,25 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
 
         auto inputStream = std::make_shared<PythonInputStream>(filelike);
         py::gil_scoped_release release;
+
+        std::unique_ptr<voyager::Metadata::V1> metadata =
+            voyager::Metadata::loadFromStream(inputStream);
+
+        if (metadata) {
+          if (metadata->getStorageDataType() != storageDataType) {
+            throw std::domain_error("Provided storage data type does not match "
+                                    "the data type used in this file.");
+          }
+          if (metadata->getSpaceType() != space) {
+            throw std::domain_error("Provided space type does not match "
+                                    "the space type used in this file.");
+          }
+          if (metadata->getNumDimensions() != num_dimensions) {
+            throw std::domain_error(
+                "Provided number of dimensions does not match "
+                "the number of dimensions used in this file.");
+          }
+        }
 
         switch (storageDataType) {
         case StorageDataType::E4M3:
@@ -958,4 +987,21 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
       },
       py::arg("file_like"), py::arg("space"), py::arg("num_dimensions"),
       py::arg("storage_data_type") = StorageDataType::Float32, LOAD_DOCSTRING);
+
+  index.def_static(
+      "load",
+      [](const py::object filelike) -> std::shared_ptr<Index> {
+        if (!isReadableFileLike(filelike)) {
+          throw py::type_error(
+              "Expected either a filename or a file-like object (with "
+              "read, seek, seekable, and tell methods), but received: " +
+              filelike.attr("__repr__")().cast<std::string>());
+        }
+
+        auto inputStream = std::make_shared<PythonInputStream>(filelike);
+        py::gil_scoped_release release;
+
+        return loadTypedIndexFromStream(inputStream);
+      },
+      py::arg("file_like"), LOAD_DOCSTRING);
 }

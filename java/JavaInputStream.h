@@ -65,6 +65,14 @@ public:
           std::to_string(bufferSize));
     }
 
+    if (peekValue.size()) {
+      long long bytesToCopy = std::min(bytesToRead, peekValue.size());
+      std::memcpy(buffer, peekValue.data(), bytesToCopy);
+      for (int i = 0; i < bytesToCopy; i++)
+        peekValue.erase(peekValue.begin());
+      bytesRead += bytesToCopy;
+    }
+
     while (bytesRead < bytesToRead) {
       int readResult = env->CallIntMethod(
           inputStream, readMethod, byteArray, 0,
@@ -109,8 +117,27 @@ public:
 
   virtual ~JavaInputStream() {}
 
+  virtual uint32_t peek() {
+    uint32_t result = 0;
+    long long lastPosition = getPosition();
+    if (read(&result, sizeof(result)) == sizeof(result)) {
+      char *resultAsCharacters = (char *)&result;
+      peekValue.push_back(resultAsCharacters[0]);
+      peekValue.push_back(resultAsCharacters[1]);
+      peekValue.push_back(resultAsCharacters[2]);
+      peekValue.push_back(resultAsCharacters[3]);
+      return result;
+    } else {
+      throw std::runtime_error("Failed to peek " +
+                               std::to_string(sizeof(result)) +
+                               " bytes from JavaInputStream at index " +
+                               std::to_string(lastPosition) + ".")
+    }
+  }
+
 private:
   JNIEnv *env;
   jobject inputStream;
+  std::vector<char> peekValue;
   long long bytesRead = 0;
 };
