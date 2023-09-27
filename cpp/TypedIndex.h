@@ -118,7 +118,8 @@ public:
       break;
     case InnerProduct:
       spaceImpl = std::make_unique<
-          hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(dimensions + 1);
+          hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(dimensions +
+                                                                   1);
       useOrderPreservingTransform = true;
       break;
     case Cosine:
@@ -246,13 +247,14 @@ public:
                                std::to_string(_b.size()) + ".");
     }
 
-    int actualDimensions = useOrderPreservingTransform ? dimensions + 1 : dimensions;
+    int actualDimensions =
+        useOrderPreservingTransform ? dimensions + 1 : dimensions;
 
     if (useOrderPreservingTransform) {
-      size_t dotFactorA = getDotFactor(a.data());
-      a.push_back(dotFactorA);
-      size_t dotFactorB = getDotFactor(b.data());
-      b.push_back(dotFactorB);
+      size_t dotFactorA = getDotFactor(_a.data());
+      _a.push_back(dotFactorA);
+      size_t dotFactorB = getDotFactor(_b.data());
+      _b.push_back(dotFactorB);
     }
 
     if (normalize) {
@@ -316,24 +318,29 @@ public:
       resizeIndex(getNumElements() + rows);
     }
 
-    int actualDimensions = useOrderPreservingTransform ? dimensions + 1 : dimensions;
+    int actualDimensions =
+        useOrderPreservingTransform ? dimensions + 1 : dimensions;
 
     int start = 0;
     if (!ep_added) {
       size_t id = ids.size() ? ids.at(0) : (currentLabel);
+      // TODO(psobot): Should inputVector be on the stack instead?
+      std::vector<float> inputVector(actualDimensions);
       std::vector<data_t> convertedVector(actualDimensions);
+
+      std::memcpy(inputVector.data(), floatInput[0],
+                  dimensions * sizeof(float));
+
       if (useOrderPreservingTransform) {
-        dist_t dotFactor = getDotFactor(floatInput[0])
-        // how to add dimension to input array without copying??
-        // want to do something like floatInput[0].push_back(dotFactor)
+        inputVector[dimensions] = getDotFactor(floatInput[0]);
       }
 
       if (normalize) {
         normalizeVector<dist_t, data_t, scalefactor>(
-            floatInput[0], convertedVector.data(), convertedVector.size());
+            inputVector.data(), convertedVector.data(), convertedVector.size());
       } else {
         floatToDataType<data_t, scalefactor>(
-            floatInput[0], convertedVector.data(), convertedVector.size());
+            inputVector.data(), convertedVector.data(), convertedVector.size());
       }
 
       algorithmImpl->addPoint(convertedVector.data(), (size_t)id);
@@ -343,33 +350,40 @@ public:
     }
 
     if (!normalize) {
+      std::vector<float> inputArray(numThreads * actualDimensions);
       std::vector<data_t> convertedArray(numThreads * actualDimensions);
       ParallelFor(start, rows, numThreads, [&](size_t row, size_t threadId) {
+        size_t startIndex = threadId * actualDimensions;
+        std::memcpy(&inputArray[startIndex], floatInput[row],
+                    dimensions * sizeof(float));
+
         if (useOrderPreservingTransform) {
-          dist_t dotFactor = getDotFactor(floatInput[row])
-          // how to add dimension to input array without copying??
-          // want to do something like floatInput[0].push_back(dotFactor)
+          inputArray[startIndex + dimensions] = getDotFactor(floatInput[row]);
         }
 
-        size_t startIndex = threadId * dimensions;
-        floatToDataType<data_t, scalefactor>(
-            floatInput[row], (convertedArray.data() + startIndex), actualDimensions);
+        floatToDataType<data_t, scalefactor>(&inputArray[startIndex],
+                                             &convertedArray[startIndex],
+                                             actualDimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
         algorithmImpl->addPoint(convertedArray.data() + startIndex, id);
         idsToReturn[row] = id;
       });
     } else {
+      std::vector<float> inputArray(numThreads * actualDimensions);
       std::vector<data_t> normalizedArray(numThreads * actualDimensions);
       ParallelFor(start, rows, numThreads, [&](size_t row, size_t threadId) {
+        size_t startIndex = threadId * actualDimensions;
+
+        std::memcpy(&inputArray[startIndex], floatInput[row],
+                    dimensions * sizeof(float));
+
         if (useOrderPreservingTransform) {
-          dist_t dotFactor = getDotFactor(floatInput[row])
-          // how to add dimension to input array without copying??
-          // want to do something like floatInput[0].push_back(dotFactor)
+          inputArray[startIndex + dimensions] = getDotFactor(floatInput[row]);
         }
 
-        size_t startIndex = threadId * dimensions;
         normalizeVector<dist_t, data_t, scalefactor>(
-            floatInput[row], (normalizedArray.data() + startIndex), actualDimensions);
+            &inputArray[startIndex], &normalizedArray[startIndex],
+            actualDimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
         algorithmImpl->addPoint(normalizedArray.data() + startIndex, id);
         idsToReturn[row] = id;
@@ -381,14 +395,15 @@ public:
     return idsToReturn;
   }
 
-  // get the extra dimension to reduce MIS to NN. See https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/XboxInnerProduct.pdf
-  dist_t getDotFactor(const data_t *data) {
-    dist_t norm = getNorm<dist_t, data_t, scalefactor>(data, dimensions);
+  // get the extra dimension to reduce MIS to NN. See
+  // https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/XboxInnerProduct.pdf
+  dist_t getDotFactor(const dist_t *data) {
+    dist_t norm = getNorm<dist_t, dist_t, scalefactor>(data, dimensions);
     if (norm > max_norm) {
       max_norm = norm;
       return 0.0;
     }
-    
+
     return sqrt((max_norm * max_norm) - (norm * norm));
   }
 
@@ -398,7 +413,7 @@ public:
 
   std::vector<float> getVector(hnswlib::labeltype id) {
     std::vector<data_t> rawData = getRawVector(id);
-    NDArray<data_t, 2> output(rawData, {1, (int)rawData.size()});
+    NDArray<data_t, 2> output(rawData.data(), {1, (int)dimensions});
     return dataTypeToFloat<data_t, scalefactor>(output).data;
   }
 
@@ -463,18 +478,21 @@ public:
       numThreads = 1;
     }
 
-    int actualDimensions = useOrderPreservingTransform ? dimensions + 1 : dimensions;
+    int actualDimensions =
+        useOrderPreservingTransform ? dimensions + 1 : dimensions;
 
     if (normalize == false) {
-      std::vector<data_t> convertedArray(numThreads * numFeatures);
+      std::vector<float> inputArray(numThreads * actualDimensions);
+      std::vector<data_t> convertedArray(numThreads * actualDimensions);
       ParallelFor(0, numRows, numThreads, [&](size_t row, size_t threadId) {
-        // how to add element w/o copy?? want to do something like:
-        // floatQueryVectors[row].push_back(0);
+        size_t start_idx = threadId * actualDimensions;
 
-        size_t start_idx = threadId * dimensions;
-        floatToDataType<data_t, scalefactor>(
-            floatQueryVectors[row], (convertedArray.data() + start_idx),
-            actualDimensions);
+        std::memcpy(&inputArray[start_idx], floatQueryVectors[row],
+                    actualDimensions * sizeof(float));
+
+        floatToDataType<data_t, scalefactor>(&inputArray[start_idx],
+                                             &convertedArray[start_idx],
+                                             actualDimensions);
 
         std::priority_queue<std::pair<dist_t, hnswlib::labeltype>> result =
             algorithmImpl->searchKnn((convertedArray.data() + start_idx), k,
@@ -499,15 +517,16 @@ public:
         }
       });
     } else {
+      std::vector<float> inputArray(numThreads * actualDimensions);
       std::vector<data_t> norm_array(numThreads * numFeatures);
       ParallelFor(0, numRows, numThreads, [&](size_t row, size_t threadId) {
-        // how to add element w/o copy?? want to do something like:
-        // floatQueryVectors[row].push_back(0);
+        size_t start_idx = threadId * actualDimensions;
 
-        size_t start_idx = threadId * dimensions;
+        std::memcpy(&inputArray[start_idx], floatQueryVectors[row],
+                    actualDimensions * sizeof(float));
+
         normalizeVector<dist_t, data_t, scalefactor>(
-            floatQueryVectors[row], (norm_array.data() + start_idx),
-            actualDimensions);
+            &inputArray[start_idx], &norm_array[start_idx], actualDimensions);
 
         std::priority_queue<std::pair<dist_t, hnswlib::labeltype>> result =
             algorithmImpl->searchKnn(norm_array.data() + start_idx, k, nullptr,

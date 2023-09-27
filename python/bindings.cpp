@@ -70,6 +70,17 @@ py::array_t<T> ndArrayToPyArray(NDArray<T, Dims> input) {
   py::array_t<T> output(input.shape);
   T *outputPtr = static_cast<T *>(const_cast<T *>(output.data()));
 
+  size_t numOutputElements = 1;
+  for (int i = 0; i < input.shape.size(); i++) {
+    numOutputElements *= input.shape[i];
+  }
+  if (input.data.size() != numOutputElements) {
+    throw std::runtime_error("Internal error: NDArray input size (" +
+                             std::to_string(input.data.size()) +
+                             " elements) does not match output shape: (" +
+                             std::to_string(numOutputElements) + " elements).");
+  }
+
   {
     py::gil_scoped_release release;
     std::copy(input.data.begin(), input.data.end(), outputPtr);
