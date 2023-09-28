@@ -66,7 +66,8 @@ public:
     }
 
     if (peekValue.size()) {
-      long long bytesToCopy = std::min(bytesToRead, peekValue.size());
+      long long bytesToCopy =
+          std::min(bytesToRead, (long long)peekValue.size());
       std::memcpy(buffer, peekValue.data(), bytesToCopy);
       for (int i = 0; i < bytesToCopy; i++)
         peekValue.erase(peekValue.begin());
@@ -120,7 +121,7 @@ public:
   virtual uint32_t peek() {
     uint32_t result = 0;
     long long lastPosition = getPosition();
-    if (read(&result, sizeof(result)) == sizeof(result)) {
+    if (read((char *)&result, sizeof(result)) == sizeof(result)) {
       char *resultAsCharacters = (char *)&result;
       peekValue.push_back(resultAsCharacters[0]);
       peekValue.push_back(resultAsCharacters[1]);
@@ -131,7 +132,7 @@ public:
       throw std::runtime_error("Failed to peek " +
                                std::to_string(sizeof(result)) +
                                " bytes from JavaInputStream at index " +
-                               std::to_string(lastPosition) + ".")
+                               std::to_string(lastPosition) + ".");
     }
   }
 

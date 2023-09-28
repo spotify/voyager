@@ -697,31 +697,49 @@ void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2(
 // Load Index
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // TODO: Convert these to static methods
-void Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(
+void Java_com_spotify_voyager_jni_Index_nativeLoadFromFileWithParameters(
     JNIEnv *env, jobject self, jstring filename, jobject spaceType,
     jint numDimensions, jobject storageDataType) {
   try {
+    auto inputStream =
+        std::make_shared<FileInputStream>(toString(env, filename));
+    std::unique_ptr<voyager::Metadata::V1> metadata =
+        voyager::Metadata::loadFromStream(inputStream);
+
+    if (metadata) {
+      if (metadata->getStorageDataType() !=
+          toStorageDataType(env, storageDataType)) {
+        throw std::domain_error("Provided storage data type does not match "
+                                "the data type used in this file.");
+      }
+      if (metadata->getSpaceType() != toSpaceType(env, spaceType)) {
+        throw std::domain_error("Provided space type does not match "
+                                "the space type used in this file.");
+      }
+      if (metadata->getNumDimensions() != numDimensions) {
+        throw std::domain_error("Provided number of dimensions does not match "
+                                "the number of dimensions used in this file.");
+      }
+    }
+
     switch (toStorageDataType(env, storageDataType)) {
     case StorageDataType::Float32:
-      setHandle<Index>(
-          env, self,
-          new TypedIndex<float>(
-              std::make_shared<FileInputStream>(toString(env, filename)),
-              toSpaceType(env, spaceType), numDimensions));
+      setHandle<Index>(env, self,
+                       new TypedIndex<float>(inputStream,
+                                             toSpaceType(env, spaceType),
+                                             numDimensions));
       break;
     case StorageDataType::Float8:
       setHandle<Index>(
           env, self,
           new TypedIndex<float, int8_t, std::ratio<1, 127>>(
-              std::make_shared<FileInputStream>(toString(env, filename)),
-              toSpaceType(env, spaceType), numDimensions));
+              inputStream, toSpaceType(env, spaceType), numDimensions));
       break;
     case StorageDataType::E4M3:
-      setHandle<Index>(
-          env, self,
-          new TypedIndex<float, E4M3>(
-              std::make_shared<FileInputStream>(toString(env, filename)),
-              toSpaceType(env, spaceType), numDimensions));
+      setHandle<Index>(env, self,
+                       new TypedIndex<float, E4M3>(inputStream,
+                                                   toSpaceType(env, spaceType),
+                                                   numDimensions));
       break;
     }
   } catch (std::exception const &e) {
@@ -731,28 +749,48 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(
-    JNIEnv *env, jobject self, jobject inputStream, jobject spaceType,
+void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
+    JNIEnv *env, jobject self, jobject jInputStream, jobject spaceType,
     jint numDimensions, jobject storageDataType) {
   try {
+    auto inputStream = std::make_shared<JavaInputStream>(env, jInputStream);
+    std::unique_ptr<voyager::Metadata::V1> metadata =
+        voyager::Metadata::loadFromStream(inputStream);
+
+    if (metadata) {
+      if (metadata->getStorageDataType() !=
+          toStorageDataType(env, storageDataType)) {
+        throw std::domain_error("Provided storage data type does not match "
+                                "the data type used in this file.");
+      }
+      if (metadata->getSpaceType() != toSpaceType(env, spaceType)) {
+        throw std::domain_error("Provided space type does not match "
+                                "the space type used in this file.");
+      }
+      if (metadata->getNumDimensions() != numDimensions) {
+        throw std::domain_error("Provided number of dimensions does not match "
+                                "the number of dimensions used in this file.");
+      }
+    }
+
     switch (toStorageDataType(env, storageDataType)) {
     case StorageDataType::Float32:
       setHandle<Index>(env, self,
-                       new TypedIndex<float>(
-                           std::make_shared<JavaInputStream>(env, inputStream),
-                           toSpaceType(env, spaceType), numDimensions));
+                       new TypedIndex<float>(inputStream,
+                                             toSpaceType(env, spaceType),
+                                             numDimensions));
       break;
     case StorageDataType::Float8:
-      setHandle<Index>(env, self,
-                       new TypedIndex<float, int8_t, std::ratio<1, 127>>(
-                           std::make_shared<JavaInputStream>(env, inputStream),
-                           toSpaceType(env, spaceType), numDimensions));
+      setHandle<Index>(
+          env, self,
+          new TypedIndex<float, int8_t, std::ratio<1, 127>>(
+              inputStream, toSpaceType(env, spaceType), numDimensions));
       break;
     case StorageDataType::E4M3:
       setHandle<Index>(env, self,
-                       new TypedIndex<float, E4M3>(
-                           std::make_shared<JavaInputStream>(env, inputStream),
-                           toSpaceType(env, spaceType), numDimensions));
+                       new TypedIndex<float, E4M3>(inputStream,
+                                                   toSpaceType(env, spaceType),
+                                                   numDimensions));
       break;
     }
   } catch (std::exception const &e) {

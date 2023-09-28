@@ -623,6 +623,11 @@ loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
               (voyager::Metadata::V1 *)metadata.release()),
           inputStream);
       break;
+    default:
+      throw std::domain_error("Unknown storage data type: " +
+                              std::to_string((int)v1->getStorageDataType()));
     }
+  } else {
+    throw std::domain_error("Unknown Voyager metadata format.");
   }
 }
