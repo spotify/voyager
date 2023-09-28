@@ -905,20 +905,37 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
          const StorageDataType storageDataType) -> std::shared_ptr<Index> {
         py::gil_scoped_release release;
 
+        auto inputStream = std::make_shared<FileInputStream>(filename);
+        std::unique_ptr<voyager::Metadata::V1> metadata =
+            voyager::Metadata::loadFromStream(inputStream);
+
+        if (metadata) {
+          if (metadata->getStorageDataType() != storageDataType) {
+            throw std::domain_error("Provided storage data type does not match "
+                                    "the data type used in this file.");
+          }
+          if (metadata->getSpaceType() != space) {
+            throw std::domain_error("Provided space type does not match "
+                                    "the space type used in this file.");
+          }
+          if (metadata->getNumDimensions() != num_dimensions) {
+            throw std::domain_error(
+                "Provided number of dimensions does not match "
+                "the number of dimensions used in this file.");
+          }
+        }
+
         switch (storageDataType) {
         case StorageDataType::E4M3:
-          return std::make_shared<TypedIndex<float, E4M3>>(
-              std::make_shared<FileInputStream>(filename), space,
-              num_dimensions);
+          return std::make_shared<TypedIndex<float, E4M3>>(inputStream, space,
+                                                           num_dimensions);
         case StorageDataType::Float8:
           return std::make_shared<
-              TypedIndex<float, int8_t, std::ratio<1, 127>>>(
-              std::make_shared<FileInputStream>(filename), space,
-              num_dimensions);
+              TypedIndex<float, int8_t, std::ratio<1, 127>>>(inputStream, space,
+                                                             num_dimensions);
         case StorageDataType::Float32:
-          return std::make_shared<TypedIndex<float>>(
-              std::make_shared<FileInputStream>(filename), space,
-              num_dimensions);
+          return std::make_shared<TypedIndex<float>>(inputStream, space,
+                                                     num_dimensions);
         default:
           throw std::runtime_error("Unknown storage data type received!");
         }
