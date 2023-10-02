@@ -16,94 +16,274 @@
         <title>🛰️ Voyager Documentation</title>
         <style type="text/css">
             body {
-                padding: 100px;
-                font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji;
-                background: #151515;
-                color: #fff;
+                font-family: sans-serif;
+                padding: 0;
+                margin: 0;
+                position: relative;
             }
-
-            body > img {
-                width: 700px;
-                margin: 0 auto;
+            .header {
+                position: relative;
+                background: black;
+                color: white;
                 display: block;
-                box-shadow: 0 0 20px #444;
-                border-radius: 20px;
             }
-
-            body > p {
-                text-align: center;
-                padding: 50px 0 10px 0;
-                width: 550px;
+            .header .nav {
+                display: block;
+                width: 1000px;
                 margin: 0 auto;
-                font-size: 1.4em;
+                border-bottom: 2px solid rgb(241, 55, 165); 
+                height: 150px;
+                text-align: right;
             }
-
-            a {
-                color: #fff;
+            .header .nav img {
+                margin: 28px 0;
+                height: 100px;
+                float: left;
             }
-
-            .container {
-                text-align: center;
-                margin: 50px auto;
-                width: 700px;
+            .header .nav ul {
+                display: block;
+                list-style-type: none;
             }
-
-            .container a {
-                width: 200px;
-                height: 175px;
-                padding: 10px 50px 100px 50px;
-                margin: 0 10px;
-                border: 1px solid #fff;
-                border-radius: 20px;
-                text-align: center;
-                vertical-align: middle;
+            .header .nav ul li {
                 display: inline-block;
+                margin: 60px 0;
+            }
+            .header .nav ul li a {
+                color: white;
+                text-decoration: none;
+                text-transform: uppercase;
+                font-size: 1.75em;
                 font-weight: bold;
-                transition: background-color 0.25s ease, box-shadow 0.5s ease;
-                background: #151515;
-                box-shadow: 0 0 10px #111;
+                margin: 0 30px; 
+            }
+            .header .nav ul li a:hover {
+                border-bottom: 5px solid rgb(241, 55, 165); 
             }
 
-            .container a:hover {
-                background: #222;
-                box-shadow: 0 0 20px #555;
+            .header .intro {
+                position: relative;
+                display: block;
+                width: 500px;
+                height: 400px;
+                margin: 0 auto;
+                padding-right: 500px;
+                padding-left: 10px;
+                padding-bottom: 100px;
+                z-index: 2;
             }
-
-            .container a img {
-                width: 100%;
+            .header .video {
+                position: relative;
+                width: 1000px;
+                margin: 0 auto;
             }
             
-            .footer {
-                margin-top: 40px;
-                text-align: center;
-                color: #ddd;
+            .header video {
+                position: absolute;
+                top: 0;
+                right: -200px;
+                height: 533px;
+                z-index: 1;
             }
 
-            .footer a {
-                color: #ddd;
+            .header .intro h2 {
+                font-size: 2.5em;
+                font-weight: 300;
+                padding: 40px 0 10px;
+            }
+            .header .intro p {
+                font-size: 1.2em;
+                line-height: 1.5em;
+                padding-right: 80px;
+                font-weight: 300;
+            }
+            .header .intro a.button {
+                font-weight: bold;
+                color: black;
+                background-color: rgb(250, 230, 45);
+                font-size: 1.5em;
+                border-radius: 2em;
+                padding: 20px 50px;
+                text-decoration: none;
+                margin: 30px 0;
+                display: inline-block;
+            }
+            .header .intro a.button:hover {
+                text-decoration: underline;
+            }
+            .middle {
+                display: block;
+                width: 1000px;
+                margin: 0 auto;
+                padding-top: 20px;
+                padding-bottom: 50px;
+            }
+            .middle .section {
+                height: 250px;
+                position: relative;
+                display: block;
+                padding-top: 20px;
+            }
+            .middle .section img {
+                width: 500px;
+                margin-top: 10px;
+                margin-left: -50px;
+                position: absolute;
+            }
+            .middle .section h2 {
+                margin-left: 500px;
+            }
+            .middle .section p {
+                margin-left: 500px;
+                font-size: 1.2em;
+                line-height: 1.5em;
+            }
+            .footer {
+                background: rgb(25, 20, 20);
+                display: block;
+                margin: 0 auto;
+                height: 175px;
+                text-align: left;
+            }
+            .footer .columns {
+                width: 1000px;
+                padding-top: 50px;
+                margin: 0 auto;
+            }
+            .footer .columns img {
+                margin: 28px 0;
+                width: 25%;
+                float: left;
+            }
+            .footer .columns .column {
+                float: left;
+                width: 25%;
+                line-height: 1.75em;
+            }
+            .footer .columns .column a {
+                color: white;
+                text-decoration: none;
+            }
+            .footer .columns .column a:hover {
+                text-decoration: underline;
+            }
+            span.code {
+                font-family: monospace;
+            }
+            .copyright {
+                background: rgb(25, 20, 20);
+                color: white;
+                text-align: center;
+                font-size: 0.75em;
+                padding: 50px 0;
+            }
+            .copyright .made {
+                font-weight: bold;
+            }
+            .copyright .copy {
+                color: #aaa;
             }
         </style>
     </head>
     <body>
-        <img src="https://github.com/spotify/voyager/assets/213293/190c07bf-bf43-43d3-a46b-ed71232bbcdd" alt="Voyager Logo"/>
-        <p>
-            Voyager is an approximate nearest-neighbor search library for Python and Java with a focus on ease of use, simplicity, and deployability.
-        </p>
-        <div class="container">
-            <a href="./python/index.html">
-                <img src="https://github.com/spotify/voyager/assets/213293/463a0d30-85bd-43a0-a73a-6ff9bf436c35" alt="Python Logo">
-                Python Documentation
-            </a>
-            <a href="./java/index.html">
-                <img src="https://github.com/spotify/voyager/assets/213293/fd41b0c2-7be7-4fd0-b06f-0c9e60d63ccf" alt="Java Logo">
-                Java Documentation
-            </a>
+        <div class="header">
+            <div class="nav">
+                <img src="https://github.com/spotify/voyager/assets/213293/190c07bf-bf43-43d3-a46b-ed71232bbcdd" alt="Voyager Logo"/>
+                <ul>
+                    <li><a href="./python/">Python</a></li>
+                    <li><a href="./java/">Java</a></li>
+                    <li><a href="https://github.com/spotify/voyager">GitHub</a></li>
+                </ul>
+            </div>
+            <div class="video">
+                <video autoplay muted>
+                    <source src="voyager-gif.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div class="intro">
+                <h2>
+                    Fast, Simple, In-Memory Nearest Neighbor Search
+                </h2>
+                <p>
+                    Voyager provides approximate nearest-neighbor search in Python and Java.
+                    It's up to 10 times faster than Annoy, while using 4 times less memory and providing more features.
+                </p>
+                <a href="https://github.com/spotify/voyager#readme" class="button">
+                    Get Started
+                </a>
+            </div>
+        </div>
+        <div class="middle">
+            <div class="section">
+                <img src="Spaceship_Icon_v002.gif" />
+                <h2>Fast</h2>
+                <p>
+                    Tuned for lighting-fast production use at Spotify,
+                    Voyager provides near-instantaneous nearest-neighbor
+                    lookups on in-memory collections of embeddings &mdash;
+                    without requiring GPUs &mdash; so you can power millions
+                    of requests per day at millisecond latencies.
+                </p>
+            </div>
+            <div class="section">
+                <img src="Docking_Icon_v002.gif" />
+                <h2>Well-Documented</h2>
+                <p>
+                    Need an example to get started? Voyager includes documentation for every method,
+                    and a comprehensive guide for common use cases. With a strongly-typed API in both
+                    Python or Java, you can have your IDE guide you with autocomplete every step of
+                    the way &mdash; or check out Voyager's documentation.
+                </p>
+            </div>
+            <div class="section">
+                <img src="Telescope_Icon_v001.gif" />
+                <h2>Easy to Integrate</h2>
+                <p>
+                    Add Voyager to your existing application with just one line of code.
+                    No dependencies or setup required. Voyager works with all popular Python
+                    and Java versions, on macOS, Linux, and Windows. Just <span class="code">import voyager</span>
+                    in Python or <span class="code">import com.spotify.voyager;</span> in Java and go!
+                </p>
+            </div>
+            <div class="section">
+                <img src="Astronaut_Icon_v002.gif" />
+                <h2>Lightweight</h2>
+                <p>
+                    Voyager is built to minimize resource usage. There's no server to start, no resources
+                    to keep running in the background, and no operational overhead.
+                    Add Voyager to your application code and you can search through millions of
+                    embeddings while only using gigabytes of memory.
+                </p>
+            </div>
         </div>
         <div class="footer">
-            <a href="https://github.com/spotify/voyager">github.com/spotify/voyager</a>
-            <br />
-            <br />
-            Copyright &copy; 2022-2023, Spotify AB
+            <div class="columns">
+                <img src="https://github.com/spotify/voyager/assets/213293/190c07bf-bf43-43d3-a46b-ed71232bbcdd" alt="Voyager Logo"/>
+                <div class="column">
+                    <ul>
+                        <li><a href="https://github.com/spotify/voyager">GitHub</a></li>
+                        <li><a href="https://spotify.github.io">Open Source @ Spotify</a></li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <ul>
+                        <li><a href="https://x.com/SpotifyEng">@SpotifyEng</a></li>
+                        <li><a href="https://www.linkedin.com/showcase/spotify-r&d/">Spotify R&amp;D on LinkedIn</a></li>
+                        <li><a href="https://open.spotify.com/show/5eXZwvvxt3K2dxha3BSaAe">NerdOut@Spotify Podcast</a></li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <ul>
+                        <li><a href="https://engineering.atspotify.com/">Spotify R&amp;D Engineering</a></li>
+                        <li><a href="https://research.atspotify.com/">Spotify R&amp;D Research</a></li>
+                        <li><a href="https://design.atspotify.com/">Spotify R&amp;D Design</a></li>
+                        <li><a href="https://www.lifeatspotify.com/">Life at Spotify</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <div class="made">Made with &#x1FA77; at Spotify</div>
+            <div class="copy">Copyright &copy; 2023 Spotify AB</div>
         </div>
     </body>
 </html>
