@@ -245,9 +245,9 @@ public class Index implements Closeable {
    * @param filename A filename to load.
    * @return An {@link Index} whose contents have been initialized with the data provided by the
    *     file.
-   * @throws RuntimeException if the index cannot be loaded from the file, the file contains
-   *     invalid data, or the file contains an older version of the Voyager file format that
-   *     requires additional arguments to be provided.
+   * @throws RuntimeException if the index cannot be loaded from the file, the file contains invalid
+   *     data, or the file contains an older version of the Voyager file format that requires
+   *     additional arguments to be provided.
    */
   public static Index load(String filename) {
     Index index = new Index();
@@ -275,7 +275,8 @@ public class Index implements Closeable {
       int numDimensions,
       StorageDataType storageDataType) {
     Index index = new Index();
-    index.nativeLoadFromInputStreamWithParameters(inputStream, space, numDimensions, storageDataType);
+    index.nativeLoadFromInputStreamWithParameters(
+        inputStream, space, numDimensions, storageDataType);
     return index;
   }
 
