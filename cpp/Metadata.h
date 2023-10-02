@@ -38,6 +38,7 @@ public:
         storageDataType(storageDataType) {}
 
   V1() {}
+  virtual ~V1() {}
 
   int version() const { return 1; }
 

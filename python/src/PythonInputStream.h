@@ -93,6 +93,7 @@ public:
       for (int i = 0; i < bytesToCopy; i++)
         peekValue.erase(peekValue.begin());
       bytesRead += bytesToCopy;
+      buffer += bytesToCopy;
     }
 
     while (bytesRead < bytesToRead) {
