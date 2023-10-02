@@ -713,6 +713,13 @@ public:
       totalFileSize = inputStream->getTotalLength();
     }
     readBinaryPOD(inputStream, offsetLevel0_);
+    if (totalFileSize > 0 && offsetLevel0_ > totalFileSize) {
+      throw std::domain_error("Index appears to contain corrupted data; level "
+                              "0 offset parameter (" +
+                              std::to_string(offsetLevel0_) +
+                              ") exceeded size of index file (" +
+                              std::to_string(totalFileSize) + ").");
+    }
 
     readBinaryPOD(inputStream, max_elements_);
     readBinaryPOD(inputStream, cur_element_count);
@@ -763,7 +770,14 @@ public:
         if (inputStream->getPosition() < 0 ||
             inputStream->getPosition() >= totalFileSize) {
           throw std::runtime_error(
-              "Index seems to be corrupted or unsupported");
+              "Index seems to be corrupted or unsupported. Seeked to " +
+              std::to_string(position +
+                             (cur_element_count * size_data_per_element_) +
+                             (sizeof(unsigned int) * i)) +
+              " bytes to read linked list, but resulting stream position was " +
+              std::to_string(inputStream->getPosition()) +
+              " (of total file size " + std::to_string(totalFileSize) +
+              " bytes).");
         }
 
         unsigned int linkListSize;
@@ -774,7 +788,9 @@ public:
       }
 
       if (inputStream->getPosition() != totalFileSize)
-        throw std::runtime_error("Index seems to be corrupted or unsupported");
+        throw std::runtime_error(
+            "Index seems to be corrupted or unsupported. After reading all "
+            "linked lists, extra data remained at the end of the index.");
 
       inputStream->setPosition(position);
     }
@@ -903,7 +919,8 @@ public:
     tableint label_c;
     auto search = label_lookup_.find(label);
     if (search == label_lookup_.end() || isMarkedDeleted(search->second)) {
-      throw std::runtime_error("Label not found");
+      throw std::runtime_error("Label " + std::to_string(label) +
+                               " not found in index.");
     }
     label_c = search->second;
 

@@ -17,6 +17,7 @@
 import pytest
 
 import os
+from io import BytesIO
 import numpy as np
 from glob import glob
 
@@ -64,6 +65,8 @@ def test_load_v0_indices(load_from_stream: bool, index_filename: str):
     num_dimensions = detect_num_dimensions_from_filename(index_filename)
     if load_from_stream:
         with open(index_filename, "rb") as f:
+            print(f.read(8))
+            f.seek(0)
             index = Index.load(
                 f,
                 space=space,
@@ -107,3 +110,72 @@ def test_load_v1_indices(load_from_stream: bool, index_filename: str):
             # Voyager stores only normalized vectors in Cosine mode:
             expected_vector = expected_vector / np.sqrt(np.sum(expected_vector**2))
         np.testing.assert_allclose(index[_id], expected_vector, atol=0.2)
+
+
+@pytest.mark.parametrize(
+    "data,should_pass",
+    [
+        (
+            b"VOYA"  # Header
+            b"\x01\x00\x00\x00"  # File version
+            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x00"  # Space type
+            b"\x20",  # Storage data type
+            False,
+        ),
+        (
+            b"VOYA"  # Header
+            b"\x01\x00\x00\x00"  # File version
+            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x00"  # Space type
+            b"\x20"  # Storage data type
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # offsetLevel0_
+            b"\x01\x00\x00\x00\x00\x00\x00\x00"  # max_elements_
+            b"\x01\x00\x00\x00\x00\x00\x00\x00"  # cur_element_count
+            b"\x34\x00\x00\x00\x00\x00\x00\x00"  # size_data_per_element_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # label_offset_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # offsetData_
+            b"\x00\x00\x00\x00"  # maxlevel_
+            b"\x00\x00\x00\x00"  # enterpoint_node_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # maxM_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # maxM0_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # M_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # mult_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # ef_construction_
+            + (b"\x00" * 52)  # one vector
+            + b"\x00\x00\x00\x00",  # one linklist
+            True,
+        ),
+        (
+            b"VOYA"  # Header
+            b"\x01\x00\x00\x00"  # File version
+            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x00"  # Space type
+            b"\x20"  # Storage data type
+            b"\x00\x00\x00\xFF\x00\x00\x00\x00"  # offsetLevel0_
+            b"\x01\x00\x00\x00\x00\x00\x00\x00"  # max_elements_
+            b"\x01\x00\x00\x00\x00\x00\x00\x00"  # cur_element_count
+            b"\x34\x00\x00\x00\x00\x00\x00\x00"  # size_data_per_element_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # label_offset_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # offsetData_
+            b"\x00\x00\x00\x00"  # maxlevel_
+            b"\x00\x00\x00\x00"  # enterpoint_node_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # maxM_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # maxM0_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # M_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # mult_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # ef_construction_
+            + (b"\x00" * 52)  # one vector
+            + (b"\x00\x00\x00\x00"),  # one linklist
+            False,
+        ),
+    ],
+)
+def test_loading_random_data_cannot_crash(data: bytes, should_pass: bool):
+    if should_pass:
+        index = Index.load(BytesIO(data))
+        assert len(index) == 1
+        np.testing.assert_allclose(index[0], np.zeros(index.num_dimensions))
+    else:
+        with pytest.raises(Exception):
+            Index.load(BytesIO(data))
