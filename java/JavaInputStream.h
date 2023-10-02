@@ -19,7 +19,9 @@
  */
 
 #include <StreamUtils.h>
+#include <cstring>
 #include <jni.h>
+#include <vector>
 
 class JavaInputStream : public InputStream {
 public:
