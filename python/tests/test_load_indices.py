@@ -17,6 +17,7 @@
 import pytest
 
 import os
+import struct
 from io import BytesIO
 import numpy as np
 from glob import glob
@@ -198,13 +199,92 @@ def test_v1_indices_must_have_no_parameters_or_must_match(
             + (b"\x00\x00\x00\x00"),  # one linklist
             False,
         ),
+        (
+            b"VOYA"  # Header
+            b"\x01\x00\x00\x00"  # File version
+            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x00"  # Space type
+            b"\x20"  # Storage data type
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # offsetLevel0_
+            b"\x02\x00\x00\x00\x00\x00\x00\x00"  # max_elements_
+            b"\x02\x00\x00\x00\x00\x00\x00\x00"  # cur_element_count
+            b"\x48\x00\x00\x00\x00\x00\x00\x00"  # size_data_per_element_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # label_offset_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # offsetData_
+            b"\x05\x00\x00\x00"  # maxlevel_
+            b"\x05\x00\x00\x00"  # enterpoint_node_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # maxM_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # maxM0_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # M_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # mult_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # ef_construction_
+            + (b"\x01" * 72)  # one vector
+            + (b"\x01\x00\x00\x00" * 20)  # one linklist
+            + b"\x00",
+            False,
+        ),
+        (
+            b"VOYA"  # Header
+            b"\x01\x00\x00\x00"  # File version
+            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x00"  # Space type
+            b"\x20"  # Storage data type
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # offsetLevel0_
+            b"\x02\x00\x00\x00\x00\x00\x00\x00"  # max_elements_
+            b"\x02\x00\x00\x00\x00\x00\x00\x00"  # cur_element_count
+            b"\x48\x00\x00\x00\x00\x00\x00\x00"  # size_data_per_element_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # label_offset_
+            b"\x00\x00\x00\x00\x00\x00\x00\x00"  # offsetData_
+            b"\x05\x00\x00\x00"  # maxlevel_
+            b"\x01\x00\x00\x00"  # enterpoint_node_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # maxM_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # maxM0_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # M_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # mult_
+            b"\x05\x00\x00\x00\x00\x00\x00\x00"  # ef_construction_
+            + (b"\x01" * 72)  # one vector
+            + (b"\x01\x00\x00\x00" * 20)  # one linklist
+            + b"\x00",
+            False,
+        ),
     ],
 )
-def test_loading_random_data_cannot_crash(data: bytes, should_pass: bool):
+def test_loading_invalid_data_cannot_crash(data: bytes, should_pass: bool):
     if should_pass:
         index = Index.load(BytesIO(data))
         assert len(index) == 1
         np.testing.assert_allclose(index[0], np.zeros(index.num_dimensions))
     else:
         with pytest.raises(Exception):
-            Index.load(BytesIO(data))
+            index = Index.load(BytesIO(data))
+            # We shoulnd't get here, but if we do: do we segfault?
+            for id in index.ids:
+                index.query(index[id])
+
+
+@pytest.mark.parametrize("seed", range(1000))
+@pytest.mark.parametrize(
+    "with_valid_header,offset_level_0",
+    [(True, 500_000), (True, None), (False, None)],
+)
+def test_fuzz(seed: int, with_valid_header: bool, offset_level_0: int):
+    """
+    Send in 10,000 randomly-generated indices to ensure that the process doesn't crash
+    """
+    np.random.seed(seed)
+    num_bytes = np.random.randint(1_000_000)
+    random_data = BytesIO((np.random.rand(num_bytes) * 255).astype(np.uint8).tobytes())
+    if with_valid_header:
+        random_data.seek(0)
+        random_data.write(
+            b"VOYA"  # Header
+            b"\x01\x00\x00\x00"  # File version
+            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x00"  # Space type
+            b"\x20"  # Storage data type
+        )
+    if offset_level_0:
+        random_data.write(struct.pack("=Q", offset_level_0))
+    random_data.seek(0)
+    with pytest.raises(Exception):
+        Index.load(random_data)

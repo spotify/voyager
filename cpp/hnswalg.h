@@ -734,6 +734,15 @@ public:
     readBinaryPOD(inputStream, maxlevel_);
     readBinaryPOD(inputStream, enterpoint_node_);
 
+    if (enterpoint_node_ >= cur_element_count) {
+      throw std::runtime_error(
+          "Index seems to be corrupted or unsupported. "
+          "Entry point into HNSW data structure was at element index " +
+          std::to_string(enterpoint_node_) + ", but only " +
+          std::to_string(cur_element_count) +
+          " elements are present in the index.");
+    }
+
     readBinaryPOD(inputStream, maxM_);
     readBinaryPOD(inputStream, maxM0_);
     readBinaryPOD(inputStream, M_);
@@ -783,6 +792,16 @@ public:
         unsigned int linkListSize;
         readBinaryPOD(inputStream, linkListSize);
         if (linkListSize != 0) {
+          if (inputStream->getPosition() + linkListSize > totalFileSize) {
+            throw std::runtime_error(
+                "Index seems to be corrupted or unsupported. Advancing to the "
+                "next linked list requires " +
+                std::to_string(linkListSize) +
+                " additional bytes (from position " +
+                std::to_string(inputStream->getPosition()) +
+                "), but index data only has " + std::to_string(totalFileSize) +
+                " bytes in total.");
+          }
           inputStream->advanceBy(linkListSize);
         }
       }
@@ -899,6 +918,15 @@ public:
                     linkListSize);
         indexInLinkListBuffer += linkListSize;
       }
+    }
+
+    if (enterpoint_node_ > 0 && enterpoint_node_ != -1 &&
+        !linkLists_[enterpoint_node_]) {
+      throw std::runtime_error(
+          "Index seems to be corrupted or unsupported. "
+          "Entry point into HNSW data structure was at element index " +
+          std::to_string(enterpoint_node_) +
+          ", but no linked list was present at that index.");
     }
 
     for (size_t i = 0; i < cur_element_count; i++) {
