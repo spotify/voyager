@@ -29,6 +29,7 @@
 #include <ratio>
 
 #include "E4M3.h"
+#include "Enums.h"
 #include "Index.h"
 #include "Metadata.h"
 #include "array_utils.h"

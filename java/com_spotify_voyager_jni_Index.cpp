@@ -21,6 +21,7 @@
 #include "com_spotify_voyager_jni_Index.h"
 #include "JavaInputStream.h"
 #include "JavaOutputStream.h"
+#include <Enums.h>
 #include <Index.h>
 #include <TypedIndex.h>
 
@@ -709,16 +710,23 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromFileWithParameters(
     if (metadata) {
       if (metadata->getStorageDataType() !=
           toStorageDataType(env, storageDataType)) {
-        throw std::domain_error("Provided storage data type does not match "
-                                "the data type used in this file.");
+        throw std::domain_error(
+            "Provided storage data type (" +
+            toString(toStorageDataType(env, storageDataType)) +
+            ") does not match the data type used in this file (" +
+            toString(metadata->getStorageDataType()) + ").");
       }
       if (metadata->getSpaceType() != toSpaceType(env, spaceType)) {
-        throw std::domain_error("Provided space type does not match "
-                                "the space type used in this file.");
+        throw std::domain_error(
+            "Provided space type (" + toString(toSpaceType(env, spaceType)) +
+            ") does not match the space type used in this file (" +
+            toString(metadata->getSpaceType()) + ").");
       }
       if (metadata->getNumDimensions() != numDimensions) {
-        throw std::domain_error("Provided number of dimensions does not match "
-                                "the number of dimensions used in this file.");
+        throw std::domain_error(
+            "Provided number of dimensions (" + std::to_string(numDimensions) +
+            ") does not match the number of dimensions used in this file (" +
+            std::to_string(metadata->getNumDimensions()) + ").");
       }
     }
 
@@ -760,16 +768,23 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
     if (metadata) {
       if (metadata->getStorageDataType() !=
           toStorageDataType(env, storageDataType)) {
-        throw std::domain_error("Provided storage data type does not match "
-                                "the data type used in this file.");
+        throw std::domain_error(
+            "Provided storage data type (" +
+            toString(toStorageDataType(env, storageDataType)) +
+            ") does not match the data type used in this file (" +
+            toString(metadata->getStorageDataType()) + ").");
       }
       if (metadata->getSpaceType() != toSpaceType(env, spaceType)) {
-        throw std::domain_error("Provided space type does not match "
-                                "the space type used in this file.");
+        throw std::domain_error(
+            "Provided space type (" + toString(toSpaceType(env, spaceType)) +
+            ") does not match the space type used in this file (" +
+            toString(metadata->getSpaceType()) + ").");
       }
       if (metadata->getNumDimensions() != numDimensions) {
-        throw std::domain_error("Provided number of dimensions does not match "
-                                "the number of dimensions used in this file.");
+        throw std::domain_error(
+            "Provided number of dimensions (" + std::to_string(numDimensions) +
+            ") does not match the number of dimensions used in this file (" +
+            std::to_string(metadata->getNumDimensions()) + ").");
       }
     }
 

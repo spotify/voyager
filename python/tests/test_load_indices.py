@@ -112,6 +112,35 @@ def test_load_v1_indices(load_from_stream: bool, index_filename: str):
         np.testing.assert_allclose(index[_id], expected_vector, atol=0.2)
 
 
+@pytest.mark.parametrize("load_from_stream", [False, True])
+@pytest.mark.parametrize("index_filename", glob(os.path.join(INDEX_FIXTURE_DIR, "v1", "*.hnsw")))
+def test_v1_indices_must_have_no_parameters_or_must_match(
+    load_from_stream: bool, index_filename: str
+):
+    space = detect_space_from_filename(index_filename)
+    num_dimensions = detect_num_dimensions_from_filename(index_filename)
+    storage_data_type = detect_storage_datatype_from_filename(index_filename)
+    with pytest.raises(ValueError) as exception:
+        if load_from_stream:
+            with open(index_filename, "rb") as f:
+                Index.load(
+                    f,
+                    space=space,
+                    num_dimensions=num_dimensions + 1,
+                    storage_data_type=storage_data_type,
+                )
+        else:
+            Index.load(
+                index_filename,
+                space=space,
+                num_dimensions=num_dimensions + 1,
+                storage_data_type=storage_data_type,
+            )
+    assert "number of dimensions" in repr(exception)
+    assert f"({num_dimensions})" in repr(exception)
+    assert f"({num_dimensions + 1})" in repr(exception)
+
+
 @pytest.mark.parametrize(
     "data,should_pass",
     [

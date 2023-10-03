@@ -911,17 +911,24 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
 
         if (metadata) {
           if (metadata->getStorageDataType() != storageDataType) {
-            throw std::domain_error("Provided storage data type does not match "
-                                    "the data type used in this file.");
+            throw std::domain_error(
+                "Provided storage data type (" + toString(storageDataType) +
+                ") does not match the data type used in this file (" +
+                toString(metadata->getStorageDataType()) + ").");
           }
           if (metadata->getSpaceType() != space) {
-            throw std::domain_error("Provided space type does not match "
-                                    "the space type used in this file.");
+            throw std::domain_error(
+                "Provided space type (" + toString(space) +
+                ") does not match the space type used in this file (" +
+                toString(metadata->getSpaceType()) + ").");
           }
           if (metadata->getNumDimensions() != num_dimensions) {
             throw std::domain_error(
-                "Provided number of dimensions does not match "
-                "the number of dimensions used in this file.");
+                "Provided number of dimensions (" +
+                std::to_string(num_dimensions) +
+                ") does not match the number of dimensions used in this file "
+                "(" +
+                std::to_string(metadata->getNumDimensions()) + ").");
           }
         }
 
@@ -973,17 +980,24 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
 
         if (metadata) {
           if (metadata->getStorageDataType() != storageDataType) {
-            throw std::domain_error("Provided storage data type does not match "
-                                    "the data type used in this file.");
+            throw std::domain_error(
+                "Provided storage data type (" + toString(storageDataType) +
+                ") does not match the data type used in this file (" +
+                toString(metadata->getStorageDataType()) + ").");
           }
           if (metadata->getSpaceType() != space) {
-            throw std::domain_error("Provided space type does not match "
-                                    "the space type used in this file.");
+            throw std::domain_error(
+                "Provided space type (" + toString(space) +
+                ") does not match the space type used in this file (" +
+                toString(metadata->getSpaceType()) + ").");
           }
           if (metadata->getNumDimensions() != num_dimensions) {
             throw std::domain_error(
-                "Provided number of dimensions does not match "
-                "the number of dimensions used in this file.");
+                "Provided number of dimensions (" +
+                std::to_string(num_dimensions) +
+                ") does not match the number of dimensions used in this file "
+                "(" +
+                std::to_string(metadata->getNumDimensions()) + ").");
           }
         }
 

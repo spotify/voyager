@@ -22,3 +22,29 @@ enum class StorageDataType : unsigned char {
   // allowing representation of values from 2e-9 to 448.
   E4M3 = 3 << 4,
 };
+
+inline const std::string toString(StorageDataType sdt) {
+  switch (sdt) {
+  case StorageDataType::Float8:
+    return "Float8";
+  case StorageDataType::Float32:
+    return "Float32";
+  case StorageDataType::E4M3:
+    return "E4M3";
+  default:
+    return "Unknown storage data type (value " + std::to_string((int)sdt) + ")";
+  }
+}
+
+inline const std::string toString(SpaceType space) {
+  switch (space) {
+  case SpaceType::Euclidean:
+    return "Euclidean";
+  case SpaceType::Cosine:
+    return "Cosine";
+  case SpaceType::InnerProduct:
+    return "InnerProduct";
+  default:
+    return "Unknown space type (value " + std::to_string((int)space) + ")";
+  }
+}
