@@ -18,23 +18,40 @@ JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeConstructor(
 
 /*
  * Class:     com_spotify_voyager_jni_Index
- * Method:    nativeLoadFromFile
+ * Method:    nativeLoadFromFileWithParameters
  * Signature:
  * (Ljava/lang/String;Lcom/spotify/voyager/jni/Index/SpaceType;ILcom/spotify/voyager/jni/Index/StorageDataType;)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(
+JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_nativeLoadFromFileWithParameters(
     JNIEnv *, jobject, jstring, jobject, jint, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
- * Method:    nativeLoadFromInputStream
+ * Method:    nativeLoadFromFile
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(
+    JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    nativeLoadFromInputStreamWithParameters
  * Signature:
  * (Ljava/io/InputStream;Lcom/spotify/voyager/jni/Index/SpaceType;ILcom/spotify/voyager/jni/Index/StorageDataType;)V
  */
 JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
+    JNIEnv *, jobject, jobject, jobject, jint, jobject);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    nativeLoadFromInputStream
+ * Signature: (Ljava/io/InputStream;)V
+ */
+JNIEXPORT void JNICALL
 Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(JNIEnv *, jobject,
-                                                             jobject, jobject,
-                                                             jint, jobject);
+                                                             jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index

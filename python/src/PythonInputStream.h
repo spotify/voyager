@@ -86,6 +86,16 @@ public:
 
     long long bytesRead = 0;
 
+    if (peekValue.size()) {
+      long long bytesToCopy =
+          std::min(bytesToRead, (long long)peekValue.size());
+      std::memcpy(buffer, peekValue.data(), bytesToCopy);
+      for (int i = 0; i < bytesToCopy; i++)
+        peekValue.erase(peekValue.begin());
+      bytesRead += bytesToCopy;
+      buffer += bytesToCopy;
+    }
+
     while (bytesRead < bytesToRead) {
       auto readResult = fileLike.attr("read")(
           std::min(MAX_BUFFER_SIZE, bytesToRead - bytesRead));
@@ -150,13 +160,13 @@ public:
       return true;
     }
 
-    return fileLike.attr("tell")().cast<long long>() == getTotalLength();
+    return getPosition() == getTotalLength();
   }
 
   long long getPosition() {
     py::gil_scoped_acquire acquire;
 
-    return fileLike.attr("tell")().cast<long long>();
+    return fileLike.attr("tell")().cast<long long>() - peekValue.size();
   }
 
   bool setPosition(long long pos) {
@@ -166,10 +176,29 @@ public:
       fileLike.attr("seek")(pos);
     }
 
-    return fileLike.attr("tell")().cast<long long>() == pos;
+    return getPosition() == pos;
+  }
+
+  uint32_t peek() {
+    uint32_t result = 0;
+    long long lastPosition = getPosition();
+    if (read((char *)&result, sizeof(result)) == sizeof(result)) {
+      char *resultAsCharacters = (char *)&result;
+      peekValue.push_back(resultAsCharacters[0]);
+      peekValue.push_back(resultAsCharacters[1]);
+      peekValue.push_back(resultAsCharacters[2]);
+      peekValue.push_back(resultAsCharacters[3]);
+      return result;
+    } else {
+      throw std::runtime_error("Failed to peek " +
+                               std::to_string(sizeof(result)) +
+                               " bytes from file-like object at index " +
+                               std::to_string(lastPosition) + ".");
+    }
   }
 
 private:
   long long totalLength = -1;
+  std::vector<char> peekValue;
   bool lastReadWasSmallerThanExpected = false;
 };
