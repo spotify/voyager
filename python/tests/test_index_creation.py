@@ -367,7 +367,7 @@ def test_accuracy_for_inner_product():
     space = voyager.Space.InnerProduct
     num_dimensions = 1024
 
-    np.random.seed(1)
+    np.random.default_rng(1)
     input_data = np.random.rand(10000, num_dimensions)
     index = voyager.Index(space=space, num_dimensions=num_dimensions)
 
