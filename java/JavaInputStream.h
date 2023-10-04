@@ -19,7 +19,9 @@
  */
 
 #include <StreamUtils.h>
+#include <cstring>
 #include <jni.h>
+#include <vector>
 
 class JavaInputStream : public InputStream {
 public:
@@ -63,6 +65,16 @@ public:
       throw std::domain_error(
           "Failed to instantiate Java byte array of size: " +
           std::to_string(bufferSize));
+    }
+
+    if (peekValue.size()) {
+      long long bytesToCopy =
+          std::min(bytesToRead, (long long)peekValue.size());
+      std::memcpy(buffer, peekValue.data(), bytesToCopy);
+      for (int i = 0; i < bytesToCopy; i++)
+        peekValue.erase(peekValue.begin());
+      bytesRead += bytesToCopy;
+      buffer += bytesToCopy;
     }
 
     while (bytesRead < bytesToRead) {
@@ -109,8 +121,27 @@ public:
 
   virtual ~JavaInputStream() {}
 
+  virtual uint32_t peek() {
+    uint32_t result = 0;
+    long long lastPosition = getPosition();
+    if (read((char *)&result, sizeof(result)) == sizeof(result)) {
+      char *resultAsCharacters = (char *)&result;
+      peekValue.push_back(resultAsCharacters[0]);
+      peekValue.push_back(resultAsCharacters[1]);
+      peekValue.push_back(resultAsCharacters[2]);
+      peekValue.push_back(resultAsCharacters[3]);
+      return result;
+    } else {
+      throw std::runtime_error("Failed to peek " +
+                               std::to_string(sizeof(result)) +
+                               " bytes from JavaInputStream at index " +
+                               std::to_string(lastPosition) + ".");
+    }
+  }
+
 private:
   JNIEnv *env;
   jobject inputStream;
+  std::vector<char> peekValue;
   long long bytesRead = 0;
 };

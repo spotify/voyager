@@ -905,26 +905,60 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
          const StorageDataType storageDataType) -> std::shared_ptr<Index> {
         py::gil_scoped_release release;
 
+        auto inputStream = std::make_shared<FileInputStream>(filename);
+        std::unique_ptr<voyager::Metadata::V1> metadata =
+            voyager::Metadata::loadFromStream(inputStream);
+
+        if (metadata) {
+          if (metadata->getStorageDataType() != storageDataType) {
+            throw std::domain_error(
+                "Provided storage data type (" + toString(storageDataType) +
+                ") does not match the data type used in this file (" +
+                toString(metadata->getStorageDataType()) + ").");
+          }
+          if (metadata->getSpaceType() != space) {
+            throw std::domain_error(
+                "Provided space type (" + toString(space) +
+                ") does not match the space type used in this file (" +
+                toString(metadata->getSpaceType()) + ").");
+          }
+          if (metadata->getNumDimensions() != num_dimensions) {
+            throw std::domain_error(
+                "Provided number of dimensions (" +
+                std::to_string(num_dimensions) +
+                ") does not match the number of dimensions used in this file "
+                "(" +
+                std::to_string(metadata->getNumDimensions()) + ").");
+          }
+        }
+
         switch (storageDataType) {
         case StorageDataType::E4M3:
-          return std::make_shared<TypedIndex<float, E4M3>>(
-              std::make_shared<FileInputStream>(filename), space,
-              num_dimensions);
+          return std::make_shared<TypedIndex<float, E4M3>>(inputStream, space,
+                                                           num_dimensions);
         case StorageDataType::Float8:
           return std::make_shared<
-              TypedIndex<float, int8_t, std::ratio<1, 127>>>(
-              std::make_shared<FileInputStream>(filename), space,
-              num_dimensions);
+              TypedIndex<float, int8_t, std::ratio<1, 127>>>(inputStream, space,
+                                                             num_dimensions);
         case StorageDataType::Float32:
-          return std::make_shared<TypedIndex<float>>(
-              std::make_shared<FileInputStream>(filename), space,
-              num_dimensions);
+          return std::make_shared<TypedIndex<float>>(inputStream, space,
+                                                     num_dimensions);
         default:
           throw std::runtime_error("Unknown storage data type received!");
         }
       },
       py::arg("filename"), py::arg("space"), py::arg("num_dimensions"),
       py::arg("storage_data_type") = StorageDataType::Float32, LOAD_DOCSTRING);
+
+  index.def_static(
+      "load",
+      [](const std::string filename) -> std::shared_ptr<Index> {
+        py::gil_scoped_release release;
+
+        return loadTypedIndexFromStream(
+            std::make_shared<FileInputStream>(filename));
+      },
+      py::arg("filename"), LOAD_DOCSTRING);
 
   index.def_static(
       "load",
@@ -940,6 +974,32 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
 
         auto inputStream = std::make_shared<PythonInputStream>(filelike);
         py::gil_scoped_release release;
+
+        std::unique_ptr<voyager::Metadata::V1> metadata =
+            voyager::Metadata::loadFromStream(inputStream);
+
+        if (metadata) {
+          if (metadata->getStorageDataType() != storageDataType) {
+            throw std::domain_error(
+                "Provided storage data type (" + toString(storageDataType) +
+                ") does not match the data type used in this file (" +
+                toString(metadata->getStorageDataType()) + ").");
+          }
+          if (metadata->getSpaceType() != space) {
+            throw std::domain_error(
+                "Provided space type (" + toString(space) +
+                ") does not match the space type used in this file (" +
+                toString(metadata->getSpaceType()) + ").");
+          }
+          if (metadata->getNumDimensions() != num_dimensions) {
+            throw std::domain_error(
+                "Provided number of dimensions (" +
+                std::to_string(num_dimensions) +
+                ") does not match the number of dimensions used in this file "
+                "(" +
+                std::to_string(metadata->getNumDimensions()) + ").");
+          }
+        }
 
         switch (storageDataType) {
         case StorageDataType::E4M3:
@@ -958,4 +1018,21 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
       },
       py::arg("file_like"), py::arg("space"), py::arg("num_dimensions"),
       py::arg("storage_data_type") = StorageDataType::Float32, LOAD_DOCSTRING);
+
+  index.def_static(
+      "load",
+      [](const py::object filelike) -> std::shared_ptr<Index> {
+        if (!isReadableFileLike(filelike)) {
+          throw py::type_error(
+              "Expected either a filename or a file-like object (with "
+              "read, seek, seekable, and tell methods), but received: " +
+              filelike.attr("__repr__")().cast<std::string>());
+        }
+
+        auto inputStream = std::make_shared<PythonInputStream>(filelike);
+        py::gil_scoped_release release;
+
+        return loadTypedIndexFromStream(inputStream);
+      },
+      py::arg("file_like"), LOAD_DOCSTRING);
 }

@@ -712,8 +712,15 @@ public:
     if (inputStream->isSeekable()) {
       totalFileSize = inputStream->getTotalLength();
     }
-
     readBinaryPOD(inputStream, offsetLevel0_);
+    if (totalFileSize > 0 && offsetLevel0_ > totalFileSize) {
+      throw std::domain_error("Index appears to contain corrupted data; level "
+                              "0 offset parameter (" +
+                              std::to_string(offsetLevel0_) +
+                              ") exceeded size of index file (" +
+                              std::to_string(totalFileSize) + ").");
+    }
+
     readBinaryPOD(inputStream, max_elements_);
     readBinaryPOD(inputStream, cur_element_count);
 
@@ -726,6 +733,15 @@ public:
     readBinaryPOD(inputStream, offsetData_);
     readBinaryPOD(inputStream, maxlevel_);
     readBinaryPOD(inputStream, enterpoint_node_);
+
+    if (enterpoint_node_ >= cur_element_count) {
+      throw std::runtime_error(
+          "Index seems to be corrupted or unsupported. "
+          "Entry point into HNSW data structure was at element index " +
+          std::to_string(enterpoint_node_) + ", but only " +
+          std::to_string(cur_element_count) +
+          " elements are present in the index.");
+    }
 
     readBinaryPOD(inputStream, maxM_);
     readBinaryPOD(inputStream, maxM0_);
@@ -763,18 +779,37 @@ public:
         if (inputStream->getPosition() < 0 ||
             inputStream->getPosition() >= totalFileSize) {
           throw std::runtime_error(
-              "Index seems to be corrupted or unsupported");
+              "Index seems to be corrupted or unsupported. Seeked to " +
+              std::to_string(position +
+                             (cur_element_count * size_data_per_element_) +
+                             (sizeof(unsigned int) * i)) +
+              " bytes to read linked list, but resulting stream position was " +
+              std::to_string(inputStream->getPosition()) +
+              " (of total file size " + std::to_string(totalFileSize) +
+              " bytes).");
         }
 
         unsigned int linkListSize;
         readBinaryPOD(inputStream, linkListSize);
         if (linkListSize != 0) {
+          if (inputStream->getPosition() + linkListSize > totalFileSize) {
+            throw std::runtime_error(
+                "Index seems to be corrupted or unsupported. Advancing to the "
+                "next linked list requires " +
+                std::to_string(linkListSize) +
+                " additional bytes (from position " +
+                std::to_string(inputStream->getPosition()) +
+                "), but index data only has " + std::to_string(totalFileSize) +
+                " bytes in total.");
+          }
           inputStream->advanceBy(linkListSize);
         }
       }
 
       if (inputStream->getPosition() != totalFileSize)
-        throw std::runtime_error("Index seems to be corrupted or unsupported");
+        throw std::runtime_error(
+            "Index seems to be corrupted or unsupported. After reading all "
+            "linked lists, extra data remained at the end of the index.");
 
       inputStream->setPosition(position);
     }
@@ -885,6 +920,15 @@ public:
       }
     }
 
+    if (enterpoint_node_ > 0 && enterpoint_node_ != -1 &&
+        !linkLists_[enterpoint_node_]) {
+      throw std::runtime_error(
+          "Index seems to be corrupted or unsupported. "
+          "Entry point into HNSW data structure was at element index " +
+          std::to_string(enterpoint_node_) +
+          ", but no linked list was present at that index.");
+    }
+
     for (size_t i = 0; i < cur_element_count; i++) {
       if (isMarkedDeleted(i))
         num_deleted_ += 1;
@@ -903,7 +947,8 @@ public:
     tableint label_c;
     auto search = label_lookup_.find(label);
     if (search == label_lookup_.end() || isMarkedDeleted(search->second)) {
-      throw std::runtime_error("Label not found");
+      throw std::runtime_error("Label " + std::to_string(label) +
+                               " not found in index.");
     }
     label_c = search->second;
 

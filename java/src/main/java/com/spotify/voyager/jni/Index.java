@@ -234,7 +234,24 @@ public class Index implements Closeable {
   public static Index load(
       String filename, SpaceType space, int numDimensions, StorageDataType storageDataType) {
     Index index = new Index();
-    index.nativeLoadFromFile(filename, space, numDimensions, storageDataType);
+    index.nativeLoadFromFileWithParameters(filename, space, numDimensions, storageDataType);
+    return index;
+  }
+
+  /**
+   * Load a Voyager index file and create a new {@link Index} initialized with the data in that
+   * file.
+   *
+   * @param filename A filename to load.
+   * @return An {@link Index} whose contents have been initialized with the data provided by the
+   *     file.
+   * @throws RuntimeException if the index cannot be loaded from the file, the file contains invalid
+   *     data, or the file contains an older version of the Voyager file format that requires
+   *     additional arguments to be provided.
+   */
+  public static Index load(String filename) {
+    Index index = new Index();
+    index.nativeLoadFromFile(filename);
     return index;
   }
 
@@ -258,7 +275,26 @@ public class Index implements Closeable {
       int numDimensions,
       StorageDataType storageDataType) {
     Index index = new Index();
-    index.nativeLoadFromInputStream(inputStream, space, numDimensions, storageDataType);
+    index.nativeLoadFromInputStreamWithParameters(
+        inputStream, space, numDimensions, storageDataType);
+    return index;
+  }
+
+  /**
+   * Interpret the contents of a {@code java.io.InputStream} as the contents of a Voyager index file
+   * and create a new {@link Index} initialized with the data provided by that stream.
+   *
+   * @param inputStream A {@link java.io.InputStream} that will provide the contents of a Voyager
+   *     index.
+   * @return An {@link Index} whose contents have been initialized with the data provided by the
+   *     input stream.
+   * @throws RuntimeException if the index cannot be loaded from the stream, or the stream contains
+   *     invalid data, or the file contains an older version of the Voyager file format that
+   *     requires additional arguments to be provided.
+   */
+  public static Index load(InputStream inputStream) {
+    Index index = new Index();
+    index.nativeLoadFromInputStream(inputStream);
     return index;
   }
 
@@ -295,11 +331,15 @@ public class Index implements Closeable {
       long maxElements,
       StorageDataType storageDataType);
 
-  private native void nativeLoadFromFile(
+  private native void nativeLoadFromFileWithParameters(
       String filename, SpaceType space, int numDimensions, StorageDataType storageDataType);
 
-  private native void nativeLoadFromInputStream(
+  private native void nativeLoadFromFile(String filename);
+
+  private native void nativeLoadFromInputStreamWithParameters(
       InputStream inputStream, SpaceType space, int numDimensions, StorageDataType storageDataType);
+
+  private native void nativeLoadFromInputStream(InputStream inputStream);
 
   private native void nativeDestructor();
 
