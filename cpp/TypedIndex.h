@@ -164,8 +164,7 @@ public:
    */
   TypedIndex(const std::string &indexFilename, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions, 0.0) {
-    // TODO: set max_norm and useOrderPreservingTransform from file header
+      : TypedIndex(space, dimensions, 0.0f) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), indexFilename, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -177,8 +176,7 @@ public:
    */
   TypedIndex(std::shared_ptr<InputStream> inputStream, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions, 0.0) {
-    // TODO: set max_norm and useOrderPreservingTransform from file header
+      : TypedIndex(space, dimensions, 0.0f) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
