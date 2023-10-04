@@ -257,9 +257,6 @@ public:
   }
 
   float getDistance(std::vector<float> _a, std::vector<float> _b) {
-    std::vector<data_t> a(dimensions);
-    std::vector<data_t> b(dimensions);
-
     if ((int)_a.size() != dimensions || (int)_b.size() != dimensions) {
       throw std::runtime_error("Index has " + std::to_string(dimensions) +
                                " dimensions, but received vectors of size: " +
@@ -269,6 +266,9 @@ public:
 
     int actualDimensions =
         useOrderPreservingTransform ? dimensions + 1 : dimensions;
+
+    std::vector<data_t> a(actualDimensions);
+    std::vector<data_t> b(actualDimensions);
 
     if (useOrderPreservingTransform) {
       size_t dotFactorA = getDotFactor(_a.data());
@@ -507,8 +507,11 @@ public:
       ParallelFor(0, numRows, numThreads, [&](size_t row, size_t threadId) {
         size_t start_idx = threadId * actualDimensions;
 
+        // Only copy at most `dimensions` from the input; if we're using
+        // the order-preserving transform, the remaining dimension will be 0
+        // anyways.
         std::memcpy(&inputArray[start_idx], floatQueryVectors[row],
-                    actualDimensions * sizeof(float));
+                    dimensions * sizeof(float));
 
         floatToDataType<data_t, scalefactor>(&inputArray[start_idx],
                                              &convertedArray[start_idx],
@@ -542,8 +545,11 @@ public:
       ParallelFor(0, numRows, numThreads, [&](size_t row, size_t threadId) {
         size_t start_idx = threadId * actualDimensions;
 
+        // Only copy at most `dimensions` from the input; if we're using
+        // the order-preserving transform, the remaining dimension will be 0
+        // anyways.
         std::memcpy(&inputArray[start_idx], floatQueryVectors[row],
-                    actualDimensions * sizeof(float));
+                    dimensions * sizeof(float));
 
         normalizeVector<dist_t, data_t, scalefactor>(
             &inputArray[start_idx], &norm_array[start_idx], actualDimensions);
