@@ -110,12 +110,15 @@ public:
   /**
    * Create an empty index with the given parameters.
    */
-  TypedIndex(const SpaceType space, const int dimensions, const size_t M = 12,
+  TypedIndex(const SpaceType space, const int dimensions, const float maxNorm, const size_t M = 12,
              const size_t efConstruction = 200, const size_t randomSeed = 1,
              const size_t maxElements = 1)
       : space(space), dimensions(dimensions),
         metadata(std::make_unique<voyager::Metadata::V1>(
-            dimensions, space, getStorageDataType())) {
+            dimensions, space, getStorageDataType(), maxNorm)) {
+    
+    max_norm = (dist_t)(maxNorm * (dist_t)scalefactor::num) /
+                    (dist_t)scalefactor::den;
 
     switch (space) {
     case Euclidean:
@@ -161,7 +164,7 @@ public:
    */
   TypedIndex(const std::string &indexFilename, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions) {
+      : TypedIndex(space, dimensions, 0.0) {
     // TODO: set max_norm and useOrderPreservingTransform from file header
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), indexFilename, 0, searchOnly);
@@ -174,7 +177,7 @@ public:
    */
   TypedIndex(std::shared_ptr<InputStream> inputStream, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions) {
+      : TypedIndex(space, dimensions, 0.0) {
     // TODO: set max_norm and useOrderPreservingTransform from file header
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
@@ -187,7 +190,7 @@ public:
    */
   TypedIndex(std::unique_ptr<voyager::Metadata::V1> metadata,
              std::shared_ptr<InputStream> inputStream, bool searchOnly = false)
-      : TypedIndex(metadata->getSpaceType(), metadata->getNumDimensions()) {
+      : TypedIndex(metadata->getSpaceType(), metadata->getNumDimensions(), metadata->getMaxNorm()) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -240,7 +243,6 @@ public:
    * Save this index to the provided file path on disk.
    */
   void saveIndex(const std::string &pathToIndex) {
-    // TODO: write max_norm and useOrderPreservingTransform to file header
     algorithmImpl->saveIndex(pathToIndex);
     saveIndex(std::make_shared<FileOutputStream>(pathToIndex));
   }
@@ -251,7 +253,6 @@ public:
    * TypedIndex constructor to reload this index.
    */
   void saveIndex(std::shared_ptr<OutputStream> outputStream) {
-    // TODO: write max_norm and useOrderPreservingTransform to file header
     metadata->serializeToStream(outputStream);
     algorithmImpl->saveIndex(outputStream);
   }
@@ -421,6 +422,7 @@ public:
     dist_t norm = getNorm<dist_t, dist_t, scalefactor>(data, dimensions);
     if (norm > max_norm) {
       max_norm = norm;
+      metadata->setMaxNorm((float) norm);
       return 0.0;
     }
 

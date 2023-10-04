@@ -33,9 +33,8 @@ namespace Metadata {
  */
 class V1 {
 public:
-  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType)
-      : numDimensions(numDimensions), spaceType(spaceType),
-        storageDataType(storageDataType) {}
+  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType, float maxNorm)
+      : numDimensions(numDimensions), spaceType(spaceType), storageDataType(storageDataType), maxNorm(maxNorm) {}
 
   V1() {}
   virtual ~V1() {}
@@ -48,6 +47,8 @@ public:
 
   SpaceType getSpaceType() { return spaceType; }
 
+  float getMaxNorm() { return maxNorm; }
+
   void setNumDimensions(int newNumDimensions) {
     numDimensions = newNumDimensions;
   }
@@ -58,12 +59,15 @@ public:
 
   void setSpaceType(SpaceType newSpaceType) { spaceType = newSpaceType; }
 
+  void setMaxNorm(float newMaxNorm) { maxNorm = newMaxNorm; }
+
   virtual void serializeToStream(std::shared_ptr<OutputStream> stream) {
     stream->write("VOYA", 4);
     writeBinaryPOD(stream, version());
     writeBinaryPOD(stream, numDimensions);
     writeBinaryPOD(stream, spaceType);
     writeBinaryPOD(stream, storageDataType);
+    writeBinaryPOD(stream, maxNorm);
   };
 
   virtual void loadFromStream(std::shared_ptr<InputStream> stream) {
@@ -71,12 +75,14 @@ public:
     readBinaryPOD(stream, numDimensions);
     readBinaryPOD(stream, spaceType);
     readBinaryPOD(stream, storageDataType);
+    readBinaryPOD(stream, maxNorm);
   };
 
 private:
   int numDimensions;
   SpaceType spaceType;
   StorageDataType storageDataType;
+  float maxNorm;
 };
 
 static std::unique_ptr<Metadata::V1>
