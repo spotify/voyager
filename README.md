@@ -1,4 +1,4 @@
-![The word Voyager in white, on a black background](https://github.com/spotify/voyager/assets/213293/c31d89e2-011d-4e35-ae7a-deb980039235)
+![The word Voyager_in blue, with a multicoloured graphic illustrating an orbit to its left.](https://github.com/spotify/voyager/assets/213293/c99cd0e8-cd38-486f-bb61-15f74028ba52)
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/spotify/voyager/blob/master/LICENSE)
 [![Documentation](https://img.shields.io/badge/Documentation-on%20github.io-brightgreen)](https://spotify.github.io/voyager)
