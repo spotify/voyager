@@ -121,7 +121,8 @@ NDArray<data_t, 2> floatToDataType(NDArray<float, 2> input) {
         throw std::domain_error(
             "One or more vectors contain values outside of [" +
             std::to_string(lowerBound) + ", " + std::to_string(upperBound) +
-            "]. Index: " + std::to_string(i) + ", invalid value: " + std::to_string(inputPointer[i]));
+            "]. Index: " + std::to_string(i) +
+            ", invalid value: " + std::to_string(inputPointer[i]));
       }
 
       outputPointer[i] =
@@ -166,7 +167,8 @@ void floatToDataType(const float *inputPointer, data_t *outputPointer,
         throw std::domain_error(
             "One or more vectors contain values outside of [" +
             std::to_string(lowerBound) + ", " + std::to_string(upperBound) +
-            "]. Index: " + std::to_string(i) + ", invalid value: " + std::to_string(inputPointer[i]));
+            "]. Index: " + std::to_string(i) +
+            ", invalid value: " + std::to_string(inputPointer[i]));
       }
 
       outputPointer[i] =
