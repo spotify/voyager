@@ -112,20 +112,22 @@ public:
    */
   TypedIndex(const SpaceType space, const int dimensions, const size_t M = 12,
              const size_t efConstruction = 200, const size_t randomSeed = 1,
-             const size_t maxElements = 1)
+             const size_t maxElements = 1,
+             const bool enableOrderPreservingTransform = true)
       : space(space), dimensions(dimensions),
         metadata(std::make_unique<voyager::Metadata::V1>(
-            dimensions, space, getStorageDataType(), 0.0, space == InnerProduct)) {
+            dimensions, space, getStorageDataType(), 0.0,
+            space == InnerProduct)) {
     switch (space) {
     case Euclidean:
       spaceImpl = std::make_unique<
           hnswlib::EuclideanSpace<dist_t, data_t, scalefactor>>(dimensions);
       break;
     case InnerProduct:
+      useOrderPreservingTransform = enableOrderPreservingTransform;
       spaceImpl = std::make_unique<
-          hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(dimensions +
-                                                                   1);
-      useOrderPreservingTransform = true;
+          hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(
+          dimensions + (useOrderPreservingTransform ? 1 : 0));
       break;
     case Cosine:
       spaceImpl = std::make_unique<
@@ -157,10 +159,14 @@ public:
   /**
    * Load an index from the given .hnsw file on disk, interpreting
    * it as the given Space and number of dimensions.
+   *
+   * This constructor is only used to load a V0-type index from file.
    */
   TypedIndex(const std::string &indexFilename, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions) {
+      : TypedIndex(space, dimensions, /* M */ 12, /* efConstruction */ 200,
+                   /* randomSeed */ 1, /* maxElements */ 1,
+                   /* enableOrderPreservingTransform */ false) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), indexFilename, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -169,10 +175,14 @@ public:
   /**
    * Load an index from the given input stream, interpreting
    * it as the given Space and number of dimensions.
+   *
+   * This constructor is only used to load a V0-type index from a stream.
    */
   TypedIndex(std::shared_ptr<InputStream> inputStream, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions) {
+      : TypedIndex(space, dimensions, /* M */ 12, /* efConstruction */ 200,
+                   /* randomSeed */ 1, /* maxElements */ 1,
+                   /* enableOrderPreservingTransform */ false) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -184,7 +194,11 @@ public:
    */
   TypedIndex(std::unique_ptr<voyager::Metadata::V1> metadata,
              std::shared_ptr<InputStream> inputStream, bool searchOnly = false)
-      : TypedIndex(metadata->getSpaceType(), metadata->getNumDimensions()) {
+      : TypedIndex(metadata->getSpaceType(), metadata->getNumDimensions(),
+                   /* M */ 12, /* efConstruction */ 200,
+                   /* randomSeed */ 1, /* maxElements */ 1,
+                   /* enableOrderPreservingTransform */
+                   metadata->getUseOrderPreservingTransform()) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
     max_norm = metadata->getMaxNorm();
@@ -249,6 +263,7 @@ public:
    */
   void saveIndex(std::shared_ptr<OutputStream> outputStream) {
     metadata->setMaxNorm(max_norm);
+    metadata->setUseOrderPreservingTransform(useOrderPreservingTransform);
     metadata->serializeToStream(outputStream);
     algorithmImpl->saveIndex(outputStream);
   }
@@ -375,7 +390,8 @@ public:
                     dimensions * sizeof(float));
 
         if (useOrderPreservingTransform) {
-          inputArray[startIndex + dimensions] = getDotFactorAndUpdateNorm(floatInput[row]);
+          inputArray[startIndex + dimensions] =
+              getDotFactorAndUpdateNorm(floatInput[row]);
         }
 
         floatToDataType<data_t, scalefactor>(&inputArray[startIndex],
@@ -395,7 +411,8 @@ public:
                     dimensions * sizeof(float));
 
         if (useOrderPreservingTransform) {
-          inputArray[startIndex + dimensions] = getDotFactorAndUpdateNorm(floatInput[row]);
+          inputArray[startIndex + dimensions] =
+              getDotFactorAndUpdateNorm(floatInput[row]);
         }
 
         normalizeVector<dist_t, data_t, scalefactor>(
@@ -417,7 +434,9 @@ public:
     dist_t prevMaxNorm = max_norm;
 
     // atomically update max_norm when inserting from multiple threads
-    while (prevMaxNorm < norm && !max_norm.compare_exchange_weak(prevMaxNorm, norm)) {}
+    while (prevMaxNorm < norm &&
+           !max_norm.compare_exchange_weak(prevMaxNorm, norm)) {
+    }
 
     return getDotFactor(norm);
   }
@@ -429,9 +448,7 @@ public:
       return 0.0;
     }
 
-    dist_t dotFactor = sqrt((max_norm * max_norm) - (norm * norm));
-    std::cout << "dot factor: " << dotFactor << ", max_norm: " << max_norm << std::endl;
-    return dotFactor;
+    return sqrt((max_norm * max_norm) - (norm * norm));
   }
 
   std::vector<data_t> getRawVector(hnswlib::labeltype id) {
@@ -687,10 +704,8 @@ public:
 };
 
 std::unique_ptr<Index>
-loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
-  std::unique_ptr<voyager::Metadata::V1> metadata =
-      voyager::Metadata::loadFromStream(inputStream);
-
+loadTypedIndexFromMetadata(std::unique_ptr<voyager::Metadata::V1> metadata,
+                           std::shared_ptr<InputStream> inputStream) {
   if (!metadata) {
     throw std::domain_error(
         "The provided file contains no Voyager parameter metadata. Please "
@@ -725,4 +740,10 @@ loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
   } else {
     throw std::domain_error("Unknown Voyager metadata format.");
   }
+}
+
+std::unique_ptr<Index>
+loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
+  return loadTypedIndexFromMetadata(
+      voyager::Metadata::loadFromStream(inputStream), inputStream);
 }

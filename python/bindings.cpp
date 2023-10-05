@@ -941,6 +941,8 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
                 "(" +
                 std::to_string(metadata->getNumDimensions()) + ").");
           }
+
+          return loadTypedIndexFromMetadata(std::move(metadata), inputStream);
         }
 
         switch (storageDataType) {
@@ -1010,6 +1012,7 @@ binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
                 "(" +
                 std::to_string(metadata->getNumDimensions()) + ").");
           }
+          return loadTypedIndexFromMetadata(std::move(metadata), inputStream);
         }
 
         switch (storageDataType) {

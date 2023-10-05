@@ -33,8 +33,11 @@ namespace Metadata {
  */
 class V1 {
 public:
-  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType, float maxNorm)
-      : numDimensions(numDimensions), spaceType(spaceType), storageDataType(storageDataType), maxNorm(maxNorm), useOrderPreservingTransform(useOrderPreservingTransform) {}
+  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType,
+     float maxNorm, bool useOrderPreservingTransform)
+      : numDimensions(numDimensions), spaceType(spaceType),
+        storageDataType(storageDataType), maxNorm(maxNorm),
+        useOrderPreservingTransform(useOrderPreservingTransform) {}
 
   V1() {}
   virtual ~V1() {}
@@ -49,7 +52,12 @@ public:
 
   float getMaxNorm() { return maxNorm; }
 
-  bool getUseOrderPreservingTransform() { return useOrderPreservingTransform; }
+  bool getUseOrderPreservingTransform() const {
+    return useOrderPreservingTransform;
+  }
+  void setUseOrderPreservingTransform(bool newValue) {
+    useOrderPreservingTransform = newValue;
+  }
 
   void setNumDimensions(int newNumDimensions) {
     numDimensions = newNumDimensions;
@@ -70,6 +78,7 @@ public:
     writeBinaryPOD(stream, spaceType);
     writeBinaryPOD(stream, storageDataType);
     writeBinaryPOD(stream, maxNorm);
+    writeBinaryPOD(stream, useOrderPreservingTransform);
   };
 
   virtual void loadFromStream(std::shared_ptr<InputStream> stream) {
@@ -78,6 +87,7 @@ public:
     readBinaryPOD(stream, spaceType);
     readBinaryPOD(stream, storageDataType);
     readBinaryPOD(stream, maxNorm);
+    readBinaryPOD(stream, useOrderPreservingTransform);
   };
 
 private:
