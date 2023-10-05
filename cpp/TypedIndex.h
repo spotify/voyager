@@ -104,22 +104,18 @@ private:
   std::unique_ptr<hnswlib::Space<dist_t, data_t>> spaceImpl;
   std::unique_ptr<voyager::Metadata::V1> metadata;
 
-  dist_t max_norm = 0.0;
+  mutable std::atomic<float> max_norm = 0.0;
 
 public:
   /**
    * Create an empty index with the given parameters.
    */
-  TypedIndex(const SpaceType space, const int dimensions, const float maxNorm, const size_t M = 12,
+  TypedIndex(const SpaceType space, const int dimensions, const size_t M = 12,
              const size_t efConstruction = 200, const size_t randomSeed = 1,
              const size_t maxElements = 1)
       : space(space), dimensions(dimensions),
         metadata(std::make_unique<voyager::Metadata::V1>(
-            dimensions, space, getStorageDataType(), maxNorm)) {
-    
-    max_norm = (dist_t)(maxNorm * (dist_t)scalefactor::num) /
-                    (dist_t)scalefactor::den;
-
+            dimensions, space, getStorageDataType(), 0.0, space == InnerProduct)) {
     switch (space) {
     case Euclidean:
       spaceImpl = std::make_unique<
@@ -164,7 +160,7 @@ public:
    */
   TypedIndex(const std::string &indexFilename, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions, 0.0f) {
+      : TypedIndex(space, dimensions) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), indexFilename, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -176,7 +172,7 @@ public:
    */
   TypedIndex(std::shared_ptr<InputStream> inputStream, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions, 0.0f) {
+      : TypedIndex(space, dimensions) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -188,9 +184,10 @@ public:
    */
   TypedIndex(std::unique_ptr<voyager::Metadata::V1> metadata,
              std::shared_ptr<InputStream> inputStream, bool searchOnly = false)
-      : TypedIndex(metadata->getSpaceType(), metadata->getNumDimensions(), metadata->getMaxNorm()) {
+      : TypedIndex(metadata->getSpaceType(), metadata->getNumDimensions()) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
+    max_norm = metadata->getMaxNorm();
     currentLabel = algorithmImpl->cur_element_count;
   }
 
@@ -251,6 +248,7 @@ public:
    * TypedIndex constructor to reload this index.
    */
   void saveIndex(std::shared_ptr<OutputStream> outputStream) {
+    metadata->setMaxNorm(max_norm);
     metadata->serializeToStream(outputStream);
     algorithmImpl->saveIndex(outputStream);
   }
@@ -270,9 +268,9 @@ public:
     std::vector<data_t> b(actualDimensions);
 
     if (useOrderPreservingTransform) {
-      size_t dotFactorA = getDotFactor(_a.data());
+      size_t dotFactorA = getDotFactorAndUpdateNorm(_a.data());
       _a.push_back(dotFactorA);
-      size_t dotFactorB = getDotFactor(_b.data());
+      size_t dotFactorB = getDotFactorAndUpdateNorm(_b.data());
       _b.push_back(dotFactorB);
     }
 
@@ -351,7 +349,7 @@ public:
                   dimensions * sizeof(float));
 
       if (useOrderPreservingTransform) {
-        inputVector[dimensions] = getDotFactor(floatInput[0]);
+        inputVector[dimensions] = getDotFactorAndUpdateNorm(floatInput[0]);
       }
 
       if (normalize) {
@@ -377,7 +375,7 @@ public:
                     dimensions * sizeof(float));
 
         if (useOrderPreservingTransform) {
-          inputArray[startIndex + dimensions] = getDotFactor(floatInput[row]);
+          inputArray[startIndex + dimensions] = getDotFactorAndUpdateNorm(floatInput[row]);
         }
 
         floatToDataType<data_t, scalefactor>(&inputArray[startIndex],
@@ -397,7 +395,7 @@ public:
                     dimensions * sizeof(float));
 
         if (useOrderPreservingTransform) {
-          inputArray[startIndex + dimensions] = getDotFactor(floatInput[row]);
+          inputArray[startIndex + dimensions] = getDotFactorAndUpdateNorm(floatInput[row]);
         }
 
         normalizeVector<dist_t, data_t, scalefactor>(
@@ -414,17 +412,26 @@ public:
     return idsToReturn;
   }
 
+  dist_t getDotFactorAndUpdateNorm(const dist_t *data) {
+    dist_t norm = getNorm<dist_t, dist_t, scalefactor>(data, dimensions);
+    dist_t prevMaxNorm = max_norm;
+
+    // atomically update max_norm when inserting from multiple threads
+    while (prevMaxNorm < norm && !max_norm.compare_exchange_weak(prevMaxNorm, norm)) {}
+
+    return getDotFactor(norm);
+  }
+
   // get the extra dimension to reduce MIS to NN. See
   // https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/XboxInnerProduct.pdf
-  dist_t getDotFactor(const dist_t *data) {
-    dist_t norm = getNorm<dist_t, dist_t, scalefactor>(data, dimensions);
-    if (norm > max_norm) {
-      max_norm = norm;
-      metadata->setMaxNorm((float) norm);
+  dist_t getDotFactor(dist_t norm) const {
+    if (norm >= max_norm) {
       return 0.0;
     }
 
-    return sqrt((max_norm * max_norm) - (norm * norm));
+    dist_t dotFactor = sqrt((max_norm * max_norm) - (norm * norm));
+    std::cout << "dot factor: " << dotFactor << ", max_norm: " << max_norm << std::endl;
+    return dotFactor;
   }
 
   std::vector<data_t> getRawVector(hnswlib::labeltype id) {

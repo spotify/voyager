@@ -34,7 +34,7 @@ namespace Metadata {
 class V1 {
 public:
   V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType, float maxNorm)
-      : numDimensions(numDimensions), spaceType(spaceType), storageDataType(storageDataType), maxNorm(maxNorm) {}
+      : numDimensions(numDimensions), spaceType(spaceType), storageDataType(storageDataType), maxNorm(maxNorm), useOrderPreservingTransform(useOrderPreservingTransform) {}
 
   V1() {}
   virtual ~V1() {}
@@ -48,6 +48,8 @@ public:
   SpaceType getSpaceType() { return spaceType; }
 
   float getMaxNorm() { return maxNorm; }
+
+  bool getUseOrderPreservingTransform() { return useOrderPreservingTransform; }
 
   void setNumDimensions(int newNumDimensions) {
     numDimensions = newNumDimensions;
@@ -83,6 +85,7 @@ private:
   SpaceType spaceType;
   StorageDataType storageDataType;
   float maxNorm;
+  bool useOrderPreservingTransform;
 };
 
 static std::unique_ptr<Metadata::V1>
