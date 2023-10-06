@@ -8,7 +8,7 @@
 
 |br|
 
-.. image:: voyager-black-roundrect-rectangle.png
+.. image:: voyager-feature.png
   :width: 700
   :alt: The word "Voyager" in white on a black background.
 

@@ -310,8 +310,8 @@ def main():
                     mypy_parse_options(
                         [
                             "voyager",
-                            # "--allowlist",
-                            # "stubtest.allowlist",
+                            "--allowlist",
+                            "stubtest.allowlist",
                             "--ignore-missing-stub",
                             "--ignore-unused-allowlist",
                         ]
@@ -319,10 +319,8 @@ def main():
                 )
         # Re-run this same script in a fresh interpreter, but with skip_regenerating_type_hints
         # enabled:
-        interpreter = shutil.which("python3") or psutil.Process(os.getpid()).exe()
-        subprocess.check_call(
-            [interpreter] + sys.argv + ["--skip-regenerating-type-hints"]
-        )
+        interpreter = psutil.Process(os.getpid()).exe() or shutil.which("python3")
+        subprocess.check_call([interpreter] + sys.argv + ["--skip-regenerating-type-hints"])
         return
 
     # Why is this necessary? I don't know, but without it, things fail.

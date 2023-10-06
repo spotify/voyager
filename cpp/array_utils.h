@@ -72,7 +72,7 @@ private:
 
   size_t computeNumElements(std::array<int, Dims> shape) const {
     size_t numOutputElements = 1;
-    for (int i = 0; i < shape.size(); i++) {
+    for (size_t i = 0; i < shape.size(); i++) {
       numOutputElements *= shape[i];
     }
     return numOutputElements;

@@ -92,7 +92,7 @@ html_static_path = ["_static"]
 
 html_title = f"{project} {release} Python Documentation"
 html_favicon = "_static/favicon.ico"
-html_logo = "voyager-black-roundrect-icon.png"
+html_logo = "voyager-outline-color.png"
 html_baseurl = "voyager/python/"
 
 octocat_points = (

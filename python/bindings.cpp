@@ -71,7 +71,7 @@ py::array_t<T> ndArrayToPyArray(NDArray<T, Dims> input) {
   T *outputPtr = static_cast<T *>(const_cast<T *>(output.data()));
 
   size_t numOutputElements = 1;
-  for (int i = 0; i < input.shape.size(); i++) {
+  for (size_t i = 0; i < input.shape.size(); i++) {
     numOutputElements *= input.shape[i];
   }
   if (input.data.size() != numOutputElements) {
@@ -902,6 +902,10 @@ loading of multiple indices simultaneously.
 If provided a file-like object as a first argument, the provided object must have
 ``read``, ``seek``, ``tell``, and ``seekable`` methods, and must return
 binary data (i.e.: ``open(..., \"rb\")`` or ``io.BinaryIO``, etc.).
+
+The additional arguments for :py:class:`Space`, ``num_dimensions``, and
+:py:class:`StorageDataType` allow for loading of index files created with versions
+of Voyager prior to v1.3.
 
 .. warning::
     Loading an index from a file-like object will not release the GIL.

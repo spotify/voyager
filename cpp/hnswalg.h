@@ -708,7 +708,7 @@ public:
 
   void loadIndex(std::shared_ptr<InputStream> inputStream,
                  Space<dist_t, data_t> *s, size_t max_elements_i = 0) {
-    long long totalFileSize = 0;
+    size_t totalFileSize = 0;
     if (inputStream->isSeekable()) {
       totalFileSize = inputStream->getTotalLength();
     }
@@ -777,7 +777,7 @@ public:
       inputStream->advanceBy(cur_element_count * size_data_per_element_);
       for (size_t i = 0; i < cur_element_count; i++) {
         if (inputStream->getPosition() < 0 ||
-            inputStream->getPosition() >= totalFileSize) {
+            inputStream->getPosition() >= (long long)totalFileSize) {
           throw std::runtime_error(
               "Index seems to be corrupted or unsupported. Seeked to " +
               std::to_string(position +
@@ -792,7 +792,8 @@ public:
         unsigned int linkListSize;
         readBinaryPOD(inputStream, linkListSize);
         if (linkListSize != 0) {
-          if (inputStream->getPosition() + linkListSize > totalFileSize) {
+          if ((size_t)inputStream->getPosition() + linkListSize >
+              totalFileSize) {
             throw std::runtime_error(
                 "Index seems to be corrupted or unsupported. Advancing to the "
                 "next linked list requires " +
@@ -806,7 +807,7 @@ public:
         }
       }
 
-      if (inputStream->getPosition() != totalFileSize)
+      if (inputStream->getPosition() != (long long)totalFileSize)
         throw std::runtime_error(
             "Index seems to be corrupted or unsupported. After reading all "
             "linked lists, extra data remained at the end of the index.");
@@ -920,7 +921,7 @@ public:
       }
     }
 
-    if (enterpoint_node_ > 0 && enterpoint_node_ != -1 &&
+    if (enterpoint_node_ > 0 && enterpoint_node_ != (tableint)-1 &&
         !linkLists_[enterpoint_node_]) {
       throw std::runtime_error(
           "Index seems to be corrupted or unsupported. "

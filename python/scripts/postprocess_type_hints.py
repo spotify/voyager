@@ -76,11 +76,9 @@ def patch_overload(func):
     if func.__doc__:
         # Work around the fact that pybind11-stubgen generates
         # duplicate docstrings sometimes, once for each overload:
-        docstring = func.__doc__
-        if docstring[len(docstring) // 2:].strip() == docstring[:-len(docstring) // 2].strip():
-            func.__doc__ = docstring[len(docstring) // 2:].strip()
-        elif "\\\\n\\\\n" in docstring:
-            func.__doc__ = docstring.replace("\\\\n\\\\n", "\\\\n\\\\n*or*\\\\n\\\\n")
+        while func.__doc__[len(func.__doc__) // 2:].strip() \\
+                == func.__doc__[:-len(func.__doc__) // 2].strip():
+            func.__doc__ = func.__doc__[len(func.__doc__) // 2:].strip()
     return func
 
 typing.overload = patch_overload
@@ -94,7 +92,7 @@ REMOVE_INDENTED_BLOCKS_STARTING_WITH = []
 # .pyi files usually don't care about dependent types being present in order in the file;
 # but if we want to use Sphinx, our Python files need to be both lexically and semantically
 # valid as regular Python files. So...
-INDENTED_BLOCKS_TO_MOVE_TO_END = ["class GSMFullRateCompressor"]
+INDENTED_BLOCKS_TO_MOVE_TO_END = []
 
 # Similar to above; move our enum types early in the file (after the end of __all__ = [...])
 INDENTED_BLOCKS_TO_MOVE_TO_START = [
