@@ -49,12 +49,18 @@ public:
   NDArray(std::vector<T> data, std::array<int, Dims> shape)
       : data(data), shape(shape), strides(computeStrides()) {}
 
+  NDArray(T *inputPointer, std::array<int, Dims> shape)
+      : data(computeNumElements(shape)), shape(shape),
+        strides(computeStrides()) {
+    std::memcpy(data.data(), inputPointer, data.size() * sizeof(T));
+  }
+
   T *operator[](int indexInZerothDimension) const {
     return const_cast<T *>(data.data() + (indexInZerothDimension * strides[0]));
   }
 
 private:
-  std::array<int, Dims> computeStrides() {
+  std::array<int, Dims> computeStrides() const {
     std::array<int, Dims> _strides;
     _strides[Dims - 1] = 1;
 
@@ -62,6 +68,14 @@ private:
       _strides[i] = _strides[i + 1] * shape[i + 1];
     }
     return _strides;
+  }
+
+  size_t computeNumElements(std::array<int, Dims> shape) const {
+    size_t numOutputElements = 1;
+    for (int i = 0; i < shape.size(); i++) {
+      numOutputElements *= shape[i];
+    }
+    return numOutputElements;
   }
 };
 
@@ -107,7 +121,8 @@ NDArray<data_t, 2> floatToDataType(NDArray<float, 2> input) {
         throw std::domain_error(
             "One or more vectors contain values outside of [" +
             std::to_string(lowerBound) + ", " + std::to_string(upperBound) +
-            "].");
+            "]. Index: " + std::to_string(i) +
+            ", invalid value: " + std::to_string(inputPointer[i]));
       }
 
       outputPointer[i] =
@@ -152,7 +167,8 @@ void floatToDataType(const float *inputPointer, data_t *outputPointer,
         throw std::domain_error(
             "One or more vectors contain values outside of [" +
             std::to_string(lowerBound) + ", " + std::to_string(upperBound) +
-            "].");
+            "]. Index: " + std::to_string(i) +
+            ", invalid value: " + std::to_string(inputPointer[i]));
       }
 
       outputPointer[i] =

@@ -71,7 +71,9 @@ public class Index implements Closeable {
 
     /**
      * Inner (dot) product. Computed by taking the sum of the products of each element of each
-     * vector.
+     * vector. Since v2.0, this is implemented using the order preserving transform defined in this
+     * paper from Microsoft:
+     * https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/XboxInnerProduct.pdf
      */
     InnerProduct,
 

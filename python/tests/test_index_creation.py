@@ -361,3 +361,28 @@ def test_add_single_item(
         np.testing.assert_allclose(index.get_vector(label), expected_vector, atol=tolerance)
 
     np.testing.assert_allclose(index.get_vectors(labels), input_data, atol=tolerance)
+
+
+def test_accuracy_for_inner_product():
+    space = voyager.Space.InnerProduct
+    num_dimensions = 1024
+
+    rng = np.random.default_rng(1)
+    input_data = rng.random(size=(10000, num_dimensions))
+    index = voyager.Index(space=space, num_dimensions=num_dimensions)
+
+    # Sort the data descending by norm:
+    norms = np.sqrt(np.sum(np.power(input_data, 2), axis=1))
+    input_data = input_data[np.argsort(norms)[::-1]]
+    norms = np.sqrt(np.sum(np.power(input_data, 2), axis=1))
+    assert list(norms) == list(reversed(sorted(norms)))
+
+    # Don't insert in batch; this guarantees deterministic ordering.
+    for vector in input_data:
+        index.add_item(vector)
+
+    query = rng.random(size=num_dimensions)
+    expected_distances = np.dot(input_data, np.expand_dims(query, -1))
+    neighbors, distances = index.query(query, k=3, query_ef=10)
+    assert neighbors[0] == np.argmax(expected_distances)
+    assert abs(distances[0] - (1.0 - np.amax(expected_distances))) < 0.01

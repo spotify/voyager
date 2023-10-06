@@ -97,11 +97,14 @@ private:
 
   bool ep_added;
   bool normalize = false;
+  bool useOrderPreservingTransform = false;
   int numThreadsDefault;
   hnswlib::labeltype currentLabel;
   std::unique_ptr<hnswlib::HierarchicalNSW<dist_t, data_t>> algorithmImpl;
   std::unique_ptr<hnswlib::Space<dist_t, data_t>> spaceImpl;
   std::unique_ptr<voyager::Metadata::V1> metadata;
+
+  mutable std::atomic<float> max_norm = 0.0;
 
 public:
   /**
@@ -109,19 +112,22 @@ public:
    */
   TypedIndex(const SpaceType space, const int dimensions, const size_t M = 12,
              const size_t efConstruction = 200, const size_t randomSeed = 1,
-             const size_t maxElements = 1)
+             const size_t maxElements = 1,
+             const bool enableOrderPreservingTransform = true)
       : space(space), dimensions(dimensions),
         metadata(std::make_unique<voyager::Metadata::V1>(
-            dimensions, space, getStorageDataType())) {
-
+            dimensions, space, getStorageDataType(), 0.0,
+            space == InnerProduct)) {
     switch (space) {
     case Euclidean:
       spaceImpl = std::make_unique<
           hnswlib::EuclideanSpace<dist_t, data_t, scalefactor>>(dimensions);
       break;
     case InnerProduct:
+      useOrderPreservingTransform = enableOrderPreservingTransform;
       spaceImpl = std::make_unique<
-          hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(dimensions);
+          hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(
+          dimensions + (useOrderPreservingTransform ? 1 : 0));
       break;
     case Cosine:
       spaceImpl = std::make_unique<
@@ -153,10 +159,14 @@ public:
   /**
    * Load an index from the given .hnsw file on disk, interpreting
    * it as the given Space and number of dimensions.
+   *
+   * This constructor is only used to load a V0-type index from file.
    */
   TypedIndex(const std::string &indexFilename, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions) {
+      : TypedIndex(space, dimensions, /* M */ 12, /* efConstruction */ 200,
+                   /* randomSeed */ 1, /* maxElements */ 1,
+                   /* enableOrderPreservingTransform */ false) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), indexFilename, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -165,10 +175,14 @@ public:
   /**
    * Load an index from the given input stream, interpreting
    * it as the given Space and number of dimensions.
+   *
+   * This constructor is only used to load a V0-type index from a stream.
    */
   TypedIndex(std::shared_ptr<InputStream> inputStream, const SpaceType space,
              const int dimensions, bool searchOnly = false)
-      : TypedIndex(space, dimensions) {
+      : TypedIndex(space, dimensions, /* M */ 12, /* efConstruction */ 200,
+                   /* randomSeed */ 1, /* maxElements */ 1,
+                   /* enableOrderPreservingTransform */ false) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
     currentLabel = algorithmImpl->cur_element_count;
@@ -180,9 +194,14 @@ public:
    */
   TypedIndex(std::unique_ptr<voyager::Metadata::V1> metadata,
              std::shared_ptr<InputStream> inputStream, bool searchOnly = false)
-      : TypedIndex(metadata->getSpaceType(), metadata->getNumDimensions()) {
+      : TypedIndex(metadata->getSpaceType(), metadata->getNumDimensions(),
+                   /* M */ 12, /* efConstruction */ 200,
+                   /* randomSeed */ 1, /* maxElements */ 1,
+                   /* enableOrderPreservingTransform */
+                   metadata->getUseOrderPreservingTransform()) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
+    max_norm = metadata->getMaxNorm();
     currentLabel = algorithmImpl->cur_element_count;
   }
 
@@ -233,6 +252,7 @@ public:
    * Save this index to the provided file path on disk.
    */
   void saveIndex(const std::string &pathToIndex) {
+    algorithmImpl->saveIndex(pathToIndex);
     saveIndex(std::make_shared<FileOutputStream>(pathToIndex));
   }
 
@@ -242,19 +262,31 @@ public:
    * TypedIndex constructor to reload this index.
    */
   void saveIndex(std::shared_ptr<OutputStream> outputStream) {
+    metadata->setMaxNorm(max_norm);
+    metadata->setUseOrderPreservingTransform(useOrderPreservingTransform);
     metadata->serializeToStream(outputStream);
     algorithmImpl->saveIndex(outputStream);
   }
 
   float getDistance(std::vector<float> _a, std::vector<float> _b) {
-    std::vector<data_t> a(dimensions);
-    std::vector<data_t> b(dimensions);
-
     if ((int)_a.size() != dimensions || (int)_b.size() != dimensions) {
       throw std::runtime_error("Index has " + std::to_string(dimensions) +
                                " dimensions, but received vectors of size: " +
                                std::to_string(_a.size()) + " and " +
                                std::to_string(_b.size()) + ".");
+    }
+
+    int actualDimensions =
+        useOrderPreservingTransform ? dimensions + 1 : dimensions;
+
+    std::vector<data_t> a(actualDimensions);
+    std::vector<data_t> b(actualDimensions);
+
+    if (useOrderPreservingTransform) {
+      size_t dotFactorA = getDotFactorAndUpdateNorm(_a.data());
+      _a.push_back(dotFactorA);
+      size_t dotFactorB = getDotFactorAndUpdateNorm(_b.data());
+      _b.push_back(dotFactorB);
     }
 
     if (normalize) {
@@ -267,7 +299,7 @@ public:
       floatToDataType<data_t, scalefactor>(_b.data(), b.data(), b.size());
     }
 
-    return spaceImpl->get_dist_func()(a.data(), b.data(), dimensions);
+    return spaceImpl->get_dist_func()(a.data(), b.data(), actualDimensions);
   }
 
   hnswlib::labeltype addItem(std::vector<float> vector,
@@ -318,17 +350,29 @@ public:
       resizeIndex(getNumElements() + rows);
     }
 
+    int actualDimensions =
+        useOrderPreservingTransform ? dimensions + 1 : dimensions;
+
     int start = 0;
     if (!ep_added) {
       size_t id = ids.size() ? ids.at(0) : (currentLabel);
-      std::vector<data_t> convertedVector(dimensions);
+      // TODO(psobot): Should inputVector be on the stack instead?
+      std::vector<float> inputVector(actualDimensions);
+      std::vector<data_t> convertedVector(actualDimensions);
+
+      std::memcpy(inputVector.data(), floatInput[0],
+                  dimensions * sizeof(float));
+
+      if (useOrderPreservingTransform) {
+        inputVector[dimensions] = getDotFactorAndUpdateNorm(floatInput[0]);
+      }
 
       if (normalize) {
         normalizeVector<dist_t, data_t, scalefactor>(
-            floatInput[0], convertedVector.data(), convertedVector.size());
+            inputVector.data(), convertedVector.data(), convertedVector.size());
       } else {
         floatToDataType<data_t, scalefactor>(
-            floatInput[0], convertedVector.data(), convertedVector.size());
+            inputVector.data(), convertedVector.data(), convertedVector.size());
       }
 
       algorithmImpl->addPoint(convertedVector.data(), (size_t)id);
@@ -338,21 +382,42 @@ public:
     }
 
     if (!normalize) {
-      std::vector<data_t> convertedArray(numThreads * dimensions);
+      std::vector<float> inputArray(numThreads * actualDimensions);
+      std::vector<data_t> convertedArray(numThreads * actualDimensions);
       ParallelFor(start, rows, numThreads, [&](size_t row, size_t threadId) {
-        size_t startIndex = threadId * dimensions;
-        floatToDataType<data_t, scalefactor>(
-            floatInput[row], (convertedArray.data() + startIndex), dimensions);
+        size_t startIndex = threadId * actualDimensions;
+        std::memcpy(&inputArray[startIndex], floatInput[row],
+                    dimensions * sizeof(float));
+
+        if (useOrderPreservingTransform) {
+          inputArray[startIndex + dimensions] =
+              getDotFactorAndUpdateNorm(floatInput[row]);
+        }
+
+        floatToDataType<data_t, scalefactor>(&inputArray[startIndex],
+                                             &convertedArray[startIndex],
+                                             actualDimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
         algorithmImpl->addPoint(convertedArray.data() + startIndex, id);
         idsToReturn[row] = id;
       });
     } else {
-      std::vector<data_t> normalizedArray(numThreads * dimensions);
+      std::vector<float> inputArray(numThreads * actualDimensions);
+      std::vector<data_t> normalizedArray(numThreads * actualDimensions);
       ParallelFor(start, rows, numThreads, [&](size_t row, size_t threadId) {
-        size_t startIndex = threadId * dimensions;
+        size_t startIndex = threadId * actualDimensions;
+
+        std::memcpy(&inputArray[startIndex], floatInput[row],
+                    dimensions * sizeof(float));
+
+        if (useOrderPreservingTransform) {
+          inputArray[startIndex + dimensions] =
+              getDotFactorAndUpdateNorm(floatInput[row]);
+        }
+
         normalizeVector<dist_t, data_t, scalefactor>(
-            floatInput[row], (normalizedArray.data() + startIndex), dimensions);
+            &inputArray[startIndex], &normalizedArray[startIndex],
+            actualDimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
         algorithmImpl->addPoint(normalizedArray.data() + startIndex, id);
         idsToReturn[row] = id;
@@ -364,13 +429,35 @@ public:
     return idsToReturn;
   }
 
+  dist_t getDotFactorAndUpdateNorm(const dist_t *data) {
+    dist_t norm = getNorm<dist_t, dist_t, scalefactor>(data, dimensions);
+    dist_t prevMaxNorm = max_norm;
+
+    // atomically update max_norm when inserting from multiple threads
+    while (prevMaxNorm < norm &&
+           !max_norm.compare_exchange_weak(prevMaxNorm, norm)) {
+    }
+
+    return getDotFactor(norm);
+  }
+
+  // get the extra dimension to reduce MIS to NN. See
+  // https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/XboxInnerProduct.pdf
+  dist_t getDotFactor(dist_t norm) const {
+    if (norm >= max_norm) {
+      return 0.0;
+    }
+
+    return sqrt((max_norm * max_norm) - (norm * norm));
+  }
+
   std::vector<data_t> getRawVector(hnswlib::labeltype id) {
     return algorithmImpl->getDataByLabel(id);
   }
 
   std::vector<float> getVector(hnswlib::labeltype id) {
     std::vector<data_t> rawData = getRawVector(id);
-    NDArray<data_t, 2> output(rawData, {1, (int)rawData.size()});
+    NDArray<data_t, 2> output(rawData.data(), {1, (int)dimensions});
     return dataTypeToFloat<data_t, scalefactor>(output).data;
   }
 
@@ -435,13 +522,24 @@ public:
       numThreads = 1;
     }
 
+    int actualDimensions =
+        useOrderPreservingTransform ? dimensions + 1 : dimensions;
+
     if (normalize == false) {
-      std::vector<data_t> convertedArray(numThreads * numFeatures);
+      std::vector<float> inputArray(numThreads * actualDimensions);
+      std::vector<data_t> convertedArray(numThreads * actualDimensions);
       ParallelFor(0, numRows, numThreads, [&](size_t row, size_t threadId) {
-        size_t start_idx = threadId * dimensions;
-        floatToDataType<data_t, scalefactor>(
-            floatQueryVectors[row], (convertedArray.data() + start_idx),
-            dimensions);
+        size_t start_idx = threadId * actualDimensions;
+
+        // Only copy at most `dimensions` from the input; if we're using
+        // the order-preserving transform, the remaining dimension will be 0
+        // anyways.
+        std::memcpy(&inputArray[start_idx], floatQueryVectors[row],
+                    dimensions * sizeof(float));
+
+        floatToDataType<data_t, scalefactor>(&inputArray[start_idx],
+                                             &convertedArray[start_idx],
+                                             actualDimensions);
 
         std::priority_queue<std::pair<dist_t, hnswlib::labeltype>> result =
             algorithmImpl->searchKnn((convertedArray.data() + start_idx), k,
@@ -466,12 +564,19 @@ public:
         }
       });
     } else {
+      std::vector<float> inputArray(numThreads * actualDimensions);
       std::vector<data_t> norm_array(numThreads * numFeatures);
       ParallelFor(0, numRows, numThreads, [&](size_t row, size_t threadId) {
-        size_t start_idx = threadId * dimensions;
+        size_t start_idx = threadId * actualDimensions;
+
+        // Only copy at most `dimensions` from the input; if we're using
+        // the order-preserving transform, the remaining dimension will be 0
+        // anyways.
+        std::memcpy(&inputArray[start_idx], floatQueryVectors[row],
+                    dimensions * sizeof(float));
+
         normalizeVector<dist_t, data_t, scalefactor>(
-            floatQueryVectors[row], (norm_array.data() + start_idx),
-            dimensions);
+            &inputArray[start_idx], &norm_array[start_idx], actualDimensions);
 
         std::priority_queue<std::pair<dist_t, hnswlib::labeltype>> result =
             algorithmImpl->searchKnn(norm_array.data() + start_idx, k, nullptr,
@@ -515,6 +620,12 @@ public:
           "Query vector expected to share dimensionality with index.");
     }
 
+    int actualDimensions = dimensions;
+    if (useOrderPreservingTransform) {
+      actualDimensions = dimensions + 1;
+      floatQueryVector.push_back(0.0);
+    }
+
     std::vector<hnswlib::labeltype> labels(k);
     std::vector<dist_t> distances(k);
 
@@ -544,7 +655,7 @@ public:
     } else {
       std::vector<data_t> norm_array(numFeatures);
       normalizeVector<dist_t, data_t, scalefactor>(
-          floatQueryVector.data(), norm_array.data(), dimensions);
+          floatQueryVector.data(), norm_array.data(), actualDimensions);
 
       std::priority_queue<std::pair<dist_t, hnswlib::labeltype>> result =
           algorithmImpl->searchKnn(norm_array.data(), k, nullptr, queryEf);
@@ -593,10 +704,8 @@ public:
 };
 
 std::unique_ptr<Index>
-loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
-  std::unique_ptr<voyager::Metadata::V1> metadata =
-      voyager::Metadata::loadFromStream(inputStream);
-
+loadTypedIndexFromMetadata(std::unique_ptr<voyager::Metadata::V1> metadata,
+                           std::shared_ptr<InputStream> inputStream) {
   if (!metadata) {
     throw std::domain_error(
         "The provided file contains no Voyager parameter metadata. Please "
@@ -631,4 +740,10 @@ loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
   } else {
     throw std::domain_error("Unknown Voyager metadata format.");
   }
+}
+
+std::unique_ptr<Index>
+loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
+  return loadTypedIndexFromMetadata(
+      voyager::Metadata::loadFromStream(inputStream), inputStream);
 }

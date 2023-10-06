@@ -33,9 +33,11 @@ namespace Metadata {
  */
 class V1 {
 public:
-  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType)
+  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType,
+     float maxNorm, bool useOrderPreservingTransform)
       : numDimensions(numDimensions), spaceType(spaceType),
-        storageDataType(storageDataType) {}
+        storageDataType(storageDataType), maxNorm(maxNorm),
+        useOrderPreservingTransform(useOrderPreservingTransform) {}
 
   V1() {}
   virtual ~V1() {}
@@ -48,6 +50,15 @@ public:
 
   SpaceType getSpaceType() { return spaceType; }
 
+  float getMaxNorm() { return maxNorm; }
+
+  bool getUseOrderPreservingTransform() const {
+    return useOrderPreservingTransform;
+  }
+  void setUseOrderPreservingTransform(bool newValue) {
+    useOrderPreservingTransform = newValue;
+  }
+
   void setNumDimensions(int newNumDimensions) {
     numDimensions = newNumDimensions;
   }
@@ -58,12 +69,16 @@ public:
 
   void setSpaceType(SpaceType newSpaceType) { spaceType = newSpaceType; }
 
+  void setMaxNorm(float newMaxNorm) { maxNorm = newMaxNorm; }
+
   virtual void serializeToStream(std::shared_ptr<OutputStream> stream) {
     stream->write("VOYA", 4);
     writeBinaryPOD(stream, version());
     writeBinaryPOD(stream, numDimensions);
     writeBinaryPOD(stream, spaceType);
     writeBinaryPOD(stream, storageDataType);
+    writeBinaryPOD(stream, maxNorm);
+    writeBinaryPOD(stream, useOrderPreservingTransform);
   };
 
   virtual void loadFromStream(std::shared_ptr<InputStream> stream) {
@@ -71,12 +86,16 @@ public:
     readBinaryPOD(stream, numDimensions);
     readBinaryPOD(stream, spaceType);
     readBinaryPOD(stream, storageDataType);
+    readBinaryPOD(stream, maxNorm);
+    readBinaryPOD(stream, useOrderPreservingTransform);
   };
 
 private:
   int numDimensions;
   SpaceType spaceType;
   StorageDataType storageDataType;
+  float maxNorm;
+  bool useOrderPreservingTransform;
 };
 
 static std::unique_ptr<Metadata::V1>

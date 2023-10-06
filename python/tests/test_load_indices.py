@@ -66,8 +66,6 @@ def test_load_v0_indices(load_from_stream: bool, index_filename: str):
     num_dimensions = detect_num_dimensions_from_filename(index_filename)
     if load_from_stream:
         with open(index_filename, "rb") as f:
-            print(f.read(8))
-            f.seek(0)
             index = Index.load(
                 f,
                 space=space,
@@ -150,7 +148,9 @@ def test_v1_indices_must_have_no_parameters_or_must_match(
             b"\x01\x00\x00\x00"  # File version
             b"\x0A\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
-            b"\x20",  # Storage data type
+            b"\x20"
+            + struct.pack("f", 0)  # Storage data type and maximum norm
+            + b"\x00",  # Use order-preserving transform
             False,
         ),
         (
@@ -159,6 +159,8 @@ def test_v1_indices_must_have_no_parameters_or_must_match(
             b"\x0A\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"  # Storage data type
+            + struct.pack("f", 0)  # maximum norm
+            + b"\x00"  # Use order-preserving transform
             b"\x00\x00\x00\x00\x00\x00\x00\x00"  # offsetLevel0_
             b"\x01\x00\x00\x00\x00\x00\x00\x00"  # max_elements_
             b"\x01\x00\x00\x00\x00\x00\x00\x00"  # cur_element_count
@@ -182,6 +184,8 @@ def test_v1_indices_must_have_no_parameters_or_must_match(
             b"\x0A\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"  # Storage data type
+            + struct.pack("f", 0)  # maximum norm
+            + b"\x00"  # Use order-preserving transform
             b"\x00\x00\x00\xFF\x00\x00\x00\x00"  # offsetLevel0_
             b"\x01\x00\x00\x00\x00\x00\x00\x00"  # max_elements_
             b"\x01\x00\x00\x00\x00\x00\x00\x00"  # cur_element_count
@@ -205,6 +209,8 @@ def test_v1_indices_must_have_no_parameters_or_must_match(
             b"\x0A\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"  # Storage data type
+            + struct.pack("f", 0)  # maximum norm
+            + b"\x00"  # Use order-preserving transform
             b"\x05\x00\x00\x00\x00\x00\x00\x00"  # offsetLevel0_
             b"\x02\x00\x00\x00\x00\x00\x00\x00"  # max_elements_
             b"\x02\x00\x00\x00\x00\x00\x00\x00"  # cur_element_count
@@ -229,6 +235,8 @@ def test_v1_indices_must_have_no_parameters_or_must_match(
             b"\x0A\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"  # Storage data type
+            + struct.pack("f", 0)  # maximum norm
+            + b"\x00"  # Use order-preserving transform
             b"\x05\x00\x00\x00\x00\x00\x00\x00"  # offsetLevel0_
             b"\x02\x00\x00\x00\x00\x00\x00\x00"  # max_elements_
             b"\x02\x00\x00\x00\x00\x00\x00\x00"  # cur_element_count
