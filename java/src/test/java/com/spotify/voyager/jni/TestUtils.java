@@ -50,7 +50,7 @@ public class TestUtils {
         -0.78514799f, 0.77547708f, -0.49400604f, -0.88250679f, -0.45649873f
       };
 
-  private static final Random random = new Random();
+  private static final Random random = new Random(0);
 
   /**
    * Generate a random floating-point vector whose values are on (-1, 1).

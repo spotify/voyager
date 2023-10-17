@@ -52,7 +52,8 @@ public class StringIndexTest {
   private static final String TEMP_DIR_NAME = ".voyager-test-temp";
   private static final String EXPECTED_INDEX_FILE_NAME = "index.hnsw";
   private static final String EXPECTED_NAME_FILE_NAME = "names.json";
-
+  private static final String EXPECTED_INDEX_V2_FILE_NAME = "index-v2.hnsw";
+  private static final String EXPECTED_NAME_V2_FILE_NAME = "names-v2.json";
   @Test
   public void itFindsNeighbors() throws Exception {
     List<Vector> testVectors = TestUtils.getTestVectors();
@@ -187,6 +188,21 @@ public class StringIndexTest {
       assertThat(results)
           .extracting(CustomResult::getName)
           .containsExactly("my-vector-78", "my-vector-93");
+    }
+  }
+
+  @Test
+  public void itLoadsFromInputStreamNoParams() throws Exception {
+    try (final StringIndex index =
+        StringIndex.load(
+            Resources.getResource(EXPECTED_INDEX_V2_FILE_NAME).openStream(),
+            Resources.getResource(EXPECTED_NAME_V2_FILE_NAME).openStream())) {
+
+      List<CustomResult> results = RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, 100));
+
+      assertThat(results)
+          .extracting(CustomResult::getName)
+          .containsExactly("my-vector-78", "my-vector-1");
     }
   }
 
