@@ -728,6 +728,11 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromFileWithParameters(
             ") does not match the number of dimensions used in this file (" +
             std::to_string(metadata->getNumDimensions()) + ").");
       }
+
+      setHandle<Index>(
+          env, self,
+          loadTypedIndexFromMetadata(metadata, inputStream).release());
+      return;
     }
 
     switch (toStorageDataType(env, storageDataType)) {
@@ -786,6 +791,11 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
             ") does not match the number of dimensions used in this file (" +
             std::to_string(metadata->getNumDimensions()) + ").");
       }
+
+      setHandle<Index>(
+          env, self,
+          loadTypedIndexFromMetadata(metadata, inputStream).release());
+      return;
     }
 
     switch (toStorageDataType(env, storageDataType)) {
