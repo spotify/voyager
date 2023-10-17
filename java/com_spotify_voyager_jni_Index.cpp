@@ -790,22 +790,46 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
 
     switch (toStorageDataType(env, storageDataType)) {
     case StorageDataType::Float32:
-      setHandle<Index>(env, self,
-                       new TypedIndex<float>(inputStream,
-                                             toSpaceType(env, spaceType),
-                                             numDimensions));
+      if (metadata) {
+        setHandle<Index>(env, self,
+                        new TypedIndex<float>(metadata,
+                                              inputStream,
+                                              toSpaceType(env, spaceType),
+                                              numDimensions));
+      } else {
+        setHandle<Index>(env, self,
+                        new TypedIndex<float>(inputStream,
+                                              toSpaceType(env, spaceType),
+                                              numDimensions));
+      }
       break;
     case StorageDataType::Float8:
-      setHandle<Index>(
+      if (metadata) {
+        setHandle<Index>(
           env, self,
           new TypedIndex<float, int8_t, std::ratio<1, 127>>(
-              inputStream, toSpaceType(env, spaceType), numDimensions));
+              metadata, inputStream, toSpaceType(env, spaceType), numDimensions));
+
+      } else {
+        setHandle<Index>(
+            env, self,
+            new TypedIndex<float, int8_t, std::ratio<1, 127>>(
+                inputStream, toSpaceType(env, spaceType), numDimensions));
+      }
       break;
     case StorageDataType::E4M3:
-      setHandle<Index>(env, self,
+      if (metadata) {
+        setHandle<Index>(env, self,
+                       new TypedIndex<float, E4M3>(metadata, 
+                                                   inputStream,
+                                                   toSpaceType(env, spaceType),
+                                                   numDimensions));
+      } else {
+        setHandle<Index>(env, self,
                        new TypedIndex<float, E4M3>(inputStream,
                                                    toSpaceType(env, spaceType),
                                                    numDimensions));
+      }
       break;
     }
   } catch (std::exception const &e) {
