@@ -845,7 +845,7 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(JNIEnv *env,
       throw std::domain_error(
           "Provided index file has no metadata and no index parameters were "
           "specified. Must either provide an index with metadata or specify "
-          "StorageDataType, SpaceType, and numDimensions.");
+          "storageDataType, spaceType, and numDimensions.");
     }
 
   } catch (std::exception const &e) {
