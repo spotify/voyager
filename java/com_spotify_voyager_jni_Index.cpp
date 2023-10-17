@@ -792,23 +792,22 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
     case StorageDataType::Float32:
       if (metadata) {
         setHandle<Index>(env, self,
-                        new TypedIndex<float>(metadata,
-                                              inputStream,
-                                              toSpaceType(env, spaceType),
-                                              numDimensions));
+                         new TypedIndex<float>(metadata, inputStream,
+                                               toSpaceType(env, spaceType),
+                                               numDimensions));
       } else {
         setHandle<Index>(env, self,
-                        new TypedIndex<float>(inputStream,
-                                              toSpaceType(env, spaceType),
-                                              numDimensions));
+                         new TypedIndex<float>(inputStream,
+                                               toSpaceType(env, spaceType),
+                                               numDimensions));
       }
       break;
     case StorageDataType::Float8:
       if (metadata) {
-        setHandle<Index>(
-          env, self,
-          new TypedIndex<float, int8_t, std::ratio<1, 127>>(
-              metadata, inputStream, toSpaceType(env, spaceType), numDimensions));
+        setHandle<Index>(env, self,
+                         new TypedIndex<float, int8_t, std::ratio<1, 127>>(
+                             metadata, inputStream, toSpaceType(env, spaceType),
+                             numDimensions));
 
       } else {
         setHandle<Index>(
@@ -820,15 +819,14 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
     case StorageDataType::E4M3:
       if (metadata) {
         setHandle<Index>(env, self,
-                       new TypedIndex<float, E4M3>(metadata, 
-                                                   inputStream,
-                                                   toSpaceType(env, spaceType),
-                                                   numDimensions));
+                         new TypedIndex<float, E4M3>(
+                             metadata, inputStream, toSpaceType(env, spaceType),
+                             numDimensions));
       } else {
-        setHandle<Index>(env, self,
-                       new TypedIndex<float, E4M3>(inputStream,
-                                                   toSpaceType(env, spaceType),
-                                                   numDimensions));
+        setHandle<Index>(
+            env, self,
+            new TypedIndex<float, E4M3>(
+                inputStream, toSpaceType(env, spaceType), numDimensions));
       }
       break;
     }
