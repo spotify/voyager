@@ -827,6 +827,59 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
   }
 }
 
+void Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(JNIEnv *env,
+                                                           jobject self,
+                                                           jstring filename) {
+  try {
+    auto inputStream =
+        std::make_shared<FileInputStream>(toString(env, filename));
+    std::unique_ptr<voyager::Metadata::V1> metadata =
+        voyager::Metadata::loadFromStream(inputStream);
+
+    if (metadata) {
+      setHandle<Index>(
+          env, self,
+          loadTypedIndexFromMetadata(std::move(metadata), inputStream)
+              .release());
+    } else {
+      throw std::domain_error(
+          "Provided index file has no metadata and no index parameters were "
+          "specified. Must either provide an index with metadata or specify "
+          "storageDataType, spaceType, and numDimensions.");
+    }
+
+  } catch (std::exception const &e) {
+    if (!env->ExceptionCheck()) {
+      env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
+    }
+  }
+}
+
+void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(
+    JNIEnv *env, jobject self, jobject jInputStream) {
+  try {
+    auto inputStream = std::make_shared<JavaInputStream>(env, jInputStream);
+    std::unique_ptr<voyager::Metadata::V1> metadata =
+        voyager::Metadata::loadFromStream(inputStream);
+
+    if (metadata) {
+      setHandle<Index>(
+          env, self,
+          loadTypedIndexFromMetadata(std::move(metadata), inputStream)
+              .release());
+    } else {
+      throw std::domain_error(
+          "Provided index file has no metadata and no index parameters were "
+          "specified. Must either provide an index with metadata or specify "
+          "storageDataType, spaceType, and numDimensions.");
+    }
+  } catch (std::exception const &e) {
+    if (!env->ExceptionCheck()) {
+      env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
+    }
+  }
+}
+
 void Java_com_spotify_voyager_jni_Index_nativeDestructor(JNIEnv *env,
                                                          jobject self) {
   try {

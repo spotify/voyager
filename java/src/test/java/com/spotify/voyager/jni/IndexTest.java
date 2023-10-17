@@ -22,22 +22,21 @@ package com.spotify.voyager.jni;
 
 import static com.spotify.voyager.jni.Index.SpaceType.Cosine;
 import static com.spotify.voyager.jni.Index.SpaceType.Euclidean;
+import static com.spotify.voyager.jni.Index.SpaceType.InnerProduct;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.spotify.voyager.jni.Index.StorageDataType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import org.junit.Test;
 
 public class IndexTest {
-  static Random random = new Random();
-
   static final Map<Index.StorageDataType, Float> PRECISION_PER_DATA_TYPE = new HashMap<>();
 
   static {
@@ -80,6 +79,24 @@ public class IndexTest {
   public void testCosineE4M3() throws Exception {
     runTestWith(Cosine, 2000, Index.StorageDataType.E4M3, false);
     runTestWith(Cosine, 2000, Index.StorageDataType.E4M3, true);
+  }
+
+  @Test
+  public void testInnerProductFloat32() throws Exception {
+    runTestWith(InnerProduct, 2000, StorageDataType.Float32, false);
+    runTestWith(InnerProduct, 2000, StorageDataType.Float32, true);
+  }
+
+  @Test
+  public void testInnerProductFloat8() throws Exception {
+    runTestWith(InnerProduct, 2000, StorageDataType.Float8, false);
+    runTestWith(InnerProduct, 2000, StorageDataType.Float8, true);
+  }
+
+  @Test
+  public void testInnerProductE4M3() throws Exception {
+    runTestWith(InnerProduct, 2000, StorageDataType.E4M3, false);
+    runTestWith(InnerProduct, 2000, StorageDataType.E4M3, true);
   }
 
   /**
@@ -170,7 +187,8 @@ public class IndexTest {
 
           // E4M3 is too low precision for us to confidently assume that querying with the
           // unquantized (fp32) vector will return the quantized vector as its NN
-          if (storageDataType != Index.StorageDataType.E4M3) {
+          // InnerProduct will have negative distance to the closest item, not zero
+          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
             long label = neighbor.labels[0];
             float distance = neighbor.distances[0];
 
@@ -190,7 +208,8 @@ public class IndexTest {
 
           // E4M3 is too low precision for us to confidently assume that querying with the
           // unquantized (fp32) vector will return the quantized vector as its NN
-          if (storageDataType != Index.StorageDataType.E4M3) {
+          // InnerProduct will have negative distance to the closest item, not zero
+          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
             assertEquals(i, neighbor.labels[0]);
             assertEquals(0.0f, neighbor.distances[0], expectedPrecision);
           }
@@ -203,22 +222,18 @@ public class IndexTest {
       assertTrue(outputStream.size() > 0);
 
       // Recreate the index from the outputStream alone and ensure queries still work:
-      try (Index reloadedIndex =
-          Index.load(
-              new ByteArrayInputStream(outputStream.toByteArray()),
-              spaceType,
-              32,
-              storageDataType)) {
+      try (Index reloadedIndex = Index.load(new ByteArrayInputStream(outputStream.toByteArray()))) {
         final Index.QueryResults[] reloadedResults = reloadedIndex.query(inputData, 1, -1);
         for (int i = 0; i < numElements; i++) {
-          Index.QueryResults neighbor = results[i];
+          Index.QueryResults neighbor = reloadedResults[i];
 
           assertEquals(1, neighbor.labels.length);
           assertEquals(1, neighbor.distances.length);
 
           // E4M3 is too low precision for us to confidently assume that querying with the
           // unquantized (fp32) vector will return the quantized vector as its NN
-          if (storageDataType != Index.StorageDataType.E4M3) {
+          // InnerProduct will have negative distance to the closest item, not zero
+          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
             assertEquals(i, neighbor.labels[0]);
             assertEquals(0.0f, neighbor.distances[0], expectedPrecision);
           }

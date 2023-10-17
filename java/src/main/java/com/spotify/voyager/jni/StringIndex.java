@@ -166,14 +166,57 @@ public class StringIndex implements Closeable {
   }
 
   /**
+   * Load a previously constructed index from the provided file location. The space type,
+   * dimensions, and storage data type are read from the file metadata.
+   *
+   * @param indexFilename Filename of the underlying HNSW index
+   * @param nameListFilename Filename of the JSON encoded names list
+   * @return reference to the loaded StringIndex
+   */
+  public static StringIndex load(final String indexFilename, final String nameListFilename) {
+    Index index = Index.load(indexFilename);
+
+    List<String> names;
+    try {
+      names = TinyJson.readStringList(Files.newInputStream(Paths.get(nameListFilename)));
+    } catch (IOException e) {
+      throw new RuntimeException("Error reading names list from: " + nameListFilename, e);
+    }
+
+    return new StringIndex(index, names);
+  }
+
+  /**
+   * Load a previously constructed index from the provided input stream. The space type, dimensions,
+   * and storage data type are read from the file metadata.
+   *
+   * @param indexInputStream input stream pointing to the underlying HNSW index
+   * @param nameListInputStream input stream pointing to the JSON encoded names list
+   * @return reference to the loaded StringIndex
+   */
+  public static StringIndex load(
+      final InputStream indexInputStream, final InputStream nameListInputStream) {
+    Index index = Index.load(new BufferedInputStream(indexInputStream, DEFAULT_BUFFER_SIZE));
+    List<String> names =
+        TinyJson.readStringList(new BufferedInputStream(nameListInputStream, DEFAULT_BUFFER_SIZE));
+    return new StringIndex(index, names);
+  }
+
+  /**
    * Save the underlying index and JSON encoded name list to the provided output directory
    *
    * @param outputDirectory directory to output files to
    * @throws IOException when there is an error writing to JSON or saving to disk
    */
   public void saveIndex(final String outputDirectory) throws IOException {
-    Path indexPath = Paths.get(outputDirectory, INDEX_FILE_NAME);
-    Path namesPath = Paths.get(outputDirectory, NAMES_LIST_FILE_NAME);
+    saveIndex(outputDirectory, INDEX_FILE_NAME, NAMES_LIST_FILE_NAME);
+  }
+
+  public void saveIndex(
+      final String outputDirectory, final String indexFilename, final String nameListFilename)
+      throws IOException {
+    Path indexPath = Paths.get(outputDirectory, indexFilename);
+    Path namesPath = Paths.get(outputDirectory, nameListFilename);
     try {
       this.index.saveIndex(indexPath.toString());
 
