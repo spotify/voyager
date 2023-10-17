@@ -54,6 +54,7 @@ public class StringIndexTest {
   private static final String EXPECTED_NAME_FILE_NAME = "names.json";
   private static final String EXPECTED_INDEX_V2_FILE_NAME = "index-v2.hnsw";
   private static final String EXPECTED_NAME_V2_FILE_NAME = "names-v2.json";
+
   @Test
   public void itFindsNeighbors() throws Exception {
     List<Vector> testVectors = TestUtils.getTestVectors();

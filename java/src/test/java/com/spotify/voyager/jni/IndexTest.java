@@ -34,9 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import org.junit.Test;
-import org.junit.experimental.theories.suppliers.TestedOn;
 
 public class IndexTest {
   static final Map<Index.StorageDataType, Float> PRECISION_PER_DATA_TYPE = new HashMap<>();
@@ -100,6 +98,7 @@ public class IndexTest {
     runTestWith(InnerProduct, 2000, StorageDataType.E4M3, false);
     runTestWith(InnerProduct, 2000, StorageDataType.E4M3, true);
   }
+
   /**
    * One large test method with variable parameters, to replicate the parametrized tests we get "for
    * free" in Python with PyTest.
@@ -223,9 +222,7 @@ public class IndexTest {
       assertTrue(outputStream.size() > 0);
 
       // Recreate the index from the outputStream alone and ensure queries still work:
-      try (Index reloadedIndex =
-          Index.load(
-              new ByteArrayInputStream(outputStream.toByteArray()))) {
+      try (Index reloadedIndex = Index.load(new ByteArrayInputStream(outputStream.toByteArray()))) {
         final Index.QueryResults[] reloadedResults = reloadedIndex.query(inputData, 1, -1);
         for (int i = 0; i < numElements; i++) {
           Index.QueryResults neighbor = reloadedResults[i];
