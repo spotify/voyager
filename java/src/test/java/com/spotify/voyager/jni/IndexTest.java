@@ -188,7 +188,8 @@ public class IndexTest {
 
           // E4M3 is too low precision for us to confidently assume that querying with the
           // unquantized (fp32) vector will return the quantized vector as its NN
-          if (storageDataType != Index.StorageDataType.E4M3) {
+          // InnerProduct will have negative distance to the closest item, not zero
+          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
             long label = neighbor.labels[0];
             float distance = neighbor.distances[0];
 
@@ -208,7 +209,8 @@ public class IndexTest {
 
           // E4M3 is too low precision for us to confidently assume that querying with the
           // unquantized (fp32) vector will return the quantized vector as its NN
-          if (storageDataType != Index.StorageDataType.E4M3) {
+          // InnerProduct will have negative distance to the closest item, not zero
+          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
             assertEquals(i, neighbor.labels[0]);
             assertEquals(0.0f, neighbor.distances[0], expectedPrecision);
           }
@@ -223,20 +225,18 @@ public class IndexTest {
       // Recreate the index from the outputStream alone and ensure queries still work:
       try (Index reloadedIndex =
           Index.load(
-              new ByteArrayInputStream(outputStream.toByteArray()),
-              spaceType,
-              32,
-              storageDataType)) {
+              new ByteArrayInputStream(outputStream.toByteArray()))) {
         final Index.QueryResults[] reloadedResults = reloadedIndex.query(inputData, 1, -1);
         for (int i = 0; i < numElements; i++) {
-          Index.QueryResults neighbor = results[i];
+          Index.QueryResults neighbor = reloadedResults[i];
 
           assertEquals(1, neighbor.labels.length);
           assertEquals(1, neighbor.distances.length);
 
           // E4M3 is too low precision for us to confidently assume that querying with the
           // unquantized (fp32) vector will return the quantized vector as its NN
-          if (storageDataType != Index.StorageDataType.E4M3) {
+          // InnerProduct will have negative distance to the closest item, not zero
+          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
             assertEquals(i, neighbor.labels[0]);
             assertEquals(0.0f, neighbor.distances[0], expectedPrecision);
           }
