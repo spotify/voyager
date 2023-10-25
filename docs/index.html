@@ -54,7 +54,7 @@
                 text-transform: uppercase;
                 font-size: 20pt;
                 font-weight: bold;
-                margin: 0 30px; 
+                margin: 0 20px; 
             }
             .header .nav ul li a:hover {
                 border-bottom: 5px solid rgb(241, 55, 165); 
@@ -137,6 +137,11 @@
                 font-size: 1.2em;
                 line-height: 1.5em;
             }
+            .middle .section.video {
+                height: 550px;
+                margin-top: 50px;
+                margin-bottom: 50px;
+            }
             .footer {
                 background: rgb(25, 20, 20);
                 display: block;
@@ -191,6 +196,7 @@
                 <ul>
                     <li><a href="./python/">Python</a></li>
                     <li><a href="./java/">Java</a></li>
+                    <li><a href="#video-embed" onclick="(function(e) { e.preventDefault(); document.getElementById('video-embed').scrollIntoView({block: 'center', inline: 'center', behavior: 'smooth'}); })(event)">Demo</a></li>
                     <li><a href="https://github.com/spotify/voyager">GitHub</a></li>
                 </ul>
             </div>
@@ -253,6 +259,17 @@
                     Add Voyager to your application code and you can search through millions of
                     embeddings while only using gigabytes of memory.
                 </p>
+            </div>
+            <div class="section video" id="video-embed">
+                <iframe
+                    width="1000"
+                    height="562"
+                    src="https://www.youtube.com/embed/kOpL1NbvlM4?si=POjp0aEe8wVk2q6d"
+                    title="YouTube video player"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen>
+                </iframe>
             </div>
         </div>
         <div class="footer">
