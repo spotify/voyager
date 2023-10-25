@@ -659,9 +659,29 @@ jint Java_com_spotify_voyager_jni_Index_getEf(JNIEnv *env, jobject self) {
   return 0;
 }
 
-// TODO: Add markDeleted
+void Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *env, jobject self, jlong label) {
+  try {
+    Index *index = getHandle<Index>(env, self);
+    index->markDeleted(label);
+  } catch (std::exception const &e) {
+    if (!env->ExceptionCheck()) {
+      env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
+    }
+  }
+}
 
-// TODO: Add unmarkDeleted
+
+void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self, jlong label) {
+  try {
+    Index *index = getHandle<Index>(env, self);
+    index->unmarkDeleted(label);
+  } catch (std::exception const &e) {
+    if (!env->ExceptionCheck()) {
+      env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
+    }
+  }
+}
+
 
 // TODO: Add resizeIndex
 
