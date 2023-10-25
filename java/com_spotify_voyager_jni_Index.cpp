@@ -659,7 +659,8 @@ jint Java_com_spotify_voyager_jni_Index_getEf(JNIEnv *env, jobject self) {
   return 0;
 }
 
-void Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *env, jobject self, jlong label) {
+void Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *env, jobject self,
+                                                    jlong label) {
   try {
     Index *index = getHandle<Index>(env, self);
     index->markDeleted(label);
@@ -670,8 +671,8 @@ void Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *env, jobject self, j
   }
 }
 
-
-void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self, jlong label) {
+void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self,
+                                                      jlong label) {
   try {
     Index *index = getHandle<Index>(env, self);
     index->unmarkDeleted(label);
@@ -681,7 +682,6 @@ void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self,
     }
   }
 }
-
 
 // TODO: Add resizeIndex
 

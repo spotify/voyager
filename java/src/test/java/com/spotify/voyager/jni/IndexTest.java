@@ -242,23 +242,23 @@ public class IndexTest {
       // Test markDeleted and unmarkDeleted
       try {
         index.markDeleted(0);
-        assert(true);
+        assert (true);
       } catch (Exception e) {
-        assert(false);
+        assert (false);
       }
       // If we call it again it should trigger an exception
       try {
         index.markDeleted(0);
-        assert(false);
+        assert (false);
       } catch (Exception e) {
-        assert(true);
+        assert (true);
       }
       // Now let's unmark it
       try {
         index.unmarkDeleted(0);
-        assert(true);
+        assert (true);
       } catch (Exception e) {
-        assert(false);
+        assert (false);
       }
     }
   }
