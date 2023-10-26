@@ -246,9 +246,9 @@ public class IndexTest {
       } catch (Exception e) {
         assert (false);
       }
-      // If we call it again it should trigger an exception
+      // Try getting the vector out - we should not get it
       try {
-        index.markDeleted(0);
+        index.getVector(0);
         assert (false);
       } catch (Exception e) {
         assert (true);
@@ -256,6 +256,13 @@ public class IndexTest {
       // Now let's unmark it
       try {
         index.unmarkDeleted(0);
+        assert (true);
+      } catch (Exception e) {
+        assert (false);
+      }
+      // We should get the vector out since it's unmarked
+      try {
+        index.getVector(0);
         assert (true);
       } catch (Exception e) {
         assert (false);
