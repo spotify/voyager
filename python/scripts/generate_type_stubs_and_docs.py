@@ -35,7 +35,7 @@ from tempfile import TemporaryDirectory
 from contextlib import contextmanager
 from typing import Dict, List
 
-from pybind11_stubgen import ClassStubsGenerator, StubsGenerator
+from pybind11_stubgen import ClassStubsGenerator, StubsGenerator, function_docstring_preprocessing_hooks
 from pybind11_stubgen import main as pybind11_stubgen_main
 import mypy.stubtest
 from mypy.stubtest import test_stubs, parse_options as mypy_parse_options
@@ -68,8 +68,7 @@ def patch_mypy_stubtest():
 
     mypy.stubtest._verify_metaclass = patched_verify_metaclass
 
-
-def patch_pybind11_stubgen():
+def patch_pybind11_enum_stubgen():
     """
     Patch ``pybind11_stubgen`` to generate more ergonomic code for Enum-like classes.
     This generates a subclass of :class:``Enum`` for each Pybind11-generated Enum,
@@ -128,6 +127,19 @@ def patch_pybind11_stubgen():
             return original_class_stubs_generator_new(cls)
 
     ClassStubsGenerator.__new__ = patched_class_stubs_generator_new
+
+def patch_pybind11_class_name_stubgen():
+    """
+    Patch ``pybind11_stubgen`` to generate more ergonomic code for Enum-like classes.
+    This generates a subclass of :class:``Enum`` for each Pybind11-generated Enum,
+    which is not strictly correct, but produces much nicer documentation and allows
+    for a much more Pythonic API.
+    """
+    def replace_voyager_core(docstring: str) -> str:
+        return re.sub(r"voyager_core", "voyager", docstring)
+
+    function_docstring_preprocessing_hooks.append(replace_voyager_core)
+    ClassStubsGenerator.GLOBAL_CLASSNAME_REPLACEMENTS[re.compile(r"voyager_core")] = "voyager"
 
 
 def import_stub(stubs_path: str, module_name: str) -> typing.Any:
@@ -274,12 +286,13 @@ def main():
     )
     args = parser.parse_args()
 
+    patch_pybind11_enum_stubgen()
+    patch_pybind11_class_name_stubgen()
     patch_mypy_stubtest()
-    patch_pybind11_stubgen()
     patch_sphinx_to_read_pyi()
 
     if not args.skip_regenerating_type_hints:
-        with isolated_imports({"voyager"}):
+        with isolated_imports({"voyager_core"}):
             # print("Generating type stubs from pure-Python code...")
             # subprocess.check_call(["stubgen", "-o", tempdir, "voyager/voyager.py"])
 
@@ -288,7 +301,7 @@ def main():
             # files will be used as the "source of truth" for both IDE autocompletion
             # and Sphinx documentation.
             print("Generating type stubs from native code...")
-            pybind11_stubgen_main(["-o", "voyager", "voyager", "--no-setup-py"])
+            pybind11_stubgen_main(["-o", "voyager", "voyager_core", "--no-setup-py"])
 
             # Move type hints out of voyager/something_else/*:
             native_dir = pathlib.Path("voyager")

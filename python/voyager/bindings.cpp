@@ -430,8 +430,11 @@ Returns:
       R"(
 Add multiple vectors to this index simultaneously.
 
-This method may be faster than calling :py:meth:`add_items` multiple times,
+This method will be faster than calling :py:meth:`add_item` multiple times,
 as passing a batch of vectors helps avoid Python's Global Interpreter Lock.
+
+Larger batches are recommended over smaller batches as they achieve better parallelization under
+the hood.
 
 Args:
     vectors: A 32-bit floating-point NumPy array, with shape ``(num_vectors, num_dimensions)``.
@@ -441,13 +444,13 @@ Args:
         :py:class:`StorageDataType.Float32`, these vectors will be converted to the lower-precision
         data type *after* normalization.
 
-    id: An optional list of IDs to assign to these vectors.
+    ids: An optional list of IDs to assign to these vectors.
         If provided, this list must be identical in length to the first dimension of ``vectors``.
         If not provided, each vector's ID will automatically be generated based on the
         number of elements already in this index.
 
     num_threads: Up to ``num_threads`` will be started to perform insertions in parallel.
-                 If ``vectors`` contains only one query vector, ``num_threads`` will have no effect.
+                 If ``vectors`` contains only one item vector, ``num_threads`` will have no effect.
                  By default, one thread will be spawned per CPU core.
 Returns:
     The IDs that were assigned to the provided vectors (either auto-generated or provided), in the

@@ -26,4 +26,4 @@ except ImportError as _e:
     else:
         raise
 
-from .version import __version__  # noqa: F401
+from voyager.version import __version__  # noqa: F401
