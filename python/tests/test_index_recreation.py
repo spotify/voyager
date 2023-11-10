@@ -38,7 +38,11 @@ import voyager
 )
 @pytest.mark.parametrize(
     "storage_data_type",
-    [voyager.StorageDataType.E4M3, voyager.StorageDataType.Float8, voyager.StorageDataType.Float32],
+    [
+        voyager.StorageDataType.E4M3,
+        voyager.StorageDataType.Float8,
+        voyager.StorageDataType.Float32,
+    ],
     ids=lambda x: x.name if hasattr(x, "name") else str(x),
 )
 def test_recreate_index(
@@ -47,7 +51,9 @@ def test_recreate_index(
     space: voyager.Space,
     storage_data_type: voyager.StorageDataType,
 ):
-    input_data = np.random.random((num_elements, num_dimensions)).astype(np.float32) * 2 - 1
+    input_data = (
+        np.random.random((num_elements, num_dimensions)).astype(np.float32) * 2 - 1
+    )
 
     index = voyager.Index(
         space=space,

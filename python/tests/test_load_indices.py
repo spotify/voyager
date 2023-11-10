@@ -91,7 +91,9 @@ def test_load_v0_indices(load_from_stream: bool, index_filename: str):
 
 
 @pytest.mark.parametrize("load_from_stream", [False, True])
-@pytest.mark.parametrize("index_filename", glob(os.path.join(INDEX_FIXTURE_DIR, "v1", "*.hnsw")))
+@pytest.mark.parametrize(
+    "index_filename", glob(os.path.join(INDEX_FIXTURE_DIR, "v1", "*.hnsw"))
+)
 def test_load_v1_indices(load_from_stream: bool, index_filename: str):
     space = detect_space_from_filename(index_filename)
     num_dimensions = detect_num_dimensions_from_filename(index_filename)
@@ -112,7 +114,9 @@ def test_load_v1_indices(load_from_stream: bool, index_filename: str):
 
 
 @pytest.mark.parametrize("load_from_stream", [False, True])
-@pytest.mark.parametrize("index_filename", glob(os.path.join(INDEX_FIXTURE_DIR, "v1", "*.hnsw")))
+@pytest.mark.parametrize(
+    "index_filename", glob(os.path.join(INDEX_FIXTURE_DIR, "v1", "*.hnsw"))
+)
 def test_v1_indices_must_have_no_parameters_or_must_match(
     load_from_stream: bool, index_filename: str
 ):
