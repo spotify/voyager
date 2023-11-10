@@ -291,6 +291,11 @@ def test_load_incorrect_type(
 @pytest.mark.parametrize("space", [voyager.Space.Euclidean, voyager.Space.Cosine])
 @pytest.mark.parametrize("query_ef,rank_tolerance", [(1, 500), (2, 75), (100, 1)])
 def test_query_ef(space: voyager.Space, query_ef: int, rank_tolerance: int):
+    """"
+    Test to ensure that querying with random vectors will return sufficiently correct results at varying levels of
+    query_ef
+    """
+    np.random.seed(123)
     num_dimensions = 32
     num_elements = 1_000
     input_data = np.random.random((num_elements, num_dimensions)).astype(np.float32) * 2 - 1

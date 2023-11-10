@@ -110,8 +110,10 @@ jobs:
           pip install -r dev-requirements.txt
       - name: Build voyager locally
         run: python setup.py develop
-      - name: Run tests
-        run: pytest -v --durations=100 -x
+#      - name: Run tests
+#        run: pytest -v --durations=100 -x
+      - name: Run tox tests
+        run: tox
 
   run-python-tests-with-address-sanitizer:
     defaults:
@@ -158,8 +160,6 @@ jobs:
           ASAN_OPTIONS=detect_leaks=0 \
           LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
           pytest -v -x -s
-      - name: Run tox tests
-        run: tox
 
   build-python-wheels:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
