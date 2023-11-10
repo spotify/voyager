@@ -94,6 +94,15 @@ tox
 
 Use [`clang-format`](https://clang.llvm.org/docs/ClangFormat.html) for C++ code, and `black` with defaults for Python code.
 
+In order to check and run formatting within the python module, you can use tox to facilitate this.
+```bash
+cd python
+# Check formatting only (don't change files)
+tox -e check-formatting
+# Run formatter for python bindings and native python code
+tox -e format
+```
+
 ## Issues
 
 When creating an issue please try to ahere to the following format:
