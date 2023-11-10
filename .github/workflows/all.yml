@@ -110,8 +110,6 @@ jobs:
           pip install -r dev-requirements.txt
       - name: Build voyager locally
         run: python setup.py develop
-#      - name: Run tests
-#        run: pytest -v --durations=100 -x
       - name: Run tox tests
         run: tox
 
@@ -153,13 +151,13 @@ jobs:
           CC: clang
           CXX: clang++
         run: python setup.py develop
-      - name: Run tests with ASan loaded
+      - name: Run tox tests with ASan loaded
         # pytest can exit before all Python objects have been destroyed,
         # so we tell ASan to ignore leaks.
         run: |
           ASAN_OPTIONS=detect_leaks=0 \
           LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
-          pytest -v -x -s
+          tox
 
   build-python-wheels:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
