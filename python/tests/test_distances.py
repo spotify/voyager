@@ -56,12 +56,8 @@ def quantize_to_e4m3(vec: np.ndarray) -> np.ndarray:
     ],
     ids=str,
 )
-def test_distance(
-    dimensions: int, space: Space, storage_data_type: StorageDataType, tolerance: float
-):
-    index = Index(
-        space=space, num_dimensions=dimensions, storage_data_type=storage_data_type
-    )
+def test_distance(dimensions: int, space: Space, storage_data_type: StorageDataType, tolerance: float):
+    index = Index(space=space, num_dimensions=dimensions, storage_data_type=storage_data_type)
     a = np.random.rand(dimensions)
     b = np.random.rand(dimensions)
 
@@ -84,9 +80,7 @@ def test_distance(
     elif space == Space.Euclidean:
         expected = l2_square(a, b)
     else:
-        raise NotImplementedError(
-            f"Not sure how to calculate distance in tests for {space}!"
-        )
+        raise NotImplementedError(f"Not sure how to calculate distance in tests for {space}!")
 
     assert (
         np.abs(actual - expected) < tolerance

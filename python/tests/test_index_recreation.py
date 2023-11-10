@@ -51,9 +51,7 @@ def test_recreate_index(
     space: voyager.Space,
     storage_data_type: voyager.StorageDataType,
 ):
-    input_data = (
-        np.random.random((num_elements, num_dimensions)).astype(np.float32) * 2 - 1
-    )
+    input_data = np.random.random((num_elements, num_dimensions)).astype(np.float32) * 2 - 1
 
     index = voyager.Index(
         space=space,
