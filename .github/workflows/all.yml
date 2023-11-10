@@ -158,6 +158,8 @@ jobs:
           ASAN_OPTIONS=detect_leaks=0 \
           LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
           pytest -v -x -s
+      - name: Run tox tests
+        run: tox
 
   build-python-wheels:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
