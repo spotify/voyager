@@ -43,7 +43,7 @@ else:
 ext_modules = [
     Extension(
         "voyager_core",
-        ["./voyager/bindings.cpp"],
+        ["./voyager_core/bindings.cpp"],
         include_dirs=[pybind11.get_include(), np.get_include(), VOYAGER_HEADERS_PATH],
         libraries=[],
         language="c++",
