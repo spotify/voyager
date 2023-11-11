@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 try:
+    # Import everything from voyager_core so that it can be imported from `voyager` instead
     from voyager_core import *  # noqa: F403, F401
 except ImportError as _e:
     if "DLL load failed" in str(_e):
