@@ -5,4 +5,10 @@ pybind11-stubgen
 ruff
 psutil
 mypy
+# Needed for sphinx documentation
 sphinx
+sphinxext-opengraph
+sphinx-copybutton
+m2r2
+furo
+# end sphinx reqs

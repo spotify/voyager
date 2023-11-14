@@ -319,7 +319,11 @@ def main():
                 )
         # Re-run this same script in a fresh interpreter, but with skip_regenerating_type_hints
         # enabled:
-        interpreter = psutil.Process(os.getpid()).exe() or shutil.which("python3")
+        interpreter = psutil.Process(os.getpid()).exe()
+        # getpid returns the non-venv python path rather than your venv python path, so if this looks like a pyenv
+        # interpreter, use shutil instead to get the venv interpreter
+        if not interpreter or ".pyenv" in interpreter:
+            interpreter = shutil.which("python3")
         subprocess.check_call([interpreter] + sys.argv + ["--skip-regenerating-type-hints"])
         return
 
