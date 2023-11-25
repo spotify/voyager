@@ -14,28 +14,28 @@ concurrency:
 
 jobs:
   lint-java:
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     continue-on-error: true
     name: Lint Java
     defaults:
       run:
         working-directory: java
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
-          distribution: 'corretto'
+          java-version: "11"
+          distribution: "corretto"
       - name: Check Formatting
         run: mvn --batch-mode com.spotify.fmt:fmt-maven-plugin:check
 
   lint-cpp:
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     continue-on-error: true
     name: Lint C++
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check C++ Formatting
         uses: jidicula/clang-format-action@v4.4.1
         with:
@@ -51,15 +51,15 @@ jobs:
         working-directory: java
     strategy:
       matrix:
-        os: ['ubuntu-latest', windows-latest, macos-12]
-        java-version: ['11', '17']
+        os: ["ubuntu-latest", windows-latest, macos-12]
+        java-version: ["11", "17"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'corretto'
+          distribution: "corretto"
           gpg-private-key: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
       - uses: ilammy/msvc-dev-cmd@v1
@@ -80,25 +80,25 @@ jobs:
     strategy:
       matrix:
         python-version:
-#           - '3.7'
-          - '3.8'
-#           - '3.9'
-#           - '3.10'
-#           - '3.11'
+          #           - '3.7'
+          - "3.8"
+        #           - '3.9'
+        #           - '3.10'
+        #           - '3.11'
         # TODO: Switch back to macos-latest once https://github.com/actions/python-versions/pull/114 is fixed
-        os: ['ubuntu-latest', windows-latest, macos-12]
+        os: ["ubuntu-latest", windows-latest, macos-12]
     name: Test with Python ${{ matrix.python-version }} on ${{ matrix.os }}
     steps:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y pkg-config 
+        run: sudo apt-get update && sudo apt-get install -y pkg-config
       - name: Install test dependencies
         env:
           # on macOS and with Python 3.10: building NumPy from source fails without these options:
@@ -121,24 +121,24 @@ jobs:
     strategy:
       matrix:
         python-version:
-#           - '3.7'
-          - '3.8'
-#           - '3.9'
-#           - '3.10'
-#           - '3.11'
-        os: ['ubuntu-latest']
+          #           - '3.7'
+          - "3.8"
+        #           - '3.9'
+        #           - '3.10'
+        #           - '3.11'
+        os: ["ubuntu-latest"]
     name: Test with Python ${{ matrix.python-version }} + Address Sanitizer
     steps:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y pkg-config 
+        run: sudo apt-get update && sudo apt-get install -y pkg-config
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
@@ -167,46 +167,46 @@ jobs:
     strategy:
       matrix:
         include:
-        - { os: macos-12, build: cp37-macosx_x86_64 }
-        - { os: macos-12, build: cp38-macosx_x86_64 }
-        - { os: macos-12, build: cp39-macosx_x86_64 }
-        - { os: macos-12, build: cp310-macosx_x86_64 }
-        - { os: macos-12, build: cp311-macosx_x86_64 }
-        - { os: macos-12, build: cp312-macosx_x86_64 }
-        - { os: macos-12, build: cp38-macosx_universal2 }
-        - { os: macos-12, build: cp39-macosx_universal2 }
-        - { os: macos-12, build: cp310-macosx_universal2 }
-        - { os: macos-12, build: cp311-macosx_universal2 }
-        - { os: macos-12, build: cp312-macosx_universal2 }
-        - { os: macos-12, build: cp38-macosx_arm64 }
-        - { os: macos-12, build: cp39-macosx_arm64 }
-        - { os: macos-12, build: cp310-macosx_arm64 }
-        - { os: macos-12, build: cp311-macosx_arm64 }
-        - { os: macos-12, build: cp312-macosx_arm64 }
-        # - { os: macos-12, build: pp37-macosx_x86_64 }
-        # - { os: macos-12, build: pp38-macosx_x86_64 }
-        # - { os: macos-12, build: pp39-macosx_x86_64 }
-        - { os: windows-latest, build: cp37-win_amd64 }
-        - { os: windows-latest, build: cp38-win_amd64 }
-        - { os: windows-latest, build: cp39-win_amd64 }
-        - { os: windows-latest, build: cp310-win_amd64 }
-        - { os: windows-latest, build: cp311-win_amd64 }
-        - { os: windows-latest, build: cp312-win_amd64 }
-        # - { os: windows-latest, build: pp37-win_amd64 }
-        # - { os: windows-latest, build: pp38-win_amd64 }
-        # - { os: windows-latest, build: pp39-win_amd64 }
-        - { os: 'ubuntu-latest', build: cp37-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp37-manylinux_aarch64 }
-        - { os: 'ubuntu-latest', build: cp38-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp38-manylinux_aarch64 }
-        - { os: 'ubuntu-latest', build: cp39-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp39-manylinux_aarch64 }
-        - { os: 'ubuntu-latest', build: cp310-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp310-manylinux_aarch64 }
-        - { os: 'ubuntu-latest', build: cp311-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp311-manylinux_aarch64 }
-        - { os: 'ubuntu-latest', build: cp312-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp312-manylinux_aarch64 }
+          - { os: macos-12, build: cp37-macosx_x86_64 }
+          - { os: macos-12, build: cp38-macosx_x86_64 }
+          - { os: macos-12, build: cp39-macosx_x86_64 }
+          - { os: macos-12, build: cp310-macosx_x86_64 }
+          - { os: macos-12, build: cp311-macosx_x86_64 }
+          - { os: macos-12, build: cp312-macosx_x86_64 }
+          - { os: macos-12, build: cp38-macosx_universal2 }
+          - { os: macos-12, build: cp39-macosx_universal2 }
+          - { os: macos-12, build: cp310-macosx_universal2 }
+          - { os: macos-12, build: cp311-macosx_universal2 }
+          - { os: macos-12, build: cp312-macosx_universal2 }
+          - { os: macos-12, build: cp38-macosx_arm64 }
+          - { os: macos-12, build: cp39-macosx_arm64 }
+          - { os: macos-12, build: cp310-macosx_arm64 }
+          - { os: macos-12, build: cp311-macosx_arm64 }
+          - { os: macos-12, build: cp312-macosx_arm64 }
+          # - { os: macos-12, build: pp37-macosx_x86_64 }
+          # - { os: macos-12, build: pp38-macosx_x86_64 }
+          # - { os: macos-12, build: pp39-macosx_x86_64 }
+          - { os: windows-latest, build: cp37-win_amd64 }
+          - { os: windows-latest, build: cp38-win_amd64 }
+          - { os: windows-latest, build: cp39-win_amd64 }
+          - { os: windows-latest, build: cp310-win_amd64 }
+          - { os: windows-latest, build: cp311-win_amd64 }
+          - { os: windows-latest, build: cp312-win_amd64 }
+          # - { os: windows-latest, build: pp37-win_amd64 }
+          # - { os: windows-latest, build: pp38-win_amd64 }
+          # - { os: windows-latest, build: pp39-win_amd64 }
+          - { os: "ubuntu-latest", build: cp37-manylinux_x86_64 }
+          - { os: "ubuntu-latest", build: cp37-manylinux_aarch64 }
+          - { os: "ubuntu-latest", build: cp38-manylinux_x86_64 }
+          - { os: "ubuntu-latest", build: cp38-manylinux_aarch64 }
+          - { os: "ubuntu-latest", build: cp39-manylinux_x86_64 }
+          - { os: "ubuntu-latest", build: cp39-manylinux_aarch64 }
+          - { os: "ubuntu-latest", build: cp310-manylinux_x86_64 }
+          - { os: "ubuntu-latest", build: cp310-manylinux_aarch64 }
+          - { os: "ubuntu-latest", build: cp311-manylinux_x86_64 }
+          - { os: "ubuntu-latest", build: cp311-manylinux_aarch64 }
+          - { os: "ubuntu-latest", build: cp312-manylinux_x86_64 }
+          - { os: "ubuntu-latest", build: cp312-manylinux_aarch64 }
         # - { os: 'ubuntu-latest', build: pp37-manylinux_x86_64 }
         # - { os: 'ubuntu-latest', build: pp37-manylinux_aarch64 }
         # - { os: 'ubuntu-latest', build: pp38-manylinux_x86_64 }
@@ -215,7 +215,7 @@ jobs:
         # - { os: 'ubuntu-latest', build: pp39-manylinux_aarch64 }
     name: Build wheel for ${{ matrix.build }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       # Used to host cibuildwheel, so version doesn't really matter
@@ -265,15 +265,15 @@ jobs:
         working-directory: java
     strategy:
       matrix:
-        os: ['ubuntu-latest', windows-latest, macos-12]
-        java-version: ['11']
+        os: ["ubuntu-latest", windows-latest, macos-12]
+        java-version: ["11"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java-version }}
-          distribution: 'corretto'
+          distribution: "corretto"
           gpg-private-key: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
       - name: Set up QEMU for aarch64 on Linux
@@ -341,8 +341,13 @@ jobs:
     defaults:
       run:
         working-directory: python
-    needs: [build-python-wheels, run-python-tests-with-address-sanitizer, run-python-tests]
-    runs-on: 'ubuntu-latest'
+    needs:
+      [
+        build-python-wheels,
+        run-python-tests-with-address-sanitizer,
+        run-python-tests,
+      ]
+    runs-on: "ubuntu-latest"
     name: "Upload wheels to PyPI"
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
@@ -364,7 +369,7 @@ jobs:
       run:
         working-directory: java
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v3
         with:
           name: java-all-platforms
@@ -373,7 +378,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: 11
-          distribution: 'corretto'
+          distribution: "corretto"
           server-id: ossrh
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
