@@ -67,9 +67,7 @@ jobs:
       - name: Compile
         run: make
       - name: Run Tests
-        run: mvn --batch-mode verify
-        env:
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
+        run: mvn --batch-mode test
 
   run-python-tests:
     runs-on: ${{ matrix.os }}
