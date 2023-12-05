@@ -26,6 +26,7 @@ import static com.spotify.voyager.jni.Index.SpaceType.InnerProduct;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.spotify.voyager.jni.Index.StorageDataType;
@@ -240,33 +241,16 @@ public class IndexTest {
         }
       }
       // Test markDeleted and unmarkDeleted
-      try {
-        index.markDeleted(0);
-        assert (true);
-      } catch (Exception e) {
-        assert (false);
-      }
+      index.markDeleted(0);
+
       // Try getting the vector out - we should not get it
-      try {
-        index.getVector(0);
-        assert (false);
-      } catch (Exception e) {
-        assert (true);
-      }
+      assertThrows(RuntimeException.class, () -> index.getVector(0));
+
       // Now let's unmark it
-      try {
-        index.unmarkDeleted(0);
-        assert (true);
-      } catch (Exception e) {
-        assert (false);
-      }
-      // We should get the vector out since it's unmarked
-      try {
-        index.getVector(0);
-        assert (true);
-      } catch (Exception e) {
-        assert (false);
-      }
+      index.unmarkDeleted(0);
+
+      // And the resulting call should pass:
+      assertNotNull(index.getVector(0));
     }
   }
 }
