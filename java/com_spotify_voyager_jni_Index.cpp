@@ -55,7 +55,8 @@ std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj,
   std::shared_ptr<T> *pointer = reinterpret_cast<std::shared_ptr<T> *>(handle);
 
   if (!allow_missing && !pointer) {
-    throw std::runtime_error("Native JNI object not found.");
+    throw std::runtime_error(
+        "This Voyager index has been closed and can no longer be used.");
   }
 
   // Return a copy of this shared pointer, thereby ensuring that it remains
@@ -83,9 +84,8 @@ template <typename T> void deleteHandle(JNIEnv *env, jobject obj) {
   // Note: This _may_ trigger the destructor of T, but if any other threads have
   // thread-local copies of this shared_ptr, the destructor will be triggered
   // on the last thread that has one of these shared_ptrs.
-  delete pointer;
-
   env->MonitorEnter(obj);
+  delete pointer;
   env->SetLongField(obj, getHandleFieldID(env, obj), 0);
   env->MonitorExit(obj);
 }
