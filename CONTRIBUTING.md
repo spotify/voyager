@@ -83,12 +83,26 @@ We follow the [GitHub Flow Workflow](https://guides.github.com/introduction/flow
 
 ## Testing
 
+### Python Tests
+
 We use `tox` for testing - running tests from end-to-end should be as simple as:
 
 ```
+cd python
 pip3 install tox
 tox
 ```
+
+
+### Java Tests
+
+We provide java test execution as a maven test step.  Thus you can run the tests with:
+
+```shell
+cd java
+mvn verify
+````
+
 
 ## Style
 
@@ -102,6 +116,11 @@ tox -e check-formatting
 # Run formatter for python bindings and native python code
 tox -e format
 ```
+
+For C++ code, you can use the following command to check formatting:
+```bash
+cd cpp
+
 
 ## Issues
 
