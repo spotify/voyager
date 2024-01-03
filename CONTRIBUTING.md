@@ -83,9 +83,12 @@ We follow the [GitHub Flow Workflow](https://guides.github.com/introduction/flow
 
 ## Testing
 
+### Python Tests
+
 We use `tox` for testing - running tests from end-to-end should be as simple as:
 
 ```
+cd python
 pip3 install tox
 tox
 ```
@@ -110,6 +113,16 @@ asv continuous --sort name --no-only-changed HEAD main
 Please note that `airspeed-velocity` can only run benchmarks against a git commit, so if 
 you have uncommited code that you want to run benchmarks for you need to commit it first.
 
+### Java Tests
+
+We provide java test execution as a maven test step.  Thus you can run the tests with:
+
+```shell
+cd java
+mvn verify
+````
+
+
 ## Style
 
 Use [`clang-format`](https://clang.llvm.org/docs/ClangFormat.html) for C++ code, and `black` with defaults for Python code.
@@ -122,6 +135,11 @@ tox -e check-formatting
 # Run formatter for python bindings and native python code
 tox -e format
 ```
+
+For C++ code, you can use the following command to check formatting:
+```bash
+cd cpp
+
 
 ## Issues
 
