@@ -1,0 +1,3 @@
+[submodule "cpp/include/Catch2"]
+	path = cpp/include/Catch2
+	url = git@github.com:catchorg/Catch2.git
