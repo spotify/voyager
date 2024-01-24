@@ -212,14 +212,14 @@ public class StringIndexTest {
   public void indexResize() throws Exception {
     List<Vector> testVectors = TestUtils.getTestVectors();
     try (final StringIndex index =
-                 new StringIndex(
-                         SpaceType.Cosine,
-                         testVectors.get(0).vector.length,
-                         20,
-                         testVectors.size(),
-                         0,
-                         testVectors.size(),
-                         StorageDataType.E4M3)) {
+        new StringIndex(
+            SpaceType.Cosine,
+            testVectors.get(0).vector.length,
+            20,
+            testVectors.size(),
+            0,
+            testVectors.size(),
+            StorageDataType.E4M3)) {
       for (Vector v : testVectors) {
         index.addItem(v.name, v.vector);
       }
