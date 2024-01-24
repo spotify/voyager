@@ -251,6 +251,11 @@ public class IndexTest {
 
       // And the resulting call should pass:
       assertNotNull(index.getVector(0));
+
+      //Test resizing of index
+      long currentSize = index.getMaxElements();
+      index.resizeIndex(currentSize+1);
+      assertEquals(currentSize+1,index.getMaxElements());
     }
   }
 }

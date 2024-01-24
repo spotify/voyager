@@ -21,6 +21,7 @@
 package com.spotify.voyager.jni;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 import com.google.common.io.Resources;
 import com.spotify.voyager.jni.Index.SpaceType;
@@ -204,6 +205,27 @@ public class StringIndexTest {
       assertThat(results)
           .extracting(CustomResult::getName)
           .containsExactly("my-vector-78", "my-vector-1");
+    }
+  }
+
+  @Test
+  public void indexResize() throws Exception {
+    List<Vector> testVectors = TestUtils.getTestVectors();
+    try (final StringIndex index =
+                 new StringIndex(
+                         SpaceType.Cosine,
+                         testVectors.get(0).vector.length,
+                         20,
+                         testVectors.size(),
+                         0,
+                         testVectors.size(),
+                         StorageDataType.E4M3)) {
+      for (Vector v : testVectors) {
+        index.addItem(v.name, v.vector);
+      }
+      long currentSize = index.getMaxElements();
+      index.resizeIndex(currentSize + 1);
+      assertEquals(currentSize + 1, index.getMaxElements());
     }
   }
 

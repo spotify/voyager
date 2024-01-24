@@ -683,7 +683,17 @@ void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self,
   }
 }
 
-// TODO: Add resizeIndex
+void Java_com_spotify_voyager_jni_Index_resizeIndex(JNIEnv *env, jobject self,
+                                                      jlong size) {
+    try {
+        Index *index = getHandle<Index>(env, self);
+        index->resizeIndex(size);
+        } catch (std::exception const &e) {
+        if (!env->ExceptionCheck()) {
+            env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
+        }
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Save Index

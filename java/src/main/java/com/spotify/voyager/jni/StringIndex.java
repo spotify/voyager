@@ -333,6 +333,27 @@ public class StringIndex implements Closeable {
     index.close();
   }
 
+  /**
+   * Change the maximum number of elements currently storable by this {@link Index}. This operation
+   * reallocates the memory used by the index and can be quite slow, so it may be useful to set the
+   * maximum number of elements in advance if that number is known.
+   *
+   * @param newSize The new number of maximum elements to resize this {@link Index} to.
+   */
+  public void resizeIndex(long newSize) {
+    index.resizeIndex(newSize);
+  }
+
+  /**
+   * Get the maximum number of elements currently storable by this {@link Index}. If more elements
+   * are added than {@code getMaxElements()}, the index will be automatically (but slowly) resized.
+   *
+   * @return The number of elements (vectors) that are currently storable in this {@link Index}.
+   */
+  public long getMaxElements() {
+    return index.getMaxElements();
+  }
+
   /** A wrapper class for nearest neighbor query results. */
   public static class QueryResults {
     private final String[] names;
