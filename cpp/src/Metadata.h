@@ -21,8 +21,6 @@
  * limitations under the License.
  * -/-/-
  */
-#include <stdlib.h>
-#include <string>
 
 #include "Enums.h"
 #include "StreamUtils.h"
@@ -30,14 +28,15 @@
 namespace voyager {
 namespace Metadata {
 /**
- * @brief A basic metadata class that stores the SpaceType, StorageDataType, and
- * number of dimensions.
+ * @brief A basic metadata class that stores the number of dimensions,
+ * the SpaceType, StorageDataType, and number of dimensions.
  */
 class V1 {
 public:
-  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType, float maxNorm,
-     bool useOrderPreservingTransform)
-      : numDimensions(numDimensions), spaceType(spaceType), storageDataType(storageDataType), maxNorm(maxNorm),
+  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType,
+     float maxNorm, bool useOrderPreservingTransform)
+      : numDimensions(numDimensions), spaceType(spaceType),
+        storageDataType(storageDataType), maxNorm(maxNorm),
         useOrderPreservingTransform(useOrderPreservingTransform) {}
 
   V1() {}
@@ -53,12 +52,20 @@ public:
 
   float getMaxNorm() { return maxNorm; }
 
-  bool getUseOrderPreservingTransform() const { return useOrderPreservingTransform; }
-  void setUseOrderPreservingTransform(bool newValue) { useOrderPreservingTransform = newValue; }
+  bool getUseOrderPreservingTransform() const {
+    return useOrderPreservingTransform;
+  }
+  void setUseOrderPreservingTransform(bool newValue) {
+    useOrderPreservingTransform = newValue;
+  }
 
-  void setNumDimensions(int newNumDimensions) { numDimensions = newNumDimensions; }
+  void setNumDimensions(int newNumDimensions) {
+    numDimensions = newNumDimensions;
+  }
 
-  void setStorageDataType(StorageDataType newStorageDataType) { storageDataType = newStorageDataType; }
+  void setStorageDataType(StorageDataType newStorageDataType) {
+    storageDataType = newStorageDataType;
+  }
 
   void setSpaceType(SpaceType newSpaceType) { spaceType = newSpaceType; }
 
@@ -91,75 +98,8 @@ private:
   bool useOrderPreservingTransform;
 };
 
-/**
- * @brief A basic metadata class that stores the number of dimensions,
- * the SpaceType, StorageDataType, and number of dimensions.
- */
-class V2 {
-public:
-  V2(int numDimensions, SpaceType spaceType, StorageDataType storageDataType, float maxNorm,
-     bool useOrderPreservingTransform, vector<string> labels)
-      : numDimensions(numDimensions), spaceType(spaceType), storageDataType(storageDataType), maxNorm(maxNorm),
-        useOrderPreservingTransform(useOrderPreservingTransform), labels(labels) {}
-
-  V2() {}
-  virtual ~V2() {}
-
-  int version() const { return 2; }
-
-  int getNumDimensions() { return numDimensions; }
-
-  StorageDataType getStorageDataType() { return storageDataType; }
-
-  SpaceType getSpaceType() { return spaceType; }
-
-  float getMaxNorm() { return maxNorm; }
-
-  bool getUseOrderPreservingTransform() const { return useOrderPreservingTransform; }
-
-  std::string *getLabels() { return labels; }
-
-  void setUseOrderPreservingTransform(bool newValue) { useOrderPreservingTransform = newValue; }
-
-  void setNumDimensions(int newNumDimensions) { numDimensions = newNumDimensions; }
-
-  void setStorageDataType(StorageDataType newStorageDataType) { storageDataType = newStorageDataType; }
-
-  void setSpaceType(SpaceType newSpaceType) { spaceType = newSpaceType; }
-
-  void setMaxNorm(float newMaxNorm) { maxNorm = newMaxNorm; }
-
-  virtual void serializeToStream(std::shared_ptr<OutputStream> stream) {
-    stream->write("VOYA", 4);
-    writeBinaryPOD(stream, version());
-    writeBinaryPOD(stream, numDimensions);
-    writeBinaryPOD(stream, spaceType);
-    writeBinaryPOD(stream, storageDataType);
-    writeBinaryPOD(stream, maxNorm);
-    writeBinaryPOD(stream, useOrderPreservingTransform);
-    writeBinaryPOD(stream, labels);
-  };
-
-  virtual void loadFromStream(std::shared_ptr<InputStream> stream) {
-    // Version has already been loaded before we get here!
-    readBinaryPOD(stream, numDimensions);
-    readBinaryPOD(stream, spaceType);
-    readBinaryPOD(stream, storageDataType);
-    readBinaryPOD(stream, maxNorm);
-    readBinaryPOD(stream, useOrderPreservingTransform);
-    readBinaryPOD(stream, labels);
-  };
-
-private:
-  int numDimensions;
-  SpaceType spaceType;
-  StorageDataType storageDataType;
-  float maxNorm;
-  bool useOrderPreservingTransform;
-  vector<string> labels[];
-};
-
-static std::unique_ptr<Metadata::V1> loadFromStream(std::shared_ptr<InputStream> inputStream) {
+static std::unique_ptr<Metadata::V1>
+loadFromStream(std::shared_ptr<InputStream> inputStream) {
   uint32_t header = inputStream->peek();
   if (header != 'AYOV') {
     return nullptr;
@@ -174,11 +114,6 @@ static std::unique_ptr<Metadata::V1> loadFromStream(std::shared_ptr<InputStream>
   switch (version) {
   case 1: {
     std::unique_ptr<Metadata::V1> metadata = std::make_unique<Metadata::V1>();
-    metadata->loadFromStream(inputStream);
-    return metadata;
-  }
-  case 2: {
-    std::unique_ptr<Metadata::V2> metadata = std::make_unique<Metadata::V2>();
     metadata->loadFromStream(inputStream);
     return metadata;
   }

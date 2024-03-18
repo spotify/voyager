@@ -1,4 +1,4 @@
-add_executable(test main.cpp)
+add_executable(test test_main.cpp)
 target_link_libraries(test
     PUBLIC
         VoyagerLib
