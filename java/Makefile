@@ -10,7 +10,7 @@ WIN_SOBJ    := voyager.dll
 CPP_SRC_DIR := ../cpp/
 
 SOURCE    := com_spotify_voyager_jni_Index.cpp
-HEADERS   := $(SOURCE:.cpp=.h)
+HEADERS   := $(SOURCE:.cpp=.h) $(wildcard ../cpp/*.h)
 JAVA_SRC  := ./src/main/java
 
 ifeq ($(UNAME_S),Linux)
@@ -37,16 +37,15 @@ CXXFLAGS := $(CXXFLAGS) -fsanitize=address
 else
 endif
 
+ifndef JAVA_HOME
+	$(error JAVA_HOME is undefined)
+else
+endif
 
 all: $(ALL_OBJS)
 	# Done!
 
-check-java-home:
-ifndef JAVA_HOME
-	$(error JAVA_HOME is undefined)
-endif
-
-classpath.txt: check-java-home
+classpath.txt:
 	mvn dependency:build-classpath | grep '\.jar[;:]' | tr ';' ':' > $@
 
 %.h: %.cpp classpath.txt

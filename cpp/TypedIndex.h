@@ -694,7 +694,12 @@ public:
 
   size_t getNumElements() const { return algorithmImpl->cur_element_count; }
 
-  int getEF() const { return defaultEF; }
+  int getEF() const {
+    if (algorithmImpl)
+      return algorithmImpl->ef_;
+    else
+      return defaultEF;
+  }
 
   int getNumThreads() { return numThreadsDefault; }
 
