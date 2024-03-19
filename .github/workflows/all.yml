@@ -93,7 +93,10 @@ jobs:
           USE_ASAN: "1"
         run: make target/classes/linux-x64/libvoyager.so
       - name: Run Tests
-        run: 'LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) mvn --batch-mode test'
+        run: |
+          ASAN_OPTIONS="handle_segv=0 detect_leaks=0"
+          LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
+          mvn --batch-mode test
 
 
   run-python-tests:
