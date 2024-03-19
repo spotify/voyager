@@ -70,6 +70,7 @@ jobs:
         run: mvn --batch-mode test
 
   run-java-tests-with-address-sanitizer:
+    if: false  # Disabled due to ASan log spam in output
     continue-on-error: true
     name: Test with Java ${{ matrix.java-version }} + Address Sanitizer
     runs-on: ubuntu-latest
