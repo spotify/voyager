@@ -69,6 +69,35 @@ jobs:
       - name: Run Tests
         run: mvn --batch-mode test
 
+  run-java-tests-with-address-sanitizer:
+    continue-on-error: true
+    name: Test with Java ${{ matrix.java-version }} on ${{ matrix.os }} + Address Sanitizer
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: java
+    strategy:
+      matrix:
+        java-version: ['11', '17']
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'corretto'
+          gpg-private-key: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Compile
+        env:
+          USE_ASAN: "1"
+          CC: clang
+          CXX: clang++
+        run: make
+      - name: Run Tests
+        run: mvn --batch-mode test
+
+
   run-python-tests:
     runs-on: ${{ matrix.os }}
     continue-on-error: true

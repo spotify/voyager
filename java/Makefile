@@ -30,6 +30,14 @@ ALL_OBJS  := target/classes/win-x64/$(WIN_SOBJ)
 CXXFLAGS  := /I. /EHsc /DLL /LD /std:c++17 /I.\include $(addprefix -I,$(JAVA_INC)) /I $(CPP_SRC_DIR) /O2
 endif
 
+# Allow linking against ASan if USE_ASAN is set to 1:
+ifeq (${USE_ASAN},1) 
+CXXFLAGS  := $(CXXFLAGS) -fsanitize=address
+else
+CXXFLAGS  := $(CXXFLAGS) -fsanitize=address
+endif
+
+
 all: $(ALL_OBJS)
 	# Done!
 
