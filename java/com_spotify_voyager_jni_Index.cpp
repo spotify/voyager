@@ -43,20 +43,51 @@ jfieldID getHandleFieldID(JNIEnv *env, jobject obj) {
 }
 
 template <typename T>
-T *getHandle(JNIEnv *env, jobject obj, bool allow_missing = false) {
+std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj,
+                             bool allow_missing = false) {
+  env->MonitorEnter(obj);
   jlong handle = env->GetLongField(obj, getHandleFieldID(env, obj));
-  T *pointer = reinterpret_cast<T *>(handle);
+  env->MonitorExit(obj);
+
+  // Yes, we're storing a pointer to a shared pointer on a Java object.
+  // A bit strange, but totally okay to ensure that we still get shared_ptr
+  // semantics while storing a single Long value.
+  std::shared_ptr<T> *pointer = reinterpret_cast<std::shared_ptr<T> *>(handle);
 
   if (!allow_missing && !pointer) {
-    throw std::runtime_error("Native JNI object not found.");
+    throw std::runtime_error(
+        "This Voyager index has been closed and can no longer be used.");
   }
 
-  return pointer;
+  // Return a copy of this shared pointer, thereby ensuring that it remains
+  // alive until the shared_ptr goes out of scope.
+  return *pointer;
 }
 
 template <typename T> void setHandle(JNIEnv *env, jobject obj, T *t) {
+  std::shared_ptr<T> *sharedPointerForJava = new std::shared_ptr<T>(t);
+  env->MonitorEnter(obj);
   env->SetLongField(obj, getHandleFieldID(env, obj),
-                    reinterpret_cast<jlong>(t));
+                    reinterpret_cast<jlong>(sharedPointerForJava));
+  env->MonitorExit(obj);
+}
+
+template <typename T> void deleteHandle(JNIEnv *env, jobject obj) {
+  env->MonitorEnter(obj);
+  jlong handle = env->GetLongField(obj, getHandleFieldID(env, obj));
+  env->MonitorExit(obj);
+
+  if (handle == 0)
+    return;
+
+  std::shared_ptr<T> *pointer = reinterpret_cast<std::shared_ptr<T> *>(handle);
+  // Note: This _may_ trigger the destructor of T, but if any other threads have
+  // thread-local copies of this shared_ptr, the destructor will be triggered
+  // on the last thread that has one of these shared_ptrs.
+  env->MonitorEnter(obj);
+  delete pointer;
+  env->SetLongField(obj, getHandleFieldID(env, obj), 0);
+  env->MonitorExit(obj);
 }
 
 std::string toString(JNIEnv *env, jstring js) {
@@ -315,7 +346,7 @@ void Java_com_spotify_voyager_jni_Index_nativeConstructor(
 void Java_com_spotify_voyager_jni_Index_addItem___3F(JNIEnv *env, jobject self,
                                                      jfloatArray vector) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->addItem(toStdVector(env, vector), {});
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
@@ -328,7 +359,7 @@ void Java_com_spotify_voyager_jni_Index_addItem___3FJ(JNIEnv *env, jobject self,
                                                       jfloatArray vector,
                                                       jlong id) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->addItem(toStdVector(env, vector), {id});
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
@@ -342,7 +373,7 @@ void Java_com_spotify_voyager_jni_Index_addItems___3_3FI(JNIEnv *env,
                                                          jobjectArray vectors,
                                                          jint numThreads) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->addItems(toNDArray(env, vectors), {}, numThreads);
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
@@ -355,7 +386,7 @@ void Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(
     JNIEnv *env, jobject self, jobjectArray vectors, jlongArray ids,
     jint numThreads) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->addItems(toNDArray(env, vectors), toUnsignedStdVector(env, ids),
                     numThreads);
   } catch (std::exception const &e) {
@@ -374,7 +405,7 @@ jobject Java_com_spotify_voyager_jni_Index_query___3FIJ(JNIEnv *env,
                                                         jint numNeighbors,
                                                         jlong queryEf) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
 
     std::tuple<std::vector<hnswlib::labeltype>, std::vector<float>>
         queryResults =
@@ -421,7 +452,7 @@ jobjectArray Java_com_spotify_voyager_jni_Index_query___3_3FIIJ(
     JNIEnv *env, jobject self, jobjectArray queryVectors, jint numNeighbors,
     jint numThreads, jlong queryEf) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
 
     int numQueries = env->GetArrayLength(queryVectors);
 
@@ -564,7 +595,7 @@ jfloatArray Java_com_spotify_voyager_jni_Index_getVector(JNIEnv *env,
                                                          jobject self,
                                                          jlong id) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
     return toFloatArray(env, index->getVector(id));
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
@@ -578,8 +609,7 @@ jobjectArray Java_com_spotify_voyager_jni_Index_getVectors(JNIEnv *env,
                                                            jobject self,
                                                            jlongArray ids) {
   try {
-    Index *index = getHandle<Index>(env, self);
-
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
     NDArray<float, 2> vectors =
         index->getVectors(toUnsignedStdVector(env, ids));
 
@@ -610,7 +640,7 @@ jobjectArray Java_com_spotify_voyager_jni_Index_getVectors(JNIEnv *env,
 jlongArray Java_com_spotify_voyager_jni_Index_getIDs(JNIEnv *env,
                                                      jobject self) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
 
     std::vector<hnswlib::labeltype> ids = index->getIDs();
 
@@ -662,8 +692,7 @@ jint Java_com_spotify_voyager_jni_Index_getEf(JNIEnv *env, jobject self) {
 void Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *env, jobject self,
                                                     jlong label) {
   try {
-    Index *index = getHandle<Index>(env, self);
-    index->markDeleted(label);
+    getHandle<Index>(env, self)->markDeleted(label);
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
@@ -674,8 +703,7 @@ void Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *env, jobject self,
 void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self,
                                                       jlong label) {
   try {
-    Index *index = getHandle<Index>(env, self);
-    index->unmarkDeleted(label);
+    getHandle<Index>(env, self)->unmarkDeleted(label);
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
@@ -691,7 +719,7 @@ void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self,
 void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_lang_String_2(
     JNIEnv *env, jobject self, jstring filename) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->saveIndex(toString(env, filename));
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
@@ -703,7 +731,7 @@ void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_lang_String_2(
 void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2(
     JNIEnv *env, jobject self, jobject outputStream) {
   try {
-    Index *index = getHandle<Index>(env, self);
+    std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->saveIndex(std::make_shared<JavaOutputStream>(env, outputStream));
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
@@ -903,10 +931,7 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(
 void Java_com_spotify_voyager_jni_Index_nativeDestructor(JNIEnv *env,
                                                          jobject self) {
   try {
-    if (Index *index = getHandle<Index>(env, self, true)) {
-      delete index;
-      setHandle<Index>(env, self, nullptr);
-    }
+    deleteHandle<Index>(env, self);
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
