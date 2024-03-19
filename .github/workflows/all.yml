@@ -67,9 +67,7 @@ jobs:
       - name: Compile
         run: make
       - name: Run Tests
-        run: mvn --batch-mode verify
-        env:
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
+        run: mvn --batch-mode test
 
   run-python-tests:
     runs-on: ${{ matrix.os }}
@@ -110,8 +108,8 @@ jobs:
           pip install -r dev-requirements.txt
       - name: Build voyager locally
         run: python setup.py develop
-      - name: Run tests
-        run: pytest -v --durations=100 -x
+      - name: Run tox tests
+        run: tox
 
   run-python-tests-with-address-sanitizer:
     defaults:
@@ -151,13 +149,13 @@ jobs:
           CC: clang
           CXX: clang++
         run: python setup.py develop
-      - name: Run tests with ASan loaded
+      - name: Run tox tests with ASan loaded
         # pytest can exit before all Python objects have been destroyed,
         # so we tell ASan to ignore leaks.
         run: |
           ASAN_OPTIONS=detect_leaks=0 \
           LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
-          pytest -v -x -s
+          tox
 
   build-python-wheels:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
@@ -320,15 +318,15 @@ jobs:
           echo "Checking mac-aarch64/libvoyager.dylib for arm64 architecture..."
           file combined-jar/mac-aarch64/libvoyager.dylib | grep arm64
 
-          # Check the Linux JARs to ensure a sufficiently old required GLIBC and GLIBCXX version:
+          echo "Checking the Linux JARs to ensure a sufficiently old required GLIBC and GLIBCXX version in each..."
           echo "Checking linux-aarch64/libvoyager.so for GLIBC 2.27..."
-          objdump -T combined-jar/linux-aarch64/libvoyager.so | grep GLIBC | sed 's/.*GLIBC_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 2\.27
+          objdump -T combined-jar/linux-aarch64/libvoyager.so | grep GLIBC | sed 's/.*GLIBC_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 2\.27 || echo "Expected linux-aarch64 binary to require at most glibc 2.27. Ensure the dockcross container has not been updated." && false
           echo "Checking linux-aarch64/libvoyager.so for GLIBCXX 3.4.22..."
-          objdump -T combined-jar/linux-aarch64/libvoyager.so | grep GLIBCXX | sed 's/.*GLIBCXX_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 3\.4\.22
+          objdump -T combined-jar/linux-aarch64/libvoyager.so | grep GLIBCXX | sed 's/.*GLIBCXX_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 3\.4\.22 || echo "Expected linux-aarch64 binary to require at most glibc++ 3.4.22. Ensure the dockcross container has not been updated." && false
           echo "Checking linux-x64/libvoyager.so for GLIBC 2.29..."
-          objdump -T combined-jar/linux-x64/libvoyager.so | grep GLIBC | sed 's/.*GLIBC_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 2\.29
+          objdump -T combined-jar/linux-x64/libvoyager.so | grep GLIBC | sed 's/.*GLIBC_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 2\.29 || echo "Expected linux-x64 binary to require at most glibc 2.29. Ensure the dockcross container has not been updated." && false
           echo "Checking linux-x64/libvoyager.so for GLIBCXX 3.4.22..."
-          objdump -T combined-jar/linux-x64/libvoyager.so | grep GLIBCXX | sed 's/.*GLIBCXX_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 3\.4\.22
+          objdump -T combined-jar/linux-x64/libvoyager.so | grep GLIBCXX | sed 's/.*GLIBCXX_\([.0-9]*\).*/\1/g' | sort -Vu | tail -n 1 | grep 3\.4\.22  || echo "Expected linux-x64 binary to require at most glibc++ 3.4.22. Ensure the dockcross container has not been updated." && false
 
           zip -r $(ls java-* | grep jar | tail -n 1) combined-jar/*
       - uses: actions/upload-artifact@v3
