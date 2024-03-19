@@ -32,7 +32,8 @@ CXXFLAGS  := /I. /EHsc /DLL /LD /std:c++17 /I.\include $(addprefix -I,$(JAVA_INC
 endif
 
 # Allow linking against ASan if USE_ASAN is set to 1:
-ifeq (${USE_ASAN},1) 
+ifeq (${USE_ASAN},1)
+TEST_LD_PRELOAD := $(shell clang -print-file-name=libclang_rt.asan-x86_64.so)
 CXXFLAGS := $(CXXFLAGS) -fsanitize=address
 else
 endif
@@ -83,7 +84,7 @@ target/classes/win-x64/$(WIN_SOBJ): classpath.txt $(HEADERS)
 	cp com_spotify_voyager_jni_Index.dll $@
 
 test: $(ALL_OBJS)
-	mvn test
+	LD_PRELOAD=$(TEST_LD_PRELOAD) mvn test	
 
 clean:
 	rm -rfv com_spotify_*.h classpath.txt target
