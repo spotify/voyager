@@ -91,7 +91,6 @@ jobs:
       - name: Compile
         env:
           USE_ASAN: "1"
-          CXX: "clang++"
         run: make target/classes/linux-x64/libvoyager.so
       - name: Run Tests
         run: 'LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) mvn --batch-mode test'
