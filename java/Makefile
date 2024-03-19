@@ -14,13 +14,13 @@ HEADERS   := $(SOURCE:.cpp=.h) $(wildcard ../cpp/*.h)
 JAVA_SRC  := ./src/main/java
 
 ifeq ($(UNAME_S),Linux)
-CXX       ?= g++
+CXX       := g++
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/linux
 ALL_OBJS  := target/classes/linux-x64/$(LINUX_SOBJ) target/classes/linux-aarch64/$(LINUX_SOBJ)
 CXXFLAGS  := -I. -lc -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
 PREBUILD_COMMAND := sudo apt-get update && sudo apt-get install -y ca-certificates-java openjdk-11-jre-headless; { curl https://dlcdn.apache.org/maven/maven-3/3.9.2/binaries/apache-maven-3.9.2-bin.tar.gz | sudo tar -xvzf - -C /opt ; }; export M2_HOME=/opt/apache-maven-3.9.2 && export PATH=\"${M2_HOME}/bin:${PATH}\"
 else ifeq ($(UNAME_S),Darwin)
-CXX       ?= clang++
+CXX       := clang++
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/darwin
 ALL_OBJS  := target/classes/mac-x64/$(MAC_SOBJ) target/classes/mac-aarch64/$(MAC_SOBJ)
 CXXFLAGS  := -I. -lc++ -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
@@ -60,14 +60,14 @@ target/classes/linux-x64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
 	# Why use Dockcross if we're already building on x86?
 	# We need to use an older version of GLIBC and GLIBCXX to ensure wide compatibility on Linux.
-	docker run -e CXX=$(CXX) -v $(shell realpath ../):/work dockcross/linux-x64:20210625-78b96c7 bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
+	docker run -v $(shell realpath ../):/work dockcross/linux-x64:20210625-78b96c7 bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
 
 target/classes/linux-aarch64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/linux-aarch64/
 	mkdir -p linux-build
 	cp -r $(CPP_SRC_DIR) linux-build/include
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
-	docker run -e CXX=$(CXX) -v $(shell realpath ../):/work dockcross/linux-arm64-lts bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
+	docker run -v $(shell realpath ../):/work dockcross/linux-arm64-lts bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
 
 target/classes/mac-x64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/mac-x64/
