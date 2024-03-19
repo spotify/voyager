@@ -258,12 +258,14 @@ public class IndexTest {
           // unquantized (fp32) vector will return the quantized vector as its NN
           // InnerProduct will have negative distance to the closest item, not zero
           if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
-            assertEquals(String.format(
-                    "Expected element %d to be the nearest neighbor to itself when " +
-                    "reloading the index, but nearest neighbor was %d " +
-                    "(%2.2f distance away).", i, neighbor.labels[0], neighbor.distances[0]),
-                    i, neighbor.labels[0]
-            );
+            assertEquals(
+                String.format(
+                    "Expected element %d to be the nearest neighbor to itself when "
+                        + "reloading the index, but nearest neighbor was %d "
+                        + "(%2.2f distance away).",
+                    i, neighbor.labels[0], neighbor.distances[0]),
+                i,
+                neighbor.labels[0]);
             assertEquals(0.0f, neighbor.distances[0], expectedPrecision);
           }
         }
