@@ -25,7 +25,7 @@ JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/darwin
 ALL_OBJS  := target/classes/mac-x64/$(MAC_SOBJ) target/classes/mac-aarch64/$(MAC_SOBJ)
 CXXFLAGS  := -I. -lc++ -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
 else ifdef OS # Windows:
-CXX       ?= cl.exe
+CXX       := cl.exe
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/win32
 ALL_OBJS  := target/classes/win-x64/$(WIN_SOBJ)
 CXXFLAGS  := /I. /EHsc /DLL /LD /std:c++17 /I.\include $(addprefix -I,$(JAVA_INC)) /I $(CPP_SRC_DIR) /O2
@@ -33,9 +33,8 @@ endif
 
 # Allow linking against ASan if USE_ASAN is set to 1:
 ifeq (${USE_ASAN},1) 
-CXXFLAGS  := $(CXXFLAGS) -fsanitize=address
+CXXFLAGS := $(CXXFLAGS) -fsanitize=address
 else
-CXXFLAGS  := $(CXXFLAGS) -fsanitize=address
 endif
 
 
