@@ -34,7 +34,7 @@ Add the following artifact to your `pom.xml`:
 <dependency>
   <groupId>com.spotify</groupId>
   <artifactId>voyager</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.4</version>
 </dependency>
 ```
 You can find the latest version on [Voyager's Releases page](https://github.com/spotify/voyager/releases).
@@ -43,7 +43,7 @@ You can find the latest version on [Voyager's Releases page](https://github.com/
 
 Add the following artifact to your `build.sbt`:
 ```sbt
-"com.spotify" % "voyager" % "2.0.0"
+"com.spotify" % "voyager" % "2.0.4"
 ```
 You can find the latest version on [Voyager's Releases page](https://github.com/spotify/voyager/releases).
 
@@ -82,6 +82,6 @@ See [CONTRIBUTING.md](https://github.com/spotify/voyager/blob/master/CONTRIBUTIN
 
 
 ### License
-Voyager is copyright 2022-2023 Spotify AB.
+Voyager is copyright 2022-2024 Spotify AB.
 
 Voyager is licensed under the [Apache 2 License]([https://www.gnu.org/licenses/gpl-3.0.en.html](https://www.apache.org/licenses/LICENSE-2.0)).
