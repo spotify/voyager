@@ -346,7 +346,7 @@ public:
 
     // if size is exceeded, increase by 50% of old max plus num rows
     if (getNumElements() + rows > getMaxElements()) {
-      size_t newNumElements = int (getMaxElements() * 1.5) + rows;
+      size_t newNumElements = int(getMaxElements() * 1.5) + rows;
       resizeIndex(newNumElements);
     }
 
