@@ -101,7 +101,7 @@ public class StringIndexTest {
       float[][] targetVectors = TestUtils.randomVectors(() -> new Random(0), 2, numDimensions);
 
       List<List<CustomResult>> results =
-          Arrays.stream(index.query(targetVectors, 2, testVectors.size(), 1))
+          Arrays.stream(index.query(targetVectors, 2, 1, testVectors.size()))
               .map(RESULT_MAPPER)
               .collect(Collectors.toList());
 

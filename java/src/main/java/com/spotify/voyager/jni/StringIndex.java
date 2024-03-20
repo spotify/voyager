@@ -311,16 +311,16 @@ public class StringIndex implements Closeable {
   }
 
   /**
-   * Query for against multiple target vectors in parallel.
+   * Query for multiple target vectors in parallel.
    *
    * @param queryVectors Array of query vectors to search around
    * @param numNeighbors Number of neighbors to get for each target
-   * @param ef Search depth in the graph
    * @param numThreads Number of threads to use for the underlying index search. -1 uses all
    *     available CPU cores
+   * @param ef Search depth in the graph
    * @return Array of QueryResults, one for each target vector
    */
-  public QueryResults[] query(float[][] queryVectors, int numNeighbors, int ef, int numThreads) {
+  public QueryResults[] query(float[][] queryVectors, int numNeighbors, int numThreads, int ef) {
     QueryResults[] results = new QueryResults[queryVectors.length];
     Index.QueryResults[] idxResults = index.query(queryVectors, numNeighbors, numThreads, ef);
     for (int i = 0; i < idxResults.length; i++) {
