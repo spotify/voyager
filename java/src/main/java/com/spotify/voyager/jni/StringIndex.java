@@ -307,9 +307,34 @@ public class StringIndex implements Closeable {
    *     distance from the query vector, sorted in ascending order of distance
    */
   public QueryResults query(float[] queryVector, int numNeighbors, int ef) {
-    String[] resultNames = new String[numNeighbors];
-    float[] distances = new float[numNeighbors];
-    Index.QueryResults idxResults = index.query(queryVector, numNeighbors, ef);
+    return convertResult(index.query(queryVector, numNeighbors, ef));
+  }
+
+  /**
+   * Query for against multiple target vectors in parallel.
+   *
+   * @param queryVectors Array of query vectors to search around
+   * @param numNeighbors Number of neighbors to get for each target
+   * @param ef Search depth in the graph
+   * @param numThreads Number of threads to use for the underlying index search. -1 uses all
+   *     available CPU cores
+   * @return Array of QueryResults, one for each target vector
+   */
+  public QueryResults[] query(float[][] queryVectors, int numNeighbors, int ef, int numThreads) {
+    QueryResults[] results = new QueryResults[queryVectors.length];
+    Index.QueryResults[] idxResults = index.query(queryVectors, numNeighbors, numThreads, ef);
+    for (int i = 0; i < idxResults.length; i++) {
+      results[i] = this.convertResult(idxResults[i]);
+    }
+
+    return results;
+  }
+
+  private QueryResults convertResult(Index.QueryResults idxResults) {
+    int numResults = idxResults.distances.length;
+    String[] resultNames = new String[numResults];
+    float[] distances = new float[numResults];
+
     for (int i = 0; i < idxResults.getLabels().length; i++) {
       long indexId = idxResults.getLabels()[i];
       float dist = idxResults.getDistances()[i];
