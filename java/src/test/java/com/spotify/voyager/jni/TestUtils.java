@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
 
 public class TestUtils {
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -74,12 +75,13 @@ public class TestUtils {
    * @return an array of float arrays, with numElements as the first dimension, and numDimensions as
    *     the second.
    */
-  public static float[][] randomVectors(int numElements, int numDimensions) {
+  public static float[][] randomVectors(
+      Supplier<Random> randomSupplier, int numElements, int numDimensions) {
     float[][] vectors = new float[numElements][numDimensions];
 
     for (int i = 0; i < numElements; i++) {
       for (int j = 0; j < numDimensions; j++) {
-        vectors[i][j] = random.nextFloat() * 2 - 1;
+        vectors[i][j] = randomSupplier.get().nextFloat() * 2 - 1;
       }
     }
 
