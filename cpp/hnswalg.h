@@ -638,6 +638,8 @@ public:
     return top_candidates;
   };
 
+  std::mutex resize;
+
   void resizeIndex(size_t new_max_elements) {
     if (search_only_)
       throw std::runtime_error(
@@ -646,7 +648,7 @@ public:
     if (new_max_elements < cur_element_count)
       throw std::runtime_error("Cannot resize, max element is less than the "
                                "current number of elements");
-
+    resize.lock();
     delete visited_list_pool_;
     visited_list_pool_ = new VisitedListPool(1, new_max_elements);
 
@@ -671,6 +673,7 @@ public:
     linkLists_ = linkLists_new;
 
     max_elements_ = new_max_elements;
+    resize.unlock();
   }
 
   void saveIndex(const std::string &filename) {

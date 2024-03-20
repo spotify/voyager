@@ -344,10 +344,10 @@ public:
           "of provided IDs must match the number of vectors.");
     }
 
-    // TODO: Should we always double the number of elements instead? Maybe use
-    // an adaptive algorithm to minimize both reallocations and memory usage?
+    // if size is exceeded, increase by 50% of old max plus num rows
     if (getNumElements() + rows > getMaxElements()) {
-      resizeIndex(getNumElements() + rows);
+      size_t newNumElements = int (getMaxElements() * 1.5) + rows;
+      resizeIndex(newNumElements);
     }
 
     int actualDimensions =

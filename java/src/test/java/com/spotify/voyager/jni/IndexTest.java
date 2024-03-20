@@ -40,6 +40,14 @@ import org.junit.Test;
 public class IndexTest {
   static final Map<Index.StorageDataType, Float> PRECISION_PER_DATA_TYPE = new HashMap<>();
 
+  /*
+   * The new maxElements is calculated as 1.5x the previous value, cast as an int plus the number of
+   * rows being added. For 2000 max elements added in one shot to an index with initial maxElements
+   * of 1 that comes out to 2001. When added one at a time, that comes out to 2396.
+   */
+  private static final int EXPECTED_MAX_ELEMENTS_MULTI_ADD = 2001;
+  private static final int EXPECTED_MAX_ELEMENTS_SINGLE_ADD = 2396;
+
   static {
     PRECISION_PER_DATA_TYPE.put(Index.StorageDataType.Float32, 0.00001f);
     PRECISION_PER_DATA_TYPE.put(Index.StorageDataType.Float8, 0.10f);
@@ -133,7 +141,11 @@ public class IndexTest {
       assertEquals(32, index.getNumDimensions());
       assertEquals(20, index.getM());
       assertEquals(2000, index.getEfConstruction());
-      assertEquals(numElements, index.getMaxElements());
+      int expectedMaxElements =
+          testSingleVectorMethods
+              ? EXPECTED_MAX_ELEMENTS_SINGLE_ADD
+              : EXPECTED_MAX_ELEMENTS_MULTI_ADD;
+      assertEquals(expectedMaxElements, index.getMaxElements());
 
       long[] actualIds = index.getIDs();
       Arrays.sort(actualIds);

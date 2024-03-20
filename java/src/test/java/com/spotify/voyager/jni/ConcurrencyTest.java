@@ -26,7 +26,9 @@ import static org.junit.Assert.assertTrue;
 
 import com.spotify.voyager.jni.Index.StorageDataType;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 public class ConcurrencyTest {
@@ -89,5 +91,64 @@ public class ConcurrencyTest {
     assertTrue(
         "Expected exception message to contain 'has been closed', but was: " + thrown.getMessage(),
         thrown.getMessage().contains("has been closed"));
+  }
+
+  @Test
+  public void testIndexCanBeResizedWhileQuerying() {
+    int numElements = 100_000;
+    int sliceSize = 100;
+    final Index index = new Index(Euclidean, 32, 5, 10, 1, 1, StorageDataType.Float32);
+    float[][] inputData = TestUtils.randomQuantizedVectors(numElements, 32);
+
+    index.addItems(Arrays.copyOfRange(inputData, 0, sliceSize), -1);
+
+    AtomicInteger idx = new AtomicInteger(sliceSize);
+    Thread t =
+        new Thread(
+            () -> {
+              try {
+                while (true) {
+                  // add 100 elements every 10 ms
+                  Thread.sleep(10);
+                  int i = idx.getAndAdd(sliceSize);
+                  if (i + sliceSize < numElements) {
+                    float[][] toAdd = Arrays.copyOfRange(inputData, i, i + sliceSize);
+                    index.addItems(toAdd, -1);
+                  } else {
+                    idx.set(numElements);
+                    break;
+                  }
+                }
+
+              } catch (Exception e) {
+                System.out.println("Error adding item");
+                throw new RuntimeException(e);
+              }
+            });
+    t.start();
+
+    Runnable queryIndex =
+        () -> {
+          while (true) {
+            // query index for a random target every 1 ms
+            try {
+              index.query(TestUtils.randomQuantizedVectors(1, 32)[0], 1);
+              Thread.sleep(1);
+            } catch (Exception e) {
+              System.out.println("Error querying index: " + e.getMessage());
+            }
+          }
+        };
+
+    Thread queryT = new Thread(queryIndex);
+    Thread queryT1 = new Thread(queryIndex);
+    Thread queryT2 = new Thread(queryIndex);
+    queryT.start();
+    queryT1.start();
+    queryT2.start();
+
+    while (idx.get() != numElements) {}
+    // if we get here then we successfully added 50k items to the index without crashing
+    assertTrue("Ran test with no crash", true);
   }
 }
