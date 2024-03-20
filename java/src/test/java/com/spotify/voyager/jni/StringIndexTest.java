@@ -31,8 +31,10 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
@@ -76,6 +78,36 @@ public class StringIndexTest {
       assertThat(results)
           .extracting(CustomResult::getName)
           .containsExactly("my-vector-78", "my-vector-93");
+    }
+  }
+
+  @Test
+  public void itFindsNeighborsMultipleTargets() throws Exception {
+    List<Vector> testVectors = TestUtils.getTestVectors();
+    int numDimensions = testVectors.get(0).vector.length;
+    try (final StringIndex index =
+        new StringIndex(
+            SpaceType.Cosine,
+            numDimensions,
+            20,
+            testVectors.size(),
+            0,
+            testVectors.size(),
+            StorageDataType.E4M3)) {
+      for (Vector v : testVectors) {
+        index.addItem(v.name, v.vector);
+      }
+
+      float[][] targetVectors = TestUtils.randomVectors(() -> new Random(0), 2, numDimensions);
+
+      List<List<CustomResult>> results =
+          Arrays.stream(index.query(targetVectors, 2, 1, testVectors.size()))
+              .map(RESULT_MAPPER)
+              .collect(Collectors.toList());
+
+      assertThat(results.stream().flatMap(List::stream))
+          .extracting(CustomResult::getName)
+          .containsExactly("my-vector-59", "my-vector-58", "my-vector-59", "my-vector-58");
     }
   }
 
