@@ -26,7 +26,6 @@
 #include "Spaces/Space.h"
 #include "hnswlib.h"
 #include "visited_list_pool.h"
-#include "ReadWriteLock.h"
 #include <assert.h>
 #include <atomic>
 #include <cstdio>
@@ -37,6 +36,7 @@
 #include <stdlib.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <shared_mutex>
 
 namespace hnswlib {
 typedef unsigned int tableint;
@@ -136,7 +136,7 @@ public:
   double mult_, revSize_;
   int maxlevel_;
 
-  mutable voyager::ReadWriteLock rwLock;
+  mutable std::shared_mutex resizeLock;
   VisitedListPool *visited_list_pool_;
   std::mutex cur_element_count_guard_;
 
@@ -206,9 +206,7 @@ public:
                   VisitedList *vl = nullptr) {
     bool wasPassedVisitedList = vl != nullptr;
     if (!wasPassedVisitedList) {
-      rwLock.lock_read();
       vl = visited_list_pool_->getFreeVisitedList();
-      rwLock.unlock_read();
     } else {
       vl->reset();
     }
@@ -303,9 +301,7 @@ public:
                     VisitedList *vl = nullptr) const {
     bool wasPassedVisitedList = vl != nullptr;
     if (!wasPassedVisitedList) {
-      rwLock.lock_read();
       vl = visited_list_pool_->getFreeVisitedList();
-      rwLock.unlock_read();
     } else {
       vl->reset();
     }
@@ -652,7 +648,7 @@ public:
     if (new_max_elements < cur_element_count)
       throw std::runtime_error("Cannot resize, max element is less than the "
                                "current number of elements");
-    rwLock.lock_write();
+    resizeLock.lock();
     delete visited_list_pool_;
     visited_list_pool_ = new VisitedListPool(1, new_max_elements);
 
@@ -677,7 +673,7 @@ public:
     linkLists_ = linkLists_new;
 
     max_elements_ = new_max_elements;
-    rwLock.unlock_write();
+    resizeLock.unlock();
   }
 
   void saveIndex(const std::string &filename) {
@@ -1406,6 +1402,7 @@ public:
   std::priority_queue<std::pair<dist_t, labeltype>>
   searchKnn(const data_t *query_data, size_t k, VisitedList *vl = nullptr,
             long queryEf = -1) const {
+    resizeLock.lock_shared();
     std::priority_queue<std::pair<dist_t, labeltype>> result;
     if (cur_element_count == 0)
       return result;
@@ -1464,6 +1461,7 @@ public:
                                                getExternalLabel(rez.second)));
       top_candidates.pop();
     }
+    resizeLock.unlock_shared();
     return result;
   };
 

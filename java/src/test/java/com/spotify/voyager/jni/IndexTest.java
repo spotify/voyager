@@ -133,7 +133,7 @@ public class IndexTest {
       assertEquals(32, index.getNumDimensions());
       assertEquals(20, index.getM());
       assertEquals(2000, index.getEfConstruction());
-      assertEquals(numElements + 1, index.getMaxElements());
+      assertEquals(numElements, index.getMaxElements());
 
       long[] actualIds = index.getIDs();
       Arrays.sort(actualIds);
