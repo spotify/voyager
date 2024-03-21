@@ -157,7 +157,6 @@ public class ConcurrencyTest {
   }
 
   @Test
-  @Ignore("This test exposes a known bug, ignoring until a fix is put in")
   public void itCanAddItemsInParallel() {
     int numElements = 50_000;
 
