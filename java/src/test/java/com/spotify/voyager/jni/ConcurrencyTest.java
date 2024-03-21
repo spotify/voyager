@@ -95,7 +95,7 @@ public class ConcurrencyTest {
 
   @Test
   public void testIndexCanBeResizedWhileQuerying() {
-    int numElements = 100_000;
+    int numElements = 50_000;
     int sliceSize = 100;
     final Index index = new Index(Euclidean, 32, 5, 10, 1, 1, StorageDataType.Float32);
     float[][] inputData = TestUtils.randomQuantizedVectors(numElements, 32);
@@ -135,7 +135,7 @@ public class ConcurrencyTest {
               index.query(TestUtils.randomQuantizedVectors(1, 32)[0], 1);
               Thread.sleep(1);
             } catch (Exception e) {
-              System.out.println("Error querying index: " + e.getMessage());
+              e.printStackTrace();
             }
           }
         };

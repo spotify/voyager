@@ -26,6 +26,7 @@
 #include "Spaces/Space.h"
 #include "hnswlib.h"
 #include "visited_list_pool.h"
+#include "ReadWriteLock.h"
 #include <assert.h>
 #include <atomic>
 #include <cstdio>
@@ -135,6 +136,7 @@ public:
   double mult_, revSize_;
   int maxlevel_;
 
+  mutable voyager::ReadWriteLock rwLock;
   VisitedListPool *visited_list_pool_;
   std::mutex cur_element_count_guard_;
 
@@ -204,7 +206,9 @@ public:
                   VisitedList *vl = nullptr) {
     bool wasPassedVisitedList = vl != nullptr;
     if (!wasPassedVisitedList) {
+      rwLock.lock_read();
       vl = visited_list_pool_->getFreeVisitedList();
+      rwLock.unlock_read();
     } else {
       vl->reset();
     }
@@ -299,7 +303,9 @@ public:
                     VisitedList *vl = nullptr) const {
     bool wasPassedVisitedList = vl != nullptr;
     if (!wasPassedVisitedList) {
+      rwLock.lock_read();
       vl = visited_list_pool_->getFreeVisitedList();
+      rwLock.unlock_read();
     } else {
       vl->reset();
     }
@@ -638,8 +644,6 @@ public:
     return top_candidates;
   };
 
-  std::mutex resize;
-
   void resizeIndex(size_t new_max_elements) {
     if (search_only_)
       throw std::runtime_error(
@@ -648,7 +652,7 @@ public:
     if (new_max_elements < cur_element_count)
       throw std::runtime_error("Cannot resize, max element is less than the "
                                "current number of elements");
-    resize.lock();
+    rwLock.lock_write();
     delete visited_list_pool_;
     visited_list_pool_ = new VisitedListPool(1, new_max_elements);
 
@@ -673,7 +677,7 @@ public:
     linkLists_ = linkLists_new;
 
     max_elements_ = new_max_elements;
-    resize.unlock();
+    rwLock.unlock_write();
   }
 
   void saveIndex(const std::string &filename) {
