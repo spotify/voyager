@@ -136,7 +136,7 @@ public:
   double mult_, revSize_;
   int maxlevel_;
 
-  mutable std::shared_mutex resizeLock;
+  std::shared_mutex resizeLock;
   VisitedListPool *visited_list_pool_;
   std::mutex cur_element_count_guard_;
 
@@ -1400,7 +1400,7 @@ public:
 
   std::priority_queue<std::pair<dist_t, labeltype>>
   searchKnn(const data_t *query_data, size_t k, VisitedList *vl = nullptr,
-            long queryEf = -1) const {
+            long queryEf = -1) {
     std::shared_lock<std::shared_mutex> lock(resizeLock);
     std::priority_queue<std::pair<dist_t, labeltype>> result;
     if (cur_element_count == 0)

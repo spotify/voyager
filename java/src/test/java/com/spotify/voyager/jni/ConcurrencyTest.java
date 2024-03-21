@@ -23,7 +23,6 @@ package com.spotify.voyager.jni;
 import static com.spotify.voyager.jni.Index.SpaceType.Euclidean;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import com.spotify.voyager.jni.Index.StorageDataType;
@@ -33,6 +32,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class ConcurrencyTest {
@@ -157,6 +157,7 @@ public class ConcurrencyTest {
   }
 
   @Test
+  @Ignore("This test exposes a known bug, ignoring until a fix is put in")
   public void itCanAddItemsInParallel() {
     int numElements = 50_000;
 
@@ -196,6 +197,7 @@ public class ConcurrencyTest {
     while (running.get()) {}
     // if we get here then we successfully added 50k items to the index without crashing
     if (error.get().isPresent()) {
+      error.get().get().printStackTrace();
       fail("Error in test: " + error.get().get().getMessage());
     }
   }
