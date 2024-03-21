@@ -38,6 +38,17 @@
 #include <unordered_map>
 #include <unordered_set>
 
+class IndexCannotBeShrunkError : public std::runtime_error {
+public:
+  IndexCannotBeShrunkError(const std::string &what)
+      : std::runtime_error(what) {}
+};
+
+class IndexFullError : public std::runtime_error {
+public:
+  IndexFullError(const std::string &what) : std::runtime_error(what) {}
+};
+
 namespace hnswlib {
 typedef unsigned int tableint;
 typedef unsigned int linklistsizeint;
@@ -644,11 +655,14 @@ public:
     if (search_only_)
       throw std::runtime_error(
           "resizeIndex is not supported in search only mode");
+    std::unique_lock<std::shared_mutex> lock(resizeLock);
 
     if (new_max_elements < cur_element_count)
-      throw std::runtime_error("Cannot resize, max element is less than the "
-                               "current number of elements");
-    std::unique_lock<std::shared_mutex> lock(resizeLock);
+      throw IndexCannotBeShrunkError(
+          "Cannot resize to " + std::to_string(new_max_elements) +
+          " elements, as this index already contains " +
+          std::to_string(cur_element_count) + " elements.");
+
     delete visited_list_pool_;
     visited_list_pool_ = new VisitedListPool(1, new_max_elements);
 
@@ -1287,8 +1301,13 @@ public:
       }
 
       if (cur_element_count >= max_elements_) {
-        throw std::runtime_error(
-            "The number of elements exceeds the specified limit");
+        throw IndexFullError(
+            "Cannot insert elements; this index already contains " +
+            std::to_string(cur_element_count) +
+            " elements, and its maximum size is " +
+            std::to_string(max_elements_) +
+            ". Call resizeIndex first to increase the maximum size of the "
+            "index.");
       };
 
       cur_c = cur_element_count;
