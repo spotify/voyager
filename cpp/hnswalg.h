@@ -648,7 +648,7 @@ public:
     if (new_max_elements < cur_element_count)
       throw std::runtime_error("Cannot resize, max element is less than the "
                                "current number of elements");
-    resizeLock.lock();
+    std::unique_lock<std::shared_mutex> lock(resizeLock);
     delete visited_list_pool_;
     visited_list_pool_ = new VisitedListPool(1, new_max_elements);
 
@@ -673,7 +673,6 @@ public:
     linkLists_ = linkLists_new;
 
     max_elements_ = new_max_elements;
-    resizeLock.unlock();
   }
 
   void saveIndex(const std::string &filename) {
@@ -1402,7 +1401,7 @@ public:
   std::priority_queue<std::pair<dist_t, labeltype>>
   searchKnn(const data_t *query_data, size_t k, VisitedList *vl = nullptr,
             long queryEf = -1) const {
-    resizeLock.lock_shared();
+    std::shared_lock<std::shared_mutex> lock(resizeLock);
     std::priority_queue<std::pair<dist_t, labeltype>> result;
     if (cur_element_count == 0)
       return result;
@@ -1461,7 +1460,6 @@ public:
                                                getExternalLabel(rez.second)));
       top_candidates.pop();
     }
-    resizeLock.unlock_shared();
     return result;
   };
 
