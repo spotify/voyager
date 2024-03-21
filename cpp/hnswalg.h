@@ -33,10 +33,10 @@
 #include <fstream>
 #include <list>
 #include <random>
+#include <shared_mutex>
 #include <stdlib.h>
 #include <unordered_map>
 #include <unordered_set>
-#include <shared_mutex>
 
 namespace hnswlib {
 typedef unsigned int tableint;
