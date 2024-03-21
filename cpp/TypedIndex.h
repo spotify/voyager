@@ -346,7 +346,7 @@ public:
 
     // TODO: Should we always double the number of elements instead? Maybe use
     // an adaptive algorithm to minimize both reallocations and memory usage?
-    if (getNumElements() + rows > getMaxElements()) {
+    while (getNumElements() + rows > getMaxElements()) {
       resizeIndex(getNumElements() + rows);
     }
 

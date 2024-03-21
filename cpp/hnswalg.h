@@ -1264,7 +1264,7 @@ public:
   };
 
   tableint addPoint(const data_t *data_point, labeltype label, int level) {
-
+    std::shared_lock<std::shared_mutex> lock(resizeLock);
     tableint cur_c = 0;
     {
       // Checking if the element with the same label already exists
