@@ -84,8 +84,8 @@ class BuildExt(build_ext):
     linker_flags = {"unix": [], "msvc": []}
 
     if sys.platform == "darwin":
-        compiler_flags["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
-        linker_flags["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.7"]
+        compiler_flags["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.13"]
+        linker_flags["unix"] += ["-stdlib=libc++", "-mmacosx-version-min=10.13"]
 
     if USE_ASAN:
         compiler_flags["unix"].append("-fsanitize=address")
