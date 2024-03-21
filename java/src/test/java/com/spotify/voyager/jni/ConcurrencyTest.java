@@ -170,24 +170,25 @@ public class ConcurrencyTest {
     AtomicBoolean running = new AtomicBoolean(true);
     AtomicReference<Optional<Throwable>> error = new AtomicReference<>(Optional.empty());
 
-    Runnable addItem = () -> {
-        try {
-          while (true) {
-            // add 1 item every millisecond
-            Thread.sleep(1);
-            int i = idx.getAndIncrement();
-            if (i < numElements) {
-              float[] toAdd = inputData[i];
-              index.addItem(toAdd);
-            } else {
-              running.set(false);
+    Runnable addItem =
+        () -> {
+          try {
+            while (true) {
+              // add 1 item every millisecond
+              Thread.sleep(1);
+              int i = idx.getAndIncrement();
+              if (i < numElements) {
+                float[] toAdd = inputData[i];
+                index.addItem(toAdd);
+              } else {
+                running.set(false);
+              }
             }
+          } catch (Exception e) {
+            error.set(Optional.of(e));
+            running.set(false);
           }
-        } catch (Exception e) {
-          error.set(Optional.of(e));
-          running.set(false);
-        }
-    };
+        };
 
     for (int i = 0; i < 5; i++) {
       Thread t = new Thread(addItem);
