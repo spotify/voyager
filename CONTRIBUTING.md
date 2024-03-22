@@ -11,7 +11,7 @@ To compile Voyager from scratch, the following packages will need to be installe
 - [Python 3.7](https://www.python.org/downloads/) or higher.
 - A C++ compiler, e.g. `gcc`, `clang`, etc.
 
-### Building Voyager
+### Building Voyager Python
 
 ```shell
 git clone git@github.com:spotify/voyager.git
@@ -108,7 +108,7 @@ mvn verify
 
 Use [`clang-format`](https://clang.llvm.org/docs/ClangFormat.html) for C++ code, and `black` with defaults for Python code.
 
-In order to check and run formatting within the python module, you can use tox to facilitate this.
+In order to check and run formatting within the python module (but not the c++ core module), you can use tox to facilitate this.
 ```bash
 cd python
 # Check formatting only (don't change files)
@@ -117,9 +117,14 @@ tox -e check-formatting
 tox -e format
 ```
 
-For C++ code, you can use the following command to check formatting:
+For C++ code within the core `cpp` module, you can use the following command to check formatting:
 ```bash
 cd cpp
+# Check formatting only
+clang-format --verbose --dry-run -i src/*.h
+# Run formatter
+clang-format --verbose -i src/*.h
+```
 
 
 ## Issues
@@ -144,7 +149,7 @@ When creating an issue please try to ahere to the following format:
 
 Files should be exempt of trailing spaces.
 
-We adhere to a specific format for commit messages. Please write your commit
+We adhere to a specific format for pull requests. Please write your commit
 messages along these guidelines. Please keep the line width no greater than 80
 columns (You can use `fmt -n -p -w 80` to accomplish this).
 

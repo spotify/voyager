@@ -49,7 +49,7 @@ public:
   virtual void setEF(size_t ef) = 0;
   virtual int getEF() const = 0;
 
-  virtual SpaceType getSpace() const = 0;
+  virtual SpaceType getSpace(   ) const = 0;
   virtual std::string getSpaceName() const = 0;
 
   virtual StorageDataType getStorageDataType() const = 0;
@@ -62,33 +62,27 @@ public:
 
   virtual void saveIndex(const std::string &pathToIndex) = 0;
   virtual void saveIndex(std::shared_ptr<OutputStream> outputStream) = 0;
-  virtual void loadIndex(const std::string &pathToIndex,
-                         bool searchOnly = false) = 0;
-  virtual void loadIndex(std::shared_ptr<InputStream> inputStream,
-                         bool searchOnly = false) = 0;
+  virtual void loadIndex(const std::string &pathToIndex, bool searchOnly = false) = 0;
+  virtual void loadIndex(std::shared_ptr<InputStream> inputStream, bool searchOnly = false) = 0;
 
   virtual float getDistance(std::vector<float> a, std::vector<float> b) = 0;
 
-  virtual hnswlib::labeltype addItem(std::vector<float> vector,
-                                     std::optional<hnswlib::labeltype> id) = 0;
-  virtual std::vector<hnswlib::labeltype>
-  addItems(NDArray<float, 2> input, std::vector<hnswlib::labeltype> ids = {},
-           int numThreads = -1) = 0;
+  virtual hnswlib::labeltype addItem(std::vector<float> vector, std::optional<hnswlib::labeltype> id) = 0;
+  virtual std::vector<hnswlib::labeltype> addItems(NDArray<float, 2> input, std::vector<hnswlib::labeltype> ids = {},
+                                                   int numThreads = -1) = 0;
 
   virtual std::vector<float> getVector(hnswlib::labeltype id) = 0;
   virtual NDArray<float, 2> getVectors(std::vector<hnswlib::labeltype> ids) = 0;
 
   virtual std::vector<hnswlib::labeltype> getIDs() const = 0;
   virtual long long getIDsCount() const = 0;
-  virtual const std::unordered_map<hnswlib::labeltype, hnswlib::tableint> &
-  getIDsMap() const = 0;
+  virtual const std::unordered_map<hnswlib::labeltype, hnswlib::tableint> &getIDsMap() const = 0;
 
-  virtual std::tuple<std::vector<hnswlib::labeltype>, std::vector<float>>
-  query(std::vector<float> queryVector, int k = 1, long queryEf = -1) = 0;
+  virtual std::tuple<std::vector<hnswlib::labeltype>, std::vector<float>> query(std::vector<float> queryVector,
+                                                                                int k = 1, long queryEf = -1) = 0;
 
   virtual std::tuple<NDArray<hnswlib::labeltype, 2>, NDArray<float, 2>>
-  query(NDArray<float, 2> queryVectors, int k = 1, int numThreads = -1,
-        long queryEf = -1) = 0;
+  query(NDArray<float, 2> queryVectors, int k = 1, int numThreads = -1, long queryEf = -1) = 0;
 
   virtual void markDeleted(hnswlib::labeltype label) = 0;
   virtual void unmarkDeleted(hnswlib::labeltype label) = 0;

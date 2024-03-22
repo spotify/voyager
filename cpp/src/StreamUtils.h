@@ -39,9 +39,7 @@ public:
   virtual bool isExhausted() = 0;
   virtual long long getPosition() = 0;
   virtual bool setPosition(long long position) = 0;
-  virtual bool advanceBy(long long numBytes) {
-    return setPosition(getPosition() + numBytes);
-  }
+  virtual bool advanceBy(long long numBytes) { return setPosition(getPosition() + numBytes); }
   virtual uint32_t peek() = 0;
 };
 
@@ -64,18 +62,12 @@ public:
   virtual bool isSeekable() { return isRegularFile; }
   virtual long long getTotalLength() { return sizeInBytes; }
 
-  virtual long long read(char *buffer, long long bytesToRead) {
-    return fread(buffer, 1, bytesToRead, handle);
-  }
+  virtual long long read(char *buffer, long long bytesToRead) { return fread(buffer, 1, bytesToRead, handle); }
 
   virtual bool isExhausted() { return feof(handle); }
   virtual long long getPosition() { return ftell(handle); }
-  virtual bool setPosition(long long position) {
-    return fseek(handle, position, SEEK_SET) == 0;
-  }
-  virtual bool advanceBy(long long bytes) {
-    return fseek(handle, bytes, SEEK_CUR) == 0;
-  }
+  virtual bool setPosition(long long position) { return fseek(handle, position, SEEK_SET) == 0; }
+  virtual bool advanceBy(long long bytes) { return fseek(handle, bytes, SEEK_CUR) == 0; }
   virtual uint32_t peek() {
     uint32_t result = 0;
     long long lastPosition = getPosition();
@@ -83,10 +75,8 @@ public:
       setPosition(lastPosition);
       return result;
     } else {
-      throw std::runtime_error(
-          "Failed to peek " + std::to_string(sizeof(result)) +
-          " bytes from file \"" + filename + "\" at index " +
-          std::to_string(lastPosition) + ".");
+      throw std::runtime_error("Failed to peek " + std::to_string(sizeof(result)) + " bytes from file \"" + filename +
+                               "\" at index " + std::to_string(lastPosition) + ".");
     }
   }
 
@@ -123,8 +113,7 @@ public:
     errno = 0;
     handle = fopen(filename.c_str(), "wb");
     if (!handle) {
-      throw std::runtime_error("Failed to open file for writing (errno " +
-                               std::to_string(errno) + "): " + filename);
+      throw std::runtime_error("Failed to open file for writing (errno " + std::to_string(errno) + "): " + filename);
     }
   }
 
@@ -161,20 +150,16 @@ private:
   std::ostringstream outputStream;
 };
 
-template <typename T>
-static void writeBinaryPOD(std::shared_ptr<OutputStream> out, const T &podRef) {
+template <typename T> static void writeBinaryPOD(std::shared_ptr<OutputStream> out, const T &podRef) {
   if (!out->write((char *)&podRef, sizeof(T))) {
-    throw std::runtime_error("Failed to write " + std::to_string(sizeof(T)) +
-                             " bytes to stream!");
+    throw std::runtime_error("Failed to write " + std::to_string(sizeof(T)) + " bytes to stream!");
   }
 }
 
-template <typename T>
-static void readBinaryPOD(std::shared_ptr<InputStream> in, T &podRef) {
+template <typename T> static void readBinaryPOD(std::shared_ptr<InputStream> in, T &podRef) {
   long long bytesRead = in->read((char *)&podRef, sizeof(T));
   if (bytesRead != sizeof(T)) {
-    throw std::runtime_error("Failed to read " + std::to_string(sizeof(T)) +
-                             " bytes from stream! Got " +
+    throw std::runtime_error("Failed to read " + std::to_string(sizeof(T)) + " bytes from stream! Got " +
                              std::to_string(bytesRead) + ".");
   }
 }
