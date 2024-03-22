@@ -77,11 +77,11 @@ public:
   virtual void addPoint(const data_t *datapoint, labeltype label) = 0;
   virtual std::priority_queue<std::pair<dist_t, labeltype>>
   searchKnn(const data_t *, size_t, VisitedList *a = nullptr,
-            long queryEf = -1) const = 0;
+            long queryEf = -1) = 0;
 
   // Return k nearest neighbor in the order of closer fist
   virtual std::vector<std::pair<dist_t, labeltype>>
-  searchKnnCloserFirst(const data_t *query_data, size_t k) const;
+  searchKnnCloserFirst(const data_t *query_data, size_t k);
 
   virtual void saveIndex(const std::string &location) = 0;
   virtual ~AlgorithmInterface() {}
@@ -90,7 +90,7 @@ public:
 template <typename dist_t, typename data_t>
 std::vector<std::pair<dist_t, labeltype>>
 AlgorithmInterface<dist_t, data_t>::searchKnnCloserFirst(
-    const data_t *query_data, size_t k) const {
+    const data_t *query_data, size_t k) {
   std::vector<std::pair<dist_t, labeltype>> result;
 
   // here searchKnn returns the result in the order of further first

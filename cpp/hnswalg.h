@@ -33,9 +33,21 @@
 #include <fstream>
 #include <list>
 #include <random>
+#include <shared_mutex>
 #include <stdlib.h>
 #include <unordered_map>
 #include <unordered_set>
+
+class IndexCannotBeShrunkError : public std::runtime_error {
+public:
+  IndexCannotBeShrunkError(const std::string &what)
+      : std::runtime_error(what) {}
+};
+
+class IndexFullError : public std::runtime_error {
+public:
+  IndexFullError(const std::string &what) : std::runtime_error(what) {}
+};
 
 namespace hnswlib {
 typedef unsigned int tableint;
@@ -135,6 +147,7 @@ public:
   double mult_, revSize_;
   int maxlevel_;
 
+  std::shared_mutex resizeLock;
   VisitedListPool *visited_list_pool_;
   std::mutex cur_element_count_guard_;
 
@@ -642,10 +655,13 @@ public:
     if (search_only_)
       throw std::runtime_error(
           "resizeIndex is not supported in search only mode");
+    std::unique_lock<std::shared_mutex> lock(resizeLock);
 
     if (new_max_elements < cur_element_count)
-      throw std::runtime_error("Cannot resize, max element is less than the "
-                               "current number of elements");
+      throw IndexCannotBeShrunkError(
+          "Cannot resize to " + std::to_string(new_max_elements) +
+          " elements, as this index already contains " +
+          std::to_string(cur_element_count) + " elements.");
 
     delete visited_list_pool_;
     visited_list_pool_ = new VisitedListPool(1, new_max_elements);
@@ -1262,7 +1278,7 @@ public:
   };
 
   tableint addPoint(const data_t *data_point, labeltype label, int level) {
-
+    std::shared_lock<std::shared_mutex> lock(resizeLock);
     tableint cur_c = 0;
     {
       // Checking if the element with the same label already exists
@@ -1285,8 +1301,13 @@ public:
       }
 
       if (cur_element_count >= max_elements_) {
-        throw std::runtime_error(
-            "The number of elements exceeds the specified limit");
+        throw IndexFullError(
+            "Cannot insert elements; this index already contains " +
+            std::to_string(cur_element_count) +
+            " elements, and its maximum size is " +
+            std::to_string(max_elements_) +
+            ". Call resizeIndex first to increase the maximum size of the "
+            "index.");
       };
 
       cur_c = cur_element_count;
@@ -1398,7 +1419,8 @@ public:
 
   std::priority_queue<std::pair<dist_t, labeltype>>
   searchKnn(const data_t *query_data, size_t k, VisitedList *vl = nullptr,
-            long queryEf = -1) const {
+            long queryEf = -1) {
+    std::shared_lock<std::shared_mutex> lock(resizeLock);
     std::priority_queue<std::pair<dist_t, labeltype>> result;
     if (cur_element_count == 0)
       return result;

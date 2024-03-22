@@ -346,8 +346,13 @@ public:
 
     // TODO: Should we always double the number of elements instead? Maybe use
     // an adaptive algorithm to minimize both reallocations and memory usage?
-    if (getNumElements() + rows > getMaxElements()) {
-      resizeIndex(getNumElements() + rows);
+    while (getNumElements() + rows > getMaxElements()) {
+      try {
+        resizeIndex(getNumElements() + rows);
+      } catch (IndexCannotBeShrunkError &e) {
+        // Retry with a larger size; some other thread may have resized
+        // behind our back.
+      }
     }
 
     int actualDimensions =
@@ -398,7 +403,22 @@ public:
                                              &convertedArray[startIndex],
                                              actualDimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
-        algorithmImpl->addPoint(convertedArray.data() + startIndex, id);
+        try {
+          algorithmImpl->addPoint(convertedArray.data() + startIndex, id);
+        } catch (IndexFullError &e) {
+          // Resize the index and try again:
+          while (getNumElements() + rows > getMaxElements()) {
+            try {
+              // NOTE: This will resize the index to be at least as large as
+              // the number of elements we're trying to add, but may
+              // allocate more space than necessary.
+              resizeIndex(getNumElements() + rows);
+            } catch (IndexCannotBeShrunkError &e) {
+              // Retry with a larger size; some other thread may have resized
+              // behind our back.
+            }
+          }
+        }
         idsToReturn[row] = id;
       });
     } else {
@@ -419,7 +439,23 @@ public:
             &inputArray[startIndex], &normalizedArray[startIndex],
             actualDimensions);
         size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
-        algorithmImpl->addPoint(normalizedArray.data() + startIndex, id);
+
+        try {
+          algorithmImpl->addPoint(normalizedArray.data() + startIndex, id);
+        } catch (IndexFullError &e) {
+          // Resize the index and try again:
+          while (getNumElements() + rows > getMaxElements()) {
+            try {
+              // NOTE: This will resize the index to be at least as large as
+              // the number of elements we're trying to add, but may
+              // allocate more space than necessary.
+              resizeIndex(getNumElements() + rows);
+            } catch (IndexCannotBeShrunkError &e) {
+              // Retry with a larger size; some other thread may have resized
+              // behind our back.
+            }
+          }
+        }
         idsToReturn[row] = id;
       });
     };
