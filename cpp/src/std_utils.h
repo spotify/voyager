@@ -38,9 +38,7 @@
  *
  * The method is borrowed from nmslib
  */
-template <class Function>
-inline void ParallelFor(size_t start, size_t end, size_t numThreads,
-                        Function fn) {
+template <class Function> inline void ParallelFor(size_t start, size_t end, size_t numThreads, Function fn) {
   if (numThreads <= 0) {
     numThreads = std::thread::hardware_concurrency();
   }
@@ -98,12 +96,9 @@ inline void ParallelFor(size_t start, size_t end, size_t numThreads,
  * This dramatically speeds up filtering of an std::priority_queue, as you no
  * longer need to modify the queue to iterate over it.
  */
-template <class T, class S, class C>
-S &GetContainerForQueue(std::priority_queue<T, S, C> &q) {
+template <class T, class S, class C> S &GetContainerForQueue(std::priority_queue<T, S, C> &q) {
   struct HackedQueue : private std::priority_queue<T, S, C> {
-    static S &Container(std::priority_queue<T, S, C> &q) {
-      return q.*&HackedQueue::c;
-    }
+    static S &Container(std::priority_queue<T, S, C> &q) { return q.*&HackedQueue::c; }
   };
   return HackedQueue::Container(q);
 }
@@ -115,13 +110,10 @@ S &GetContainerForQueue(std::priority_queue<T, S, C> &q) {
  * IndexID will be added as the second tuple value of each element of the queue.
  */
 template <typename dist_t, typename indexID_t, typename label_t>
-void mergePriorityQueues(
-    std::priority_queue<std::tuple<dist_t, indexID_t, label_t>> &dest,
-    std::priority_queue<std::pair<dist_t, label_t>> &src, size_t maxElements,
-    indexID_t indexID, const label_t idMask, const std::set<label_t> &labels,
-    const dist_t maximumDistance) {
-  std::vector<std::pair<dist_t, hnswlib::labeltype>> &items =
-      GetContainerForQueue(src);
+void mergePriorityQueues(std::priority_queue<std::tuple<dist_t, indexID_t, label_t>> &dest,
+                         std::priority_queue<std::pair<dist_t, label_t>> &src, size_t maxElements, indexID_t indexID,
+                         const label_t idMask, const std::set<label_t> &labels, const dist_t maximumDistance) {
+  std::vector<std::pair<dist_t, hnswlib::labeltype>> &items = GetContainerForQueue(src);
   for (auto i = items.begin(); i != items.end(); i++) {
     // To avoid copying unnecessarily, only move elements if:
     // - We don't have maxElements in `dest` yet

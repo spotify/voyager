@@ -42,16 +42,13 @@ public:
   const std::array<int, Dims> strides;
 
   NDArray(std::array<int, Dims> shape)
-      : data(std::accumulate(shape.begin(), shape.end(), 1,
-                             std::multiplies<int>())),
-        shape(shape), strides(computeStrides()) {}
+      : data(std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<int>())), shape(shape),
+        strides(computeStrides()) {}
 
-  NDArray(std::vector<T> data, std::array<int, Dims> shape)
-      : data(data), shape(shape), strides(computeStrides()) {}
+  NDArray(std::vector<T> data, std::array<int, Dims> shape) : data(data), shape(shape), strides(computeStrides()) {}
 
   NDArray(T *inputPointer, std::array<int, Dims> shape)
-      : data(computeNumElements(shape)), shape(shape),
-        strides(computeStrides()) {
+      : data(computeNumElements(shape)), shape(shape), strides(computeStrides()) {
     std::memcpy(data.data(), inputPointer, data.size() * sizeof(T));
   }
 
@@ -84,9 +81,8 @@ NDArray<data_t, 2> floatToDataType(NDArray<float, 2> input) {
   // Handle rescaling to integer storage values if necessary:
   if constexpr (std::is_same_v<data_t, float>) {
     if constexpr (scalefactor::num != scalefactor::den) {
-      throw std::runtime_error(
-          "Index has a non-unity scale factor set, but is using float32 data "
-          "storage. This combination is not yet implemented.");
+      throw std::runtime_error("Index has a non-unity scale factor set, but is using float32 data "
+                               "storage. This combination is not yet implemented.");
     }
 
     return input;
@@ -103,12 +99,10 @@ NDArray<data_t, 2> floatToDataType(NDArray<float, 2> input) {
     return output;
   } else {
     // Re-scale the input values by multiplying by `scalefactor`:
-    constexpr float lowerBound = (float)std::numeric_limits<data_t>::min() *
-                                 (float)scalefactor::num /
-                                 (float)scalefactor::den;
-    constexpr float upperBound = (float)std::numeric_limits<data_t>::max() *
-                                 (float)scalefactor::num /
-                                 (float)scalefactor::den;
+    constexpr float lowerBound =
+        (float)std::numeric_limits<data_t>::min() * (float)scalefactor::num / (float)scalefactor::den;
+    constexpr float upperBound =
+        (float)std::numeric_limits<data_t>::max() * (float)scalefactor::num / (float)scalefactor::den;
 
     NDArray<data_t, 2> output(input.shape);
 
@@ -118,15 +112,12 @@ NDArray<data_t, 2> floatToDataType(NDArray<float, 2> input) {
 
     for (unsigned long i = 0; i < input.data.size(); i++) {
       if (inputPointer[i] > upperBound || inputPointer[i] < lowerBound) {
-        throw std::domain_error(
-            "One or more vectors contain values outside of [" +
-            std::to_string(lowerBound) + ", " + std::to_string(upperBound) +
-            "]. Index: " + std::to_string(i) +
-            ", invalid value: " + std::to_string(inputPointer[i]));
+        throw std::domain_error("One or more vectors contain values outside of [" + std::to_string(lowerBound) + ", " +
+                                std::to_string(upperBound) + "]. Index: " + std::to_string(i) +
+                                ", invalid value: " + std::to_string(inputPointer[i]));
       }
 
-      outputPointer[i] =
-          (inputPointer[i] * (float)scalefactor::den) / (float)scalefactor::num;
+      outputPointer[i] = (inputPointer[i] * (float)scalefactor::den) / (float)scalefactor::num;
     }
 
     return output;
@@ -134,14 +125,12 @@ NDArray<data_t, 2> floatToDataType(NDArray<float, 2> input) {
 }
 
 template <typename data_t, typename scalefactor = std::ratio<1, 1>>
-void floatToDataType(const float *inputPointer, data_t *outputPointer,
-                     int dimensions) {
+void floatToDataType(const float *inputPointer, data_t *outputPointer, int dimensions) {
   // Handle rescaling to integer storage values if necessary:
   if constexpr (std::is_same_v<data_t, float>) {
     if constexpr (scalefactor::num != scalefactor::den) {
-      throw std::runtime_error(
-          "Index has a non-unity scale factor set, but is using float32 data "
-          "storage. This combination is not yet implemented.");
+      throw std::runtime_error("Index has a non-unity scale factor set, but is using float32 data "
+                               "storage. This combination is not yet implemented.");
     }
 
     std::memcpy(outputPointer, inputPointer, sizeof(float) * dimensions);
@@ -152,27 +141,22 @@ void floatToDataType(const float *inputPointer, data_t *outputPointer,
     }
   } else {
     // Re-scale the input values by multiplying by `scalefactor`:
-    constexpr float lowerBound = (float)std::numeric_limits<data_t>::min() *
-                                 (float)scalefactor::num /
-                                 (float)scalefactor::den;
-    constexpr float upperBound = (float)std::numeric_limits<data_t>::max() *
-                                 (float)scalefactor::num /
-                                 (float)scalefactor::den;
+    constexpr float lowerBound =
+        (float)std::numeric_limits<data_t>::min() * (float)scalefactor::num / (float)scalefactor::den;
+    constexpr float upperBound =
+        (float)std::numeric_limits<data_t>::max() * (float)scalefactor::num / (float)scalefactor::den;
 
     std::vector<data_t> output(dimensions);
 
     // Re-scale the input values by multiplying by `scalefactor`:
     for (int i = 0; i < dimensions; i++) {
       if (inputPointer[i] > upperBound || inputPointer[i] < lowerBound) {
-        throw std::domain_error(
-            "One or more vectors contain values outside of [" +
-            std::to_string(lowerBound) + ", " + std::to_string(upperBound) +
-            "]. Index: " + std::to_string(i) +
-            ", invalid value: " + std::to_string(inputPointer[i]));
+        throw std::domain_error("One or more vectors contain values outside of [" + std::to_string(lowerBound) + ", " +
+                                std::to_string(upperBound) + "]. Index: " + std::to_string(i) +
+                                ", invalid value: " + std::to_string(inputPointer[i]));
       }
 
-      outputPointer[i] =
-          (inputPointer[i] * (float)scalefactor::den) / (float)scalefactor::num;
+      outputPointer[i] = (inputPointer[i] * (float)scalefactor::den) / (float)scalefactor::num;
     }
   }
 }
@@ -181,17 +165,15 @@ template <typename data_t, typename scalefactor = std::ratio<1, 1>>
 std::vector<data_t> floatToDataType(const std::vector<float> input) {
   if constexpr (std::is_same_v<data_t, float>) {
     if constexpr (scalefactor::num != scalefactor::den) {
-      throw std::runtime_error(
-          "Index has a non-unity scale factor set, but is using float32 data "
-          "storage. This combination is not yet implemented.");
+      throw std::runtime_error("Index has a non-unity scale factor set, but is using float32 data "
+                               "storage. This combination is not yet implemented.");
     }
 
     return input;
   }
 
   std::vector<data_t> output(input.size());
-  floatToDataType<data_t, scalefactor>(input.data(), output.data(),
-                                       input.size());
+  floatToDataType<data_t, scalefactor>(input.data(), output.data(), input.size());
   return output;
 }
 
@@ -200,9 +182,8 @@ NDArray<float, 2> dataTypeToFloat(NDArray<data_t, 2> input) {
   // Handle rescaling to integer storage values if necessary:
   if constexpr (std::is_same_v<data_t, float>) {
     if constexpr (scalefactor::num != scalefactor::den) {
-      throw std::runtime_error(
-          "Index has a non-unity scale factor set, but is using float32 data "
-          "storage. This combination is not yet implemented.");
+      throw std::runtime_error("Index has a non-unity scale factor set, but is using float32 data "
+                               "storage. This combination is not yet implemented.");
     }
 
     return input;
@@ -214,22 +195,19 @@ NDArray<float, 2> dataTypeToFloat(NDArray<data_t, 2> input) {
     float *outputPointer = output.data.data();
 
     for (unsigned long i = 0; i < input.data.size(); i++) {
-      outputPointer[i] = ((float)inputPointer[i] * (float)scalefactor::num) /
-                         (float)scalefactor::den;
+      outputPointer[i] = ((float)inputPointer[i] * (float)scalefactor::num) / (float)scalefactor::den;
     }
 
     return output;
   }
 }
 
-template <typename dist_t, typename data_t = dist_t,
-          typename scalefactor = std::ratio<1, 1>>
+template <typename dist_t, typename data_t = dist_t, typename scalefactor = std::ratio<1, 1>>
 void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
   dist_t norm = 0.0;
   for (int i = 0; i < dimensions; i++) {
     if constexpr (scalefactor::num != scalefactor::den) {
-      dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) /
-                     (dist_t)scalefactor::den;
+      dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
       norm += point * point;
     } else {
       norm += data[i] * data[i];
@@ -238,8 +216,7 @@ void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
   norm = 1.0f / (sqrtf(norm) + 1e-30f);
   for (int i = 0; i < dimensions; i++) {
     if constexpr (scalefactor::num != scalefactor::den) {
-      dist_t element =
-          (data[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
+      dist_t element = (data[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
       dist_t normalizedElement = element * norm;
       norm_array[i] = (normalizedElement * scalefactor::den) / scalefactor::num;
     } else {
@@ -249,14 +226,12 @@ void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
   }
 }
 
-template <typename dist_t, typename data_t = dist_t,
-          typename scalefactor = std::ratio<1, 1>>
+template <typename dist_t, typename data_t = dist_t, typename scalefactor = std::ratio<1, 1>>
 dist_t getNorm(const data_t *data, int dimensions) {
   dist_t norm = 0.0;
   for (int i = 0; i < dimensions; i++) {
     if constexpr (scalefactor::num != scalefactor::den) {
-      dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) /
-                     (dist_t)scalefactor::den;
+      dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
       norm += point * point;
     } else {
       norm += data[i] * data[i];
@@ -265,14 +240,12 @@ dist_t getNorm(const data_t *data, int dimensions) {
   return sqrtf(norm);
 }
 
-template <typename dist_t, typename data_t = dist_t,
-          typename scalefactor = std::ratio<1, 1>>
+template <typename dist_t, typename data_t = dist_t, typename scalefactor = std::ratio<1, 1>>
 bool isNormalized(const data_t *data, int dimensions, dist_t maxNorm) {
   dist_t norm = 0.0;
   for (int i = 0; i < dimensions; i++) {
     if constexpr (scalefactor::num != scalefactor::den) {
-      dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) /
-                     (dist_t)scalefactor::den;
+      dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
       norm += point * point;
     } else {
       norm += data[i] * data[i];
@@ -281,15 +254,13 @@ bool isNormalized(const data_t *data, int dimensions, dist_t maxNorm) {
   return norm <= maxNorm;
 }
 
-template <typename dist_t, typename data_t = dist_t,
-          typename scalefactor = std::ratio<1, 1>>
+template <typename dist_t, typename data_t = dist_t, typename scalefactor = std::ratio<1, 1>>
 std::string toFloatVectorString(data_t *vec, size_t size) {
   std::ostringstream ss;
   ss << "[";
   for (size_t i = 0; i < size; i++) {
     if constexpr (scalefactor::num != scalefactor::den) {
-      float point = (dist_t)(vec[i] * (dist_t)scalefactor::num) /
-                    (dist_t)scalefactor::den;
+      float point = (dist_t)(vec[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
       ss << ((float)point);
     } else {
       ss << ((float)vec[i]);
@@ -303,9 +274,7 @@ std::string toFloatVectorString(data_t *vec, size_t size) {
   return ss.str();
 }
 
-template <typename dist_t, typename data_t = dist_t,
-          typename scalefactor = std::ratio<1, 1>>
+template <typename dist_t, typename data_t = dist_t, typename scalefactor = std::ratio<1, 1>>
 std::string toFloatVectorString(std::vector<data_t> vec) {
-  return toFloatVectorString<dist_t, data_t, scalefactor>(vec.data(),
-                                                          vec.size());
+  return toFloatVectorString<dist_t, data_t, scalefactor>(vec.data(), vec.size());
 }
