@@ -241,7 +241,7 @@ public class StringIndexTest {
   }
 
   @Test
-  public void indexResize() throws Exception {
+  public void itResizesIndex() throws Exception {
     List<Vector> testVectors = TestUtils.getTestVectors();
     try (final StringIndex index =
         new StringIndex(
