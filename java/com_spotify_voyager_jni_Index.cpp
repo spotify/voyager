@@ -712,10 +712,10 @@ void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self,
 }
 
 void Java_com_spotify_voyager_jni_Index_resizeIndex(JNIEnv *env, jobject self,
-                                                    jlong size) {
+                                                    jlong newSize) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
-    index->resizeIndex(size);
+    index->resizeIndex(newSize);
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
