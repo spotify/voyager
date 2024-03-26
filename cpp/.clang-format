@@ -1,0 +1,7 @@
+---
+BasedOnStyle: LLVM
+IndentWidth: 2
+---
+Language: Cpp
+# Use 120 columns since we have big screens now
+ColumnLimit: 120
