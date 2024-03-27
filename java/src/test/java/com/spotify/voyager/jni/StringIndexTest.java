@@ -275,7 +275,7 @@ public class StringIndexTest {
             StorageDataType.E4M3)) {
       Vector v1 = testVectors.get(0);
       Vector v2 = testVectors.get(1);
-      // Add couple of vectors//
+      // Add a couple of vectors//
       index.addItem(v1.name, v1.vector);
       index.addItem(v2.name, v2.vector);
       // Again add the first one which should be an update not an insert with the same name
@@ -304,7 +304,7 @@ public class StringIndexTest {
               .collect(Collectors.toMap(vec -> vec.name, vec -> convert(vec.vector)));
       index.addItems(vectors);
       assertEquals(vectors.size(), index.getNumElements());
-      // If we add it again number of elements  should stay the same//
+      // If we add then again number of elements  should stay the same//
       index.addItems(vectors);
       assertEquals(vectors.size(), index.getNumElements());
     }
