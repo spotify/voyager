@@ -253,9 +253,15 @@ public class StringIndex implements Closeable {
   }
 
   public void addItem(String name, float[] vector) {
-    int nextIndex = names.size();
-    index.addItem(vector, nextIndex);
-    names.add(name);
+    int nextIndex = names.indexOf(name);
+    if (nextIndex==-1) {
+      //we add it
+      index.addItem(vector, names.size());
+      names.add(name);
+    } else {
+      //up just update vector
+      index.addItem(vector, nextIndex);
+    }
   }
 
   public void addItem(String name, List<Float> vector) {
@@ -272,13 +278,26 @@ public class StringIndex implements Closeable {
     Iterator<Entry<String, List<Float>>> iterator = vectors.entrySet().iterator();
     for (int i = 0; i < numVectors; i++) {
       Entry<String, List<Float>> nextVector = iterator.next();
-      newNames.add(nextVector.getKey());
+      //Check if we already have this vector - and update it if needed
+      int nextIndex = names.indexOf(nextVector.getKey());
+      if (nextIndex==-1) {
+        newNames.add(nextVector.getKey());
+        nextIndex = names.size() + i;
+      }
       assignPrimitive(nextVector.getValue(), primitiveVectors[i]);
-      labels[i] = names.size() + i;
+      labels[i] = nextIndex;
     }
 
     names.addAll(newNames);
     index.addItems(primitiveVectors, labels, -1);
+  }
+
+  public long getNumElements() {
+    return index.getNumElements();
+  }
+
+  public float[] getVector(String name) {
+    return index.getVector(names.indexOf(name));
   }
 
   private float[] toPrimitive(List<Float> vector) {
