@@ -265,45 +265,46 @@ public class StringIndexTest {
   public void itUpsertItem() throws Exception {
     List<Vector> testVectors = TestUtils.getTestVectors();
     try (final StringIndex index =
-                 new StringIndex(
-                         SpaceType.Cosine,
-                         testVectors.get(0).vector.length,
-                         20,
-                         2,
-                         0,
-                         2,
-                         StorageDataType.E4M3)) {
+        new StringIndex(
+            SpaceType.Cosine,
+            testVectors.get(0).vector.length,
+            20,
+            2,
+            0,
+            2,
+            StorageDataType.E4M3)) {
       Vector v1 = testVectors.get(0);
       Vector v2 = testVectors.get(1);
-      //Add couple of vectors//
-      index.addItem(v1.name,v1.vector);
-      index.addItem(v2.name,v2.vector);
-      //Again add the first one which should be an update not an insert with the same name
-      index.addItem(v1.name,v1.vector);
-      //We should only have 2 entries in it. 
+      // Add couple of vectors//
+      index.addItem(v1.name, v1.vector);
+      index.addItem(v2.name, v2.vector);
+      // Again add the first one which should be an update not an insert with the same name
+      index.addItem(v1.name, v1.vector);
+      // We should only have 2 entries in it.
       assertEquals(2, index.getNumElements());
     }
   }
 
   @Test
   public void itUpsertItems() throws Exception {
-    int testSize=15;
+    int testSize = 15;
     List<Vector> testVectors = TestUtils.getTestVectors();
     try (final StringIndex index =
-                 new StringIndex(
-                         SpaceType.Cosine,
-                         testVectors.get(0).vector.length,
-                         20,
-                         testSize,
-                         0,
-                         testSize,
-                         StorageDataType.E4M3)) {
+        new StringIndex(
+            SpaceType.Cosine,
+            testVectors.get(0).vector.length,
+            20,
+            testSize,
+            0,
+            testSize,
+            StorageDataType.E4M3)) {
       Map<String, List<Float>> vectors =
-              testVectors.stream().limit(testSize)
-                      .collect(Collectors.toMap(vec -> vec.name, vec -> convert(vec.vector)));
+          testVectors.stream()
+              .limit(testSize)
+              .collect(Collectors.toMap(vec -> vec.name, vec -> convert(vec.vector)));
       index.addItems(vectors);
       assertEquals(vectors.size(), index.getNumElements());
-      //If we add it again number of elements  should stay the same//
+      // If we add it again number of elements  should stay the same//
       index.addItems(vectors);
       assertEquals(vectors.size(), index.getNumElements());
     }

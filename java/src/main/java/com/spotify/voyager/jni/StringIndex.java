@@ -254,12 +254,12 @@ public class StringIndex implements Closeable {
 
   public void addItem(String name, float[] vector) {
     int nextIndex = names.indexOf(name);
-    if (nextIndex==-1) {
-      //we add it
+    if (nextIndex == -1) {
+      // we add it
       index.addItem(vector, names.size());
       names.add(name);
     } else {
-      //up just update vector
+      // up just update vector
       index.addItem(vector, nextIndex);
     }
   }
@@ -278,9 +278,9 @@ public class StringIndex implements Closeable {
     Iterator<Entry<String, List<Float>>> iterator = vectors.entrySet().iterator();
     for (int i = 0; i < numVectors; i++) {
       Entry<String, List<Float>> nextVector = iterator.next();
-      //Check if we already have this vector - and update it if needed
+      // Check if we already have this vector - and update it if needed
       int nextIndex = names.indexOf(nextVector.getKey());
-      if (nextIndex==-1) {
+      if (nextIndex == -1) {
         newNames.add(nextVector.getKey());
         nextIndex = names.size() + i;
       }
