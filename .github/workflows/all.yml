@@ -40,7 +40,6 @@ jobs:
         uses: jidicula/clang-format-action@v4.4.1
         with:
           clang-format-version: 16
-          fallback-style: LLVM
 
   run-java-tests:
     continue-on-error: true
