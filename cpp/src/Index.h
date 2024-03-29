@@ -49,7 +49,7 @@ public:
   virtual void setEF(size_t ef) = 0;
   virtual int getEF() const = 0;
 
-  virtual SpaceType getSpace(   ) const = 0;
+  virtual SpaceType getSpace() const = 0;
   virtual std::string getSpaceName() const = 0;
 
   virtual StorageDataType getStorageDataType() const = 0;

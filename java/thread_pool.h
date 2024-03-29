@@ -22,8 +22,7 @@
 namespace similarity {
 
 // See sample usage below
-template <class T>
-bool GetNextQueueObj(std::mutex &mtx, std::queue<T> &queue, T &obj) {
+template <class T> bool GetNextQueueObj(std::mutex &mtx, std::queue<T> &queue, T &obj) {
   std::unique_lock<std::mutex> lock(mtx);
   if (queue.empty()) {
     return false;
@@ -60,9 +59,7 @@ bool GetNextQueueObj(std::mutex &mtx, std::queue<T> &queue, T &obj) {
  * only handles a subset of functionality (no reductions etc)
  * Process ids from start (inclusive) to end (EXCLUSIVE)
  */
-template <class Function>
-inline void ParallelFor(size_t start, size_t end, size_t numThreads,
-                        Function fn) {
+template <class Function> inline void ParallelFor(size_t start, size_t end, size_t numThreads, Function fn) {
   if (numThreads <= 0) {
     numThreads = std::thread::hardware_concurrency();
   }

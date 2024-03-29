@@ -21,7 +21,7 @@ add_custom_target(check-formatting
 )
 
 # Run formatter
-add_custom_target(check-formatting
+add_custom_target(format
     COMMAND ${FORMAT_COMMAND} `${FIND_COMMAND}`
     COMMENT "Running C++ formatter"
 )
