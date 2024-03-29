@@ -10,7 +10,7 @@ add_subdirectory(src)
 add_subdirectory(test)
 
 # Define the command
-set(FIND_COMMAND find .. -type d -path ./include -prune -o -type d  -path ../python/.tox -prune -o -type f -name \"*.cpp\" -o -name \"*.h\"  -print)
+set(FIND_COMMAND find .. -type d -path ./include -prune -o -type d  -path ../python/.tox -prune -o -type f -name "*.cpp" -o -name "*.h"  -print)
 set(CHECK_FORMAT_COMMAND clang-format --dry-run -i)
 set(FORMAT_COMMAND clang-format --verbose -i)
 
