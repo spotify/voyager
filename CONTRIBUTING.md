@@ -66,6 +66,7 @@ mvn package
 To build the C++ library with `cmake`, use the following commands:
 ```shell
 cd cpp
+git submodule update --init --recursive
 cmake .
 make
 ```
@@ -92,6 +93,7 @@ mvn verify
 To run the C++ tests, use the following commands:
 ```shell
 cd cpp
+git submodule update --init --recursive
 cmake .
 make test
 ./test/test

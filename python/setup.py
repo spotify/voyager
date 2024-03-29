@@ -26,7 +26,7 @@ from setuptools.command.build_ext import build_ext
 
 
 # Find the "cpp" folder depending on where this script is run from:
-for search_path in ["./cpp/", "../cpp/", "../../cpp/"]:
+for search_path in ["./cpp/src/", "../cpp/src/", "../../cpp/src/"]:
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), search_path))
     if os.path.exists(path):
         VOYAGER_HEADERS_PATH = path
