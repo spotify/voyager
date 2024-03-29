@@ -12,240 +12,219 @@ extern "C" {
  * Method:    nativeConstructor
  * Signature: (Lcom/spotify/voyager/jni/Index/SpaceType;IJJJJLcom/spotify/voyager/jni/Index/StorageDataType;)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeConstructor
-  (JNIEnv *, jobject, jobject, jint, jlong, jlong, jlong, jlong, jobject);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeConstructor(JNIEnv *, jobject, jobject, jint, jlong,
+                                                                            jlong, jlong, jlong, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    nativeLoadFromFileWithParameters
- * Signature: (Ljava/lang/String;Lcom/spotify/voyager/jni/Index/SpaceType;ILcom/spotify/voyager/jni/Index/StorageDataType;)V
+ * Signature:
+ * (Ljava/lang/String;Lcom/spotify/voyager/jni/Index/SpaceType;ILcom/spotify/voyager/jni/Index/StorageDataType;)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromFileWithParameters
-  (JNIEnv *, jobject, jstring, jobject, jint, jobject);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromFileWithParameters(JNIEnv *, jobject, jstring,
+                                                                                           jobject, jint, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    nativeLoadFromFile
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromFile
-  (JNIEnv *, jobject, jstring);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(JNIEnv *, jobject, jstring);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    nativeLoadFromInputStreamWithParameters
- * Signature: (Ljava/io/InputStream;Lcom/spotify/voyager/jni/Index/SpaceType;ILcom/spotify/voyager/jni/Index/StorageDataType;)V
+ * Signature:
+ * (Ljava/io/InputStream;Lcom/spotify/voyager/jni/Index/SpaceType;ILcom/spotify/voyager/jni/Index/StorageDataType;)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters
-  (JNIEnv *, jobject, jobject, jobject, jint, jobject);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(JNIEnv *, jobject,
+                                                                                                  jobject, jobject,
+                                                                                                  jint, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    nativeLoadFromInputStream
  * Signature: (Ljava/io/InputStream;)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream
-  (JNIEnv *, jobject, jobject);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(JNIEnv *, jobject, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    nativeDestructor
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeDestructor
-  (JNIEnv *, jobject);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_nativeDestructor(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    setEf
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_setEf
-  (JNIEnv *, jobject, jlong);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_setEf(JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getEf
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_spotify_voyager_jni_Index_getEf
-  (JNIEnv *, jobject);
+JNIEXPORT jint JNICALL Java_com_spotify_voyager_jni_Index_getEf(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getSpace
  * Signature: ()Lcom/spotify/voyager/jni/Index/SpaceType;
  */
-JNIEXPORT jobject JNICALL Java_com_spotify_voyager_jni_Index_getSpace
-  (JNIEnv *, jobject);
+JNIEXPORT jobject JNICALL Java_com_spotify_voyager_jni_Index_getSpace(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getNumDimensions
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_spotify_voyager_jni_Index_getNumDimensions
-  (JNIEnv *, jobject);
+JNIEXPORT jint JNICALL Java_com_spotify_voyager_jni_Index_getNumDimensions(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    setNumThreads
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_setNumThreads
-  (JNIEnv *, jobject, jint);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_setNumThreads(JNIEnv *, jobject, jint);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getNumThreads
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_spotify_voyager_jni_Index_getNumThreads
-  (JNIEnv *, jobject);
+JNIEXPORT jint JNICALL Java_com_spotify_voyager_jni_Index_getNumThreads(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    saveIndex
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_lang_String_2
-  (JNIEnv *, jobject, jstring);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_lang_String_2(JNIEnv *, jobject, jstring);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    saveIndex
  * Signature: (Ljava/io/OutputStream;)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2
-  (JNIEnv *, jobject, jobject);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2(JNIEnv *, jobject,
+                                                                                             jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addItem
  * Signature: ([F)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItem___3F
-  (JNIEnv *, jobject, jfloatArray);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItem___3F(JNIEnv *, jobject, jfloatArray);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addItem
  * Signature: ([FJ)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItem___3FJ
-  (JNIEnv *, jobject, jfloatArray, jlong);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItem___3FJ(JNIEnv *, jobject, jfloatArray, jlong);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addItems
  * Signature: ([[FI)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItems___3_3FI
-  (JNIEnv *, jobject, jobjectArray, jint);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItems___3_3FI(JNIEnv *, jobject, jobjectArray, jint);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addItems
  * Signature: ([[F[JI)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI
-  (JNIEnv *, jobject, jobjectArray, jlongArray, jint);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(JNIEnv *, jobject, jobjectArray,
+                                                                              jlongArray, jint);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getVector
  * Signature: (J)[F
  */
-JNIEXPORT jfloatArray JNICALL Java_com_spotify_voyager_jni_Index_getVector
-  (JNIEnv *, jobject, jlong);
+JNIEXPORT jfloatArray JNICALL Java_com_spotify_voyager_jni_Index_getVector(JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getVectors
  * Signature: ([J)[[F
  */
-JNIEXPORT jobjectArray JNICALL Java_com_spotify_voyager_jni_Index_getVectors
-  (JNIEnv *, jobject, jlongArray);
+JNIEXPORT jobjectArray JNICALL Java_com_spotify_voyager_jni_Index_getVectors(JNIEnv *, jobject, jlongArray);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getIDs
  * Signature: ()[J
  */
-JNIEXPORT jlongArray JNICALL Java_com_spotify_voyager_jni_Index_getIDs
-  (JNIEnv *, jobject);
+JNIEXPORT jlongArray JNICALL Java_com_spotify_voyager_jni_Index_getIDs(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    query
  * Signature: ([FIJ)Lcom/spotify/voyager/jni/Index/QueryResults;
  */
-JNIEXPORT jobject JNICALL Java_com_spotify_voyager_jni_Index_query___3FIJ
-  (JNIEnv *, jobject, jfloatArray, jint, jlong);
+JNIEXPORT jobject JNICALL Java_com_spotify_voyager_jni_Index_query___3FIJ(JNIEnv *, jobject, jfloatArray, jint, jlong);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    query
  * Signature: ([[FIIJ)[Lcom/spotify/voyager/jni/Index/QueryResults;
  */
-JNIEXPORT jobjectArray JNICALL Java_com_spotify_voyager_jni_Index_query___3_3FIIJ
-  (JNIEnv *, jobject, jobjectArray, jint, jint, jlong);
+JNIEXPORT jobjectArray JNICALL Java_com_spotify_voyager_jni_Index_query___3_3FIIJ(JNIEnv *, jobject, jobjectArray, jint,
+                                                                                  jint, jlong);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    markDeleted
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_markDeleted
-  (JNIEnv *, jobject, jlong);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    unmarkDeleted
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_unmarkDeleted
-  (JNIEnv *, jobject, jlong);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    resizeIndex
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_resizeIndex
-  (JNIEnv *, jobject, jlong);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_resizeIndex(JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getMaxElements
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getMaxElements
-  (JNIEnv *, jobject);
+JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getMaxElements(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getNumElements
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getNumElements
-  (JNIEnv *, jobject);
+JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getNumElements(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getEfConstruction
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getEfConstruction
-  (JNIEnv *, jobject);
+JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getEfConstruction(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getM
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getM
-  (JNIEnv *, jobject);
+JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getM(JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }
