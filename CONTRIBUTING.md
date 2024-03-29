@@ -102,7 +102,8 @@ make test
 ## Style
 Use [`clang-format`](https://clang.llvm.org/docs/ClangFormat.html) for C++ code, and `black` with defaults for Python code.
 
-In order to check and run formatting within the python module (but not the c++ core module), you can use tox to facilitate this.
+### Python
+In order to check and run formatting within the python module, you can use tox to facilitate this.
 ```bash
 cd python
 # Check formatting only (don't change files)
@@ -111,13 +112,15 @@ tox -e check-formatting
 tox -e format
 ```
 
-For C++ code within the core `cpp` module, you can use the following command to check formatting:
+### C++
+If you are working on any C++ code throughout the repo, ensure you have `clang-format` (version 16) installed, and then use clang-format to handle C++ formatting:
 ```bash
 cd cpp
-# Check formatting only
-clang-format --verbose --dry-run -i src/*.h
-# Run formatter
-clang-format --verbose -i src/*.h
+cmake .
+# Check formatting only (don't change files)
+make check-formatting
+# Run formatter 
+make format
 ```
 
 ### Updating Documentation
