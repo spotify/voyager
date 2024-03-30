@@ -47,9 +47,7 @@ template <typename T, int Dims> NDArray<T, Dims> pyArrayToNDArray(py::array_t<T>
     shape[i] = inputInfo.shape[i];
   }
 
-  NDArray<T, Dims> output = NDArray<T, Dims>(
-    shape
-  );
+  NDArray<T, Dims> output = NDArray<T, Dims>(shape);
 
   T *inputPtr = static_cast<T *>(inputInfo.ptr);
   {
