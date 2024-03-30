@@ -1,3 +1,6 @@
 
-add_subdirectory(Catch2)
-include(Catch)
+add_library(doctest INTERFACE)
+target_include_directories(doctest 
+    INTERFACE 
+        doctest/doctest
+)
