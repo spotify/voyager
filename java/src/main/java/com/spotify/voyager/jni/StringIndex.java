@@ -281,6 +281,14 @@ public class StringIndex implements Closeable {
     index.addItems(primitiveVectors, labels, -1);
   }
 
+  public long getNumElements() {
+    return index.getNumElements();
+  }
+
+  public float[] getVector(String name) {
+    return index.getVector(names.indexOf(name));
+  }
+
   private float[] toPrimitive(List<Float> vector) {
     float[] vectorValues = new float[vector.size()];
     assignPrimitive(vector, vectorValues);
