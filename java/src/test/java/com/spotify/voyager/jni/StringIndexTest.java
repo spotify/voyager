@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -40,6 +41,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
+import org.junit.experimental.theories.suppliers.TestedOn;
 
 public class StringIndexTest {
   private static final Function<QueryResults, List<CustomResult>> RESULT_MAPPER =
@@ -238,6 +240,40 @@ public class StringIndexTest {
           .extracting(CustomResult::getName)
           .containsExactly("my-vector-78", "my-vector-1");
     }
+  }
+
+  @Test
+  public void itLoadsAddsAndSaves() throws Exception {
+    try (final StringIndex index = StringIndex.load(
+        Resources.getResource(EXPECTED_INDEX_V2_FILE_NAME).openStream(),
+        Resources.getResource(EXPECTED_NAME_V2_FILE_NAME).openStream())) {
+
+      float[][] randomVecs = TestUtils.randomVectors(() -> new Random(0), 10, 80);
+      Map<String, List<Float>> toAdd = new HashMap<>();
+      for (int i = 0; i < randomVecs.length; i++) {
+        toAdd.put("rand-test-vec-" + i, convert(randomVecs[i]));
+      }
+
+      index.addItems(toAdd);
+      List<CustomResult> results = RESULT_MAPPER.apply(index.query(randomVecs[0], 2, 100));
+
+      assertThat(results)
+          .extracting(CustomResult::getName)
+          .containsExactly("rand-test-vec-9", "rand-test-vec-5");
+
+      File tempDir = new File(TEMP_DIR_NAME);
+      if (!tempDir.mkdirs())
+        throw new RuntimeException("Failed to make temporary directory in test!");
+
+      try {
+        index.saveIndex(TEMP_DIR_NAME);
+        assertThat(Paths.get(TEMP_DIR_NAME, EXPECTED_INDEX_FILE_NAME)).exists();
+        assertThat(Paths.get(TEMP_DIR_NAME, EXPECTED_NAME_FILE_NAME)).exists();
+      } finally {
+        FileUtils.deleteDirectory(tempDir);
+      }
+    }
+
   }
 
   @Test

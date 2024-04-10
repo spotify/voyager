@@ -20,9 +20,11 @@
 
 package com.spotify.voyager.jni;
 
+import com.spotify.voyager.jni.Index.QueryResults;
 import com.spotify.voyager.jni.Index.SpaceType;
 import com.spotify.voyager.jni.Index.StorageDataType;
 import com.spotify.voyager.jni.utils.TinyJson;
+import com.spotify.voyager.utils.ConcurrentBiMap;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
@@ -34,10 +36,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Wrapper around com.spotify.voyager.jni.Index with a simplified interface which maps the index ID
@@ -52,7 +57,7 @@ public class StringIndex implements Closeable {
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024 * 100;
 
   private final Index index;
-  private final List<String> names;
+  private final ConcurrentBiMap<String, Integer> namesMap;
 
   /**
    * Instantiate a new empty index with the specified space type and dimensionality
@@ -63,7 +68,7 @@ public class StringIndex implements Closeable {
    */
   public StringIndex(SpaceType spaceType, int numDimensions) {
     this.index = new Index(spaceType, numDimensions);
-    this.names = new ArrayList<>();
+    this.namesMap = new ConcurrentBiMap<>();
   }
 
   /**
@@ -98,12 +103,28 @@ public class StringIndex implements Closeable {
             randomSeed,
             maxElements,
             storageDataType);
-    this.names = new ArrayList<>();
+    this.namesMap = new ConcurrentBiMap<>();
   }
 
   private StringIndex(Index index, List<String> names) {
     this.index = index;
-    this.names = names;
+    this.namesMap = buildNamesMap(names);
+  }
+
+  private static ConcurrentBiMap<String, Integer> buildNamesMap(List<String> names) {
+    ConcurrentBiMap<String, Integer> map = new ConcurrentBiMap<>(names.size());
+    for (int i = 0; i < names.size(); i++) {
+      map.put(names.get(i), i);
+    }
+
+    return map;
+  }
+
+  private static List<String> buildNamesList(ConcurrentBiMap<String, Integer> namesMap) {
+    List<Entry<String, Integer>> entries = new ArrayList<>(namesMap.entrySet());
+    entries.sort(Entry.comparingByValue());
+
+    return entries.stream().map(Entry::getKey).collect(Collectors.toList());
   }
 
   /**
@@ -221,7 +242,7 @@ public class StringIndex implements Closeable {
       this.index.saveIndex(indexPath.toString());
 
       final OutputStream outputStream = Files.newOutputStream(namesPath);
-      TinyJson.writeStringList(this.names, outputStream);
+      TinyJson.writeStringList(buildNamesList(this.namesMap), outputStream);
 
       outputStream.flush();
       outputStream.close();
@@ -244,7 +265,7 @@ public class StringIndex implements Closeable {
     BufferedOutputStream outputStream =
         new BufferedOutputStream(indexOutputStream, 1024 * 1024 * 100);
     this.index.saveIndex(outputStream);
-    TinyJson.writeStringList(this.names, namesListOutputStream);
+    TinyJson.writeStringList(buildNamesList(this.namesMap), namesListOutputStream);
 
     outputStream.flush();
     outputStream.close();
@@ -252,32 +273,37 @@ public class StringIndex implements Closeable {
     namesListOutputStream.close();
   }
 
-  public void addItem(String name, float[] vector) {
-    int nextIndex = names.size();
-    index.addItem(vector, nextIndex);
-    names.add(name);
+  public synchronized void addItem(String name, float[] vector) {
+    // if vector with the give name is already in the index, update the value
+    if (namesMap.containsKey(name)) {
+      index.addItem(vector, namesMap.get(name));
+    } else {
+      int nextIndex = namesMap.size();
+      index.addItem(vector, nextIndex);
+      namesMap.put(name, nextIndex);
+    }
   }
 
   public void addItem(String name, List<Float> vector) {
     addItem(name, toPrimitive(vector));
   }
 
-  public void addItems(Map<String, List<Float>> vectors) {
+  public synchronized void addItems(Map<String, List<Float>> vectors) {
     int numVectors = vectors.size();
+    int nextIndex = namesMap.size();
 
-    List<String> newNames = new ArrayList<>(numVectors);
     float[][] primitiveVectors = new float[numVectors][index.getNumDimensions()];
     long[] labels = new long[numVectors];
 
     Iterator<Entry<String, List<Float>>> iterator = vectors.entrySet().iterator();
     for (int i = 0; i < numVectors; i++) {
       Entry<String, List<Float>> nextVector = iterator.next();
-      newNames.add(nextVector.getKey());
+      String name = nextVector.getKey();
       assignPrimitive(nextVector.getValue(), primitiveVectors[i]);
-      labels[i] = names.size() + i;
+      labels[i] = nextIndex + i;
+      namesMap.put(name, nextIndex + i);
     }
 
-    names.addAll(newNames);
     index.addItems(primitiveVectors, labels, -1);
   }
 
@@ -345,7 +371,7 @@ public class StringIndex implements Closeable {
                 + ") which is out of range for StringIndex. "
                 + "This index may not be compatible with Voyager's Java bindings, or the index file may be corrupt.");
       }
-      String name = names.get((int) indexId);
+      String name = namesMap.getKey((int) indexId);
       resultNames[i] = name;
       distances[i] = dist;
     }
