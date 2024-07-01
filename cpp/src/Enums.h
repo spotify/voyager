@@ -48,3 +48,13 @@ inline const std::string toString(SpaceType space) {
     return "Unknown space type (value " + std::to_string((int)space) + ")";
   }
 }
+
+std::ostream &operator<<(std::ostream &os, const SpaceType space) {
+  os << toString(space);
+  return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const StorageDataType sdt) {
+  os << toString(sdt);
+  return os;
+}

@@ -7,7 +7,7 @@ UNAME_S := $(shell uname -s)
 MAC_SOBJ    := libvoyager.dylib
 LINUX_SOBJ  := libvoyager.so
 WIN_SOBJ    := voyager.dll
-CPP_SRC_DIR := ../cpp/
+CPP_SRC_DIR := ../cpp/src/
 
 SOURCE    := com_spotify_voyager_jni_Index.cpp
 HEADERS   := $(SOURCE:.cpp=.h) $(wildcard ../cpp/*.h)

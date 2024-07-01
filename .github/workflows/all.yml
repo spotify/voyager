@@ -37,10 +37,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check C++ Formatting
-        uses: jidicula/clang-format-action@v4.4.1
+        uses: jidicula/clang-format-action@v4.11.0
         with:
-          clang-format-version: 14
-          fallback-style: LLVM
+          clang-format-version: 16
 
   run-java-tests:
     continue-on-error: true

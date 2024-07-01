@@ -30,8 +30,7 @@ public:
   // hundreds of GB at once, which would allocate 2x that amount.
   static constexpr long long MAX_BUFFER_SIZE = 1024 * 1024 * 100;
 
-  JavaInputStream(JNIEnv *env, jobject inputStream)
-      : env(env), inputStream(inputStream) {
+  JavaInputStream(JNIEnv *env, jobject inputStream) : env(env), inputStream(inputStream) {
 
     jclass inputStreamClass = env->FindClass("java/io/InputStream");
     if (!inputStreamClass) {
@@ -39,8 +38,7 @@ public:
     }
 
     if (!env->IsInstanceOf(inputStream, inputStreamClass)) {
-      throw std::runtime_error(
-          "Provided Java object is not a java.io.InputStream!");
+      throw std::runtime_error("Provided Java object is not a java.io.InputStream!");
     }
   };
 
@@ -49,8 +47,7 @@ public:
   virtual long long getTotalLength() { return -1; }
 
   virtual long long read(char *buffer, long long bytesToRead) {
-    jmethodID readMethod = env->GetMethodID(
-        env->FindClass("java/io/InputStream"), "read", "([BII)I");
+    jmethodID readMethod = env->GetMethodID(env->FindClass("java/io/InputStream"), "read", "([BII)I");
 
     if (!readMethod) {
       throw std::runtime_error("Native code failed to find "
@@ -62,14 +59,11 @@ public:
     long long bufferSize = std::min(MAX_BUFFER_SIZE, bytesToRead);
     jbyteArray byteArray = env->NewByteArray(bufferSize);
     if (!byteArray) {
-      throw std::domain_error(
-          "Failed to instantiate Java byte array of size: " +
-          std::to_string(bufferSize));
+      throw std::domain_error("Failed to instantiate Java byte array of size: " + std::to_string(bufferSize));
     }
 
     if (peekValue.size()) {
-      long long bytesToCopy =
-          std::min(bytesToRead, (long long)peekValue.size());
+      long long bytesToCopy = std::min(bytesToRead, (long long)peekValue.size());
       std::memcpy(buffer, peekValue.data(), bytesToCopy);
       for (int i = 0; i < bytesToCopy; i++)
         peekValue.erase(peekValue.begin());
@@ -78,26 +72,21 @@ public:
     }
 
     while (bytesRead < bytesToRead) {
-      int readResult = env->CallIntMethod(
-          inputStream, readMethod, byteArray, 0,
-          (int)(std::min(bufferSize, bytesToRead - bytesRead)));
+      int readResult = env->CallIntMethod(inputStream, readMethod, byteArray, 0,
+                                          (int)(std::min(bufferSize, bytesToRead - bytesRead)));
       if (env->ExceptionCheck()) {
         return 0;
       }
 
       if (readResult > 0) {
         if (bytesRead + readResult > bytesToRead) {
-          throw std::domain_error("java.io.InputStream#read(byte[]) returned " +
-                                  std::to_string(readResult) + ", but only " +
-                                  std::to_string(bytesToRead - bytesRead) +
-                                  " bytes were required.");
+          throw std::domain_error("java.io.InputStream#read(byte[]) returned " + std::to_string(readResult) +
+                                  ", but only " + std::to_string(bytesToRead - bytesRead) + " bytes were required.");
         }
 
         if (readResult > bufferSize) {
-          throw std::domain_error("java.io.InputStream#read(byte[]) returned " +
-                                  std::to_string(readResult) +
-                                  ", but buffer is only " +
-                                  std::to_string(bufferSize) + " bytes.");
+          throw std::domain_error("java.io.InputStream#read(byte[]) returned " + std::to_string(readResult) +
+                                  ", but buffer is only " + std::to_string(bufferSize) + " bytes.");
         }
         env->GetByteArrayRegion(byteArray, 0, readResult, (jbyte *)buffer);
         bytesRead += readResult;
@@ -132,10 +121,8 @@ public:
       peekValue.push_back(resultAsCharacters[3]);
       return result;
     } else {
-      throw std::runtime_error("Failed to peek " +
-                               std::to_string(sizeof(result)) +
-                               " bytes from JavaInputStream at index " +
-                               std::to_string(lastPosition) + ".");
+      throw std::runtime_error("Failed to peek " + std::to_string(sizeof(result)) +
+                               " bytes from JavaInputStream at index " + std::to_string(lastPosition) + ".");
     }
   }
 

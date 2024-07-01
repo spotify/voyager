@@ -42,9 +42,7 @@ jfieldID getHandleFieldID(JNIEnv *env, jobject obj) {
   return env->GetFieldID(c, "nativeHandle", "J");
 }
 
-template <typename T>
-std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj,
-                             bool allow_missing = false) {
+template <typename T> std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj, bool allow_missing = false) {
   env->MonitorEnter(obj);
   jlong handle = env->GetLongField(obj, getHandleFieldID(env, obj));
   env->MonitorExit(obj);
@@ -55,8 +53,7 @@ std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj,
   std::shared_ptr<T> *pointer = reinterpret_cast<std::shared_ptr<T> *>(handle);
 
   if (!allow_missing && !pointer) {
-    throw std::runtime_error(
-        "This Voyager index has been closed and can no longer be used.");
+    throw std::runtime_error("This Voyager index has been closed and can no longer be used.");
   }
 
   // Return a copy of this shared pointer, thereby ensuring that it remains
@@ -67,8 +64,7 @@ std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj,
 template <typename T> void setHandle(JNIEnv *env, jobject obj, T *t) {
   std::shared_ptr<T> *sharedPointerForJava = new std::shared_ptr<T>(t);
   env->MonitorEnter(obj);
-  env->SetLongField(obj, getHandleFieldID(env, obj),
-                    reinterpret_cast<jlong>(sharedPointerForJava));
+  env->SetLongField(obj, getHandleFieldID(env, obj), reinterpret_cast<jlong>(sharedPointerForJava));
   env->MonitorExit(obj);
 }
 
@@ -103,13 +99,11 @@ std::string toString(JNIEnv *env, jstring js) {
 std::string toString(JNIEnv *env, jobject object) {
   jclass javaClass = env->GetObjectClass(object);
   if (javaClass == 0) {
-    throw std::runtime_error(
-        "C++ bindings were unable to get the class for the provided object.");
+    throw std::runtime_error("C++ bindings were unable to get the class for the provided object.");
   }
 
-  return toString(env, (jstring)env->CallObjectMethod(
-                           object, env->GetMethodID(javaClass, "toString",
-                                                    "()Ljava/lang/String;")));
+  return toString(
+      env, (jstring)env->CallObjectMethod(object, env->GetMethodID(javaClass, "toString", "()Ljava/lang/String;")));
 }
 
 SpaceType toSpaceType(JNIEnv *env, jobject enumVal) {
@@ -123,17 +117,14 @@ SpaceType toSpaceType(JNIEnv *env, jobject enumVal) {
   } else if (enumValueName == "Cosine") {
     return SpaceType::Cosine;
   } else {
-    throw std::runtime_error(
-        "Voyager C++ bindings received unknown enum value \"" + enumValueName +
-        "\".");
+    throw std::runtime_error("Voyager C++ bindings received unknown enum value \"" + enumValueName + "\".");
   }
 }
 
 jobject toSpaceType(JNIEnv *env, SpaceType enumVal) {
   jclass enumClass = env->FindClass("com/spotify/voyager/jni/Index$SpaceType");
   if (!enumClass) {
-    throw std::runtime_error(
-        "C++ bindings could not find SpaceType Java enum!");
+    throw std::runtime_error("C++ bindings could not find SpaceType Java enum!");
   }
 
   const char *enumValueName = nullptr;
@@ -149,15 +140,12 @@ jobject toSpaceType(JNIEnv *env, SpaceType enumVal) {
     enumValueName = "Cosine";
     break;
   default:
-    throw std::runtime_error(
-        "Voyager C++ bindings received unknown enum value.");
+    throw std::runtime_error("Voyager C++ bindings received unknown enum value.");
   }
 
-  jfieldID fieldID = env->GetStaticFieldID(
-      enumClass, enumValueName, "Lcom/spotify/voyager/jni/Index$SpaceType;");
+  jfieldID fieldID = env->GetStaticFieldID(enumClass, enumValueName, "Lcom/spotify/voyager/jni/Index$SpaceType;");
   if (!fieldID) {
-    throw std::runtime_error(
-        "C++ bindings could not find value in SpaceType Java enum!");
+    throw std::runtime_error("C++ bindings could not find value in SpaceType Java enum!");
   }
 
   jobject javaValue = env->GetStaticObjectField(enumClass, fieldID);
@@ -180,19 +168,15 @@ StorageDataType toStorageDataType(JNIEnv *env, jobject enumVal) {
   } else if (enumValueName == "E4M3") {
     return StorageDataType::E4M3;
   } else {
-    throw std::runtime_error(
-        "Voyager C++ bindings received unknown enum value \"" + enumValueName +
-        "\".");
+    throw std::runtime_error("Voyager C++ bindings received unknown enum value \"" + enumValueName + "\".");
   }
 }
 
 jobject toStorageDataType(JNIEnv *env, StorageDataType enumVal) {
-  jclass enumClass =
-      env->FindClass("com/spotify/voyager/jni/Index$StorageDataType");
+  jclass enumClass = env->FindClass("com/spotify/voyager/jni/Index$StorageDataType");
 
   if (!enumClass) {
-    throw std::runtime_error(
-        "C++ bindings could not find StorageDataType Java enum!");
+    throw std::runtime_error("C++ bindings could not find StorageDataType Java enum!");
   }
 
   const char *enumValueName = nullptr;
@@ -208,16 +192,12 @@ jobject toStorageDataType(JNIEnv *env, StorageDataType enumVal) {
     enumValueName = "E4M3";
     break;
   default:
-    throw std::runtime_error(
-        "Voyager C++ bindings received unknown enum value.");
+    throw std::runtime_error("Voyager C++ bindings received unknown enum value.");
   }
 
-  jfieldID fieldID =
-      env->GetStaticFieldID(enumClass, enumValueName,
-                            "Lcom/spotify/voyager/jni/Index$StorageDataType;");
+  jfieldID fieldID = env->GetStaticFieldID(enumClass, enumValueName, "Lcom/spotify/voyager/jni/Index$StorageDataType;");
   if (!fieldID) {
-    throw std::runtime_error(
-        "C++ bindings could not find value in StorageDataType Java enum!");
+    throw std::runtime_error("C++ bindings could not find value in StorageDataType Java enum!");
   }
 
   jobject javaValue = env->GetStaticObjectField(enumClass, fieldID);
@@ -291,8 +271,7 @@ std::vector<float> toStdVector(JNIEnv *env, jfloatArray floatArray) {
  */
 jfloatArray toFloatArray(JNIEnv *env, std::vector<float> floatArray) {
   jfloatArray returnArray = env->NewFloatArray(floatArray.size());
-  env->SetFloatArrayRegion(returnArray, 0, floatArray.size(),
-                           floatArray.data());
+  env->SetFloatArrayRegion(returnArray, 0, floatArray.size(), floatArray.data());
   return returnArray;
 }
 
@@ -310,30 +289,27 @@ std::vector<size_t> toUnsignedStdVector(JNIEnv *env, jlongArray longArray) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Index Construction and Indexing
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void Java_com_spotify_voyager_jni_Index_nativeConstructor(
-    JNIEnv *env, jobject self, jobject spaceType, jint numDimensions, jlong M,
-    jlong efConstruction, jlong randomSeed, jlong maxElements,
-    jobject storageDataType) {
+void Java_com_spotify_voyager_jni_Index_nativeConstructor(JNIEnv *env, jobject self, jobject spaceType,
+                                                          jint numDimensions, jlong M, jlong efConstruction,
+                                                          jlong randomSeed, jlong maxElements,
+                                                          jobject storageDataType) {
 
   try {
     switch (toStorageDataType(env, storageDataType)) {
     case StorageDataType::Float32:
       setHandle<Index>(env, self,
-                       new TypedIndex<float>(toSpaceType(env, spaceType),
-                                             numDimensions, M, efConstruction,
-                                             randomSeed, maxElements));
+                       new TypedIndex<float>(toSpaceType(env, spaceType), numDimensions, M, efConstruction, randomSeed,
+                                             maxElements));
       break;
     case StorageDataType::Float8:
       setHandle<Index>(env, self,
-                       new TypedIndex<float, int8_t, std::ratio<1, 127>>(
-                           toSpaceType(env, spaceType), numDimensions, M,
-                           efConstruction, randomSeed, maxElements));
+                       new TypedIndex<float, int8_t, std::ratio<1, 127>>(toSpaceType(env, spaceType), numDimensions, M,
+                                                                         efConstruction, randomSeed, maxElements));
       break;
     case StorageDataType::E4M3:
       setHandle<Index>(env, self,
-                       new TypedIndex<float, E4M3>(
-                           toSpaceType(env, spaceType), numDimensions, M,
-                           efConstruction, randomSeed, maxElements));
+                       new TypedIndex<float, E4M3>(toSpaceType(env, spaceType), numDimensions, M, efConstruction,
+                                                   randomSeed, maxElements));
       break;
     }
   } catch (std::exception const &e) {
@@ -343,8 +319,7 @@ void Java_com_spotify_voyager_jni_Index_nativeConstructor(
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_addItem___3F(JNIEnv *env, jobject self,
-                                                     jfloatArray vector) {
+void Java_com_spotify_voyager_jni_Index_addItem___3F(JNIEnv *env, jobject self, jfloatArray vector) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->addItem(toStdVector(env, vector), {});
@@ -355,9 +330,7 @@ void Java_com_spotify_voyager_jni_Index_addItem___3F(JNIEnv *env, jobject self,
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_addItem___3FJ(JNIEnv *env, jobject self,
-                                                      jfloatArray vector,
-                                                      jlong id) {
+void Java_com_spotify_voyager_jni_Index_addItem___3FJ(JNIEnv *env, jobject self, jfloatArray vector, jlong id) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->addItem(toStdVector(env, vector), {id});
@@ -368,9 +341,7 @@ void Java_com_spotify_voyager_jni_Index_addItem___3FJ(JNIEnv *env, jobject self,
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_addItems___3_3FI(JNIEnv *env,
-                                                         jobject self,
-                                                         jobjectArray vectors,
+void Java_com_spotify_voyager_jni_Index_addItems___3_3FI(JNIEnv *env, jobject self, jobjectArray vectors,
                                                          jint numThreads) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
@@ -382,13 +353,11 @@ void Java_com_spotify_voyager_jni_Index_addItems___3_3FI(JNIEnv *env,
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(
-    JNIEnv *env, jobject self, jobjectArray vectors, jlongArray ids,
-    jint numThreads) {
+void Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(JNIEnv *env, jobject self, jobjectArray vectors,
+                                                            jlongArray ids, jint numThreads) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
-    index->addItems(toNDArray(env, vectors), toUnsignedStdVector(env, ids),
-                    numThreads);
+    index->addItems(toNDArray(env, vectors), toUnsignedStdVector(env, ids), numThreads);
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
@@ -399,31 +368,23 @@ void Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Querying
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-jobject Java_com_spotify_voyager_jni_Index_query___3FIJ(JNIEnv *env,
-                                                        jobject self,
-                                                        jfloatArray queryVector,
-                                                        jint numNeighbors,
-                                                        jlong queryEf) {
+jobject Java_com_spotify_voyager_jni_Index_query___3FIJ(JNIEnv *env, jobject self, jfloatArray queryVector,
+                                                        jint numNeighbors, jlong queryEf) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
 
-    std::tuple<std::vector<hnswlib::labeltype>, std::vector<float>>
-        queryResults =
-            index->query(toStdVector(env, queryVector), numNeighbors, queryEf);
+    std::tuple<std::vector<hnswlib::labeltype>, std::vector<float>> queryResults =
+        index->query(toStdVector(env, queryVector), numNeighbors, queryEf);
 
-    jclass queryResultsClass =
-        env->FindClass("com/spotify/voyager/jni/Index$QueryResults");
+    jclass queryResultsClass = env->FindClass("com/spotify/voyager/jni/Index$QueryResults");
     if (!queryResultsClass) {
-      throw std::runtime_error(
-          "C++ bindings failed to find QueryResults class.");
+      throw std::runtime_error("C++ bindings failed to find QueryResults class.");
     }
 
-    jmethodID constructor =
-        env->GetMethodID(queryResultsClass, "<init>", "([J[F)V");
+    jmethodID constructor = env->GetMethodID(queryResultsClass, "<init>", "([J[F)V");
 
     if (!constructor) {
-      throw std::runtime_error(
-          "C++ bindings failed to find QueryResults constructor.");
+      throw std::runtime_error("C++ bindings failed to find QueryResults constructor.");
     }
 
     // Allocate a Java long array for the IDs:
@@ -432,12 +393,10 @@ jobject Java_com_spotify_voyager_jni_Index_query___3FIJ(JNIEnv *env,
     // queryResults is a (size_t *), but labels is a signed (long *).
     //  This may overflow if we have more than... 2^63 = 9.223372037e18
     //  elements. We're probably safe doing this.
-    env->SetLongArrayRegion(labels, 0, numNeighbors,
-                            (jlong *)std::get<0>(queryResults).data());
+    env->SetLongArrayRegion(labels, 0, numNeighbors, (jlong *)std::get<0>(queryResults).data());
 
     jfloatArray distances = env->NewFloatArray(numNeighbors);
-    env->SetFloatArrayRegion(distances, 0, numNeighbors,
-                             std::get<1>(queryResults).data());
+    env->SetFloatArrayRegion(distances, 0, numNeighbors, std::get<1>(queryResults).data());
 
     return env->NewObject(queryResultsClass, constructor, labels, distances);
   } catch (std::exception const &e) {
@@ -448,35 +407,28 @@ jobject Java_com_spotify_voyager_jni_Index_query___3FIJ(JNIEnv *env,
   }
 }
 
-jobjectArray Java_com_spotify_voyager_jni_Index_query___3_3FIIJ(
-    JNIEnv *env, jobject self, jobjectArray queryVectors, jint numNeighbors,
-    jint numThreads, jlong queryEf) {
+jobjectArray Java_com_spotify_voyager_jni_Index_query___3_3FIIJ(JNIEnv *env, jobject self, jobjectArray queryVectors,
+                                                                jint numNeighbors, jint numThreads, jlong queryEf) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
 
     int numQueries = env->GetArrayLength(queryVectors);
 
     std::tuple<NDArray<hnswlib::labeltype, 2>, NDArray<float, 2>> queryResults =
-        index->query(toNDArray(env, queryVectors), numNeighbors, numThreads,
-                     queryEf);
+        index->query(toNDArray(env, queryVectors), numNeighbors, numThreads, queryEf);
 
-    jclass queryResultsClass =
-        env->FindClass("com/spotify/voyager/jni/Index$QueryResults");
+    jclass queryResultsClass = env->FindClass("com/spotify/voyager/jni/Index$QueryResults");
     if (!queryResultsClass) {
-      throw std::runtime_error(
-          "C++ bindings failed to find QueryResults class.");
+      throw std::runtime_error("C++ bindings failed to find QueryResults class.");
     }
 
-    jmethodID constructor =
-        env->GetMethodID(queryResultsClass, "<init>", "([J[F)V");
+    jmethodID constructor = env->GetMethodID(queryResultsClass, "<init>", "([J[F)V");
 
     if (!constructor) {
-      throw std::runtime_error(
-          "C++ bindings failed to find QueryResults constructor.");
+      throw std::runtime_error("C++ bindings failed to find QueryResults constructor.");
     }
 
-    jobjectArray javaQueryResults =
-        env->NewObjectArray(numQueries, queryResultsClass, NULL);
+    jobjectArray javaQueryResults = env->NewObjectArray(numQueries, queryResultsClass, NULL);
 
     for (int i = 0; i < numQueries; i++) {
       // Allocate a Java long array for the indices, and a float array for the
@@ -486,15 +438,12 @@ jobjectArray Java_com_spotify_voyager_jni_Index_query___3_3FIIJ(
       // queryResults is a (size_t *), but labels is a signed (long *).
       //  This may overflow if we have more than... 2^63 = 9.223372037e18
       //  elements. We're probably safe doing this.
-      env->SetLongArrayRegion(labels, 0, numNeighbors,
-                              (jlong *)std::get<0>(queryResults)[i]);
+      env->SetLongArrayRegion(labels, 0, numNeighbors, (jlong *)std::get<0>(queryResults)[i]);
 
       jfloatArray distances = env->NewFloatArray(numNeighbors);
-      env->SetFloatArrayRegion(distances, 0, numNeighbors,
-                               std::get<1>(queryResults)[i]);
+      env->SetFloatArrayRegion(distances, 0, numNeighbors, std::get<1>(queryResults)[i]);
 
-      jobject queryResults =
-          env->NewObject(queryResultsClass, constructor, labels, distances);
+      jobject queryResults = env->NewObject(queryResultsClass, constructor, labels, distances);
       env->SetObjectArrayElement(javaQueryResults, i, queryResults);
       env->DeleteLocalRef(labels);
       env->DeleteLocalRef(distances);
@@ -524,8 +473,7 @@ jobject Java_com_spotify_voyager_jni_Index_getSpace(JNIEnv *env, jobject self) {
   return nullptr;
 }
 
-jint Java_com_spotify_voyager_jni_Index_getNumDimensions(JNIEnv *env,
-                                                         jobject self) {
+jint Java_com_spotify_voyager_jni_Index_getNumDimensions(JNIEnv *env, jobject self) {
   try {
     return getHandle<Index>(env, self)->getNumDimensions();
   } catch (std::exception const &e) {
@@ -545,8 +493,7 @@ jlong Java_com_spotify_voyager_jni_Index_getM(JNIEnv *env, jobject self) {
   return 0;
 }
 
-jlong Java_com_spotify_voyager_jni_Index_getEfConstruction(JNIEnv *env,
-                                                           jobject self) {
+jlong Java_com_spotify_voyager_jni_Index_getEfConstruction(JNIEnv *env, jobject self) {
   try {
     return getHandle<Index>(env, self)->getEfConstruction();
   } catch (std::exception const &e) {
@@ -555,8 +502,7 @@ jlong Java_com_spotify_voyager_jni_Index_getEfConstruction(JNIEnv *env,
   return 0;
 }
 
-jlong Java_com_spotify_voyager_jni_Index_getMaxElements(JNIEnv *env,
-                                                        jobject self) {
+jlong Java_com_spotify_voyager_jni_Index_getMaxElements(JNIEnv *env, jobject self) {
   try {
     return getHandle<Index>(env, self)->getMaxElements();
   } catch (std::exception const &e) {
@@ -565,11 +511,9 @@ jlong Java_com_spotify_voyager_jni_Index_getMaxElements(JNIEnv *env,
   return 0;
 }
 
-jobject Java_com_spotify_voyager_jni_Index_getStorageDataType(JNIEnv *env,
-                                                              jobject self) {
+jobject Java_com_spotify_voyager_jni_Index_getStorageDataType(JNIEnv *env, jobject self) {
   try {
-    return toStorageDataType(env,
-                             getHandle<Index>(env, self)->getStorageDataType());
+    return toStorageDataType(env, getHandle<Index>(env, self)->getStorageDataType());
   } catch (std::exception const &e) {
     env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
   }
@@ -579,8 +523,7 @@ jobject Java_com_spotify_voyager_jni_Index_getStorageDataType(JNIEnv *env,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Index Accessor Methods
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-jlong Java_com_spotify_voyager_jni_Index_getNumElements(JNIEnv *env,
-                                                        jobject self) {
+jlong Java_com_spotify_voyager_jni_Index_getNumElements(JNIEnv *env, jobject self) {
   try {
     return getHandle<Index>(env, self)->getNumElements();
   } catch (std::exception const &e) {
@@ -591,9 +534,7 @@ jlong Java_com_spotify_voyager_jni_Index_getNumElements(JNIEnv *env,
   return 0;
 }
 
-jfloatArray Java_com_spotify_voyager_jni_Index_getVector(JNIEnv *env,
-                                                         jobject self,
-                                                         jlong id) {
+jfloatArray Java_com_spotify_voyager_jni_Index_getVector(JNIEnv *env, jobject self, jlong id) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
     return toFloatArray(env, index->getVector(id));
@@ -605,21 +546,17 @@ jfloatArray Java_com_spotify_voyager_jni_Index_getVector(JNIEnv *env,
   }
 }
 
-jobjectArray Java_com_spotify_voyager_jni_Index_getVectors(JNIEnv *env,
-                                                           jobject self,
-                                                           jlongArray ids) {
+jobjectArray Java_com_spotify_voyager_jni_Index_getVectors(JNIEnv *env, jobject self, jlongArray ids) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
-    NDArray<float, 2> vectors =
-        index->getVectors(toUnsignedStdVector(env, ids));
+    NDArray<float, 2> vectors = index->getVectors(toUnsignedStdVector(env, ids));
 
     jclass floatArrayClass = env->FindClass("[F");
     if (!floatArrayClass) {
       throw std::runtime_error("C++ bindings failed to find float[] class.");
     }
 
-    jobjectArray javaVectors =
-        env->NewObjectArray(vectors.shape[0], floatArrayClass, NULL);
+    jobjectArray javaVectors = env->NewObjectArray(vectors.shape[0], floatArrayClass, NULL);
 
     for (int i = 0; i < vectors.shape[0]; i++) {
       jfloatArray vector = env->NewFloatArray(vectors.shape[1]);
@@ -637,8 +574,7 @@ jobjectArray Java_com_spotify_voyager_jni_Index_getVectors(JNIEnv *env,
   }
 }
 
-jlongArray Java_com_spotify_voyager_jni_Index_getIDs(JNIEnv *env,
-                                                     jobject self) {
+jlongArray Java_com_spotify_voyager_jni_Index_getIDs(JNIEnv *env, jobject self) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
 
@@ -667,8 +603,7 @@ jlongArray Java_com_spotify_voyager_jni_Index_getIDs(JNIEnv *env,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Index Modifier Methods
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void Java_com_spotify_voyager_jni_Index_setEf(JNIEnv *env, jobject self,
-                                              jlong newEf) {
+void Java_com_spotify_voyager_jni_Index_setEf(JNIEnv *env, jobject self, jlong newEf) {
   try {
     getHandle<Index>(env, self)->setEF(newEf);
   } catch (std::exception const &e) {
@@ -689,8 +624,7 @@ jint Java_com_spotify_voyager_jni_Index_getEf(JNIEnv *env, jobject self) {
   return 0;
 }
 
-void Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *env, jobject self,
-                                                    jlong label) {
+void Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *env, jobject self, jlong label) {
   try {
     getHandle<Index>(env, self)->markDeleted(label);
   } catch (std::exception const &e) {
@@ -700,8 +634,7 @@ void Java_com_spotify_voyager_jni_Index_markDeleted(JNIEnv *env, jobject self,
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self,
-                                                      jlong label) {
+void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self, jlong label) {
   try {
     getHandle<Index>(env, self)->unmarkDeleted(label);
   } catch (std::exception const &e) {
@@ -711,8 +644,7 @@ void Java_com_spotify_voyager_jni_Index_unmarkDeleted(JNIEnv *env, jobject self,
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_resizeIndex(JNIEnv *env, jobject self,
-                                                    jlong newSize) {
+void Java_com_spotify_voyager_jni_Index_resizeIndex(JNIEnv *env, jobject self, jlong newSize) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->resizeIndex(newSize);
@@ -726,8 +658,7 @@ void Java_com_spotify_voyager_jni_Index_resizeIndex(JNIEnv *env, jobject self,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Save Index
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_lang_String_2(
-    JNIEnv *env, jobject self, jstring filename) {
+void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_lang_String_2(JNIEnv *env, jobject self, jstring filename) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->saveIndex(toString(env, filename));
@@ -738,8 +669,8 @@ void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_lang_String_2(
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2(
-    JNIEnv *env, jobject self, jobject outputStream) {
+void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2(JNIEnv *env, jobject self,
+                                                                           jobject outputStream) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
     index->saveIndex(std::make_shared<JavaOutputStream>(env, outputStream));
@@ -756,62 +687,45 @@ void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2(
 // Load Index
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // TODO: Convert these to static methods
-void Java_com_spotify_voyager_jni_Index_nativeLoadFromFileWithParameters(
-    JNIEnv *env, jobject self, jstring filename, jobject spaceType,
-    jint numDimensions, jobject storageDataType) {
+void Java_com_spotify_voyager_jni_Index_nativeLoadFromFileWithParameters(JNIEnv *env, jobject self, jstring filename,
+                                                                         jobject spaceType, jint numDimensions,
+                                                                         jobject storageDataType) {
   try {
-    auto inputStream =
-        std::make_shared<FileInputStream>(toString(env, filename));
-    std::unique_ptr<voyager::Metadata::V1> metadata =
-        voyager::Metadata::loadFromStream(inputStream);
+    auto inputStream = std::make_shared<FileInputStream>(toString(env, filename));
+    std::unique_ptr<voyager::Metadata::V1> metadata = voyager::Metadata::loadFromStream(inputStream);
 
     if (metadata) {
-      if (metadata->getStorageDataType() !=
-          toStorageDataType(env, storageDataType)) {
-        throw std::domain_error(
-            "Provided storage data type (" +
-            toString(toStorageDataType(env, storageDataType)) +
-            ") does not match the data type used in this file (" +
-            toString(metadata->getStorageDataType()) + ").");
+      if (metadata->getStorageDataType() != toStorageDataType(env, storageDataType)) {
+        throw std::domain_error("Provided storage data type (" + toString(toStorageDataType(env, storageDataType)) +
+                                ") does not match the data type used in this file (" +
+                                toString(metadata->getStorageDataType()) + ").");
       }
       if (metadata->getSpaceType() != toSpaceType(env, spaceType)) {
-        throw std::domain_error(
-            "Provided space type (" + toString(toSpaceType(env, spaceType)) +
-            ") does not match the space type used in this file (" +
-            toString(metadata->getSpaceType()) + ").");
+        throw std::domain_error("Provided space type (" + toString(toSpaceType(env, spaceType)) +
+                                ") does not match the space type used in this file (" +
+                                toString(metadata->getSpaceType()) + ").");
       }
       if (metadata->getNumDimensions() != numDimensions) {
-        throw std::domain_error(
-            "Provided number of dimensions (" + std::to_string(numDimensions) +
-            ") does not match the number of dimensions used in this file (" +
-            std::to_string(metadata->getNumDimensions()) + ").");
+        throw std::domain_error("Provided number of dimensions (" + std::to_string(numDimensions) +
+                                ") does not match the number of dimensions used in this file (" +
+                                std::to_string(metadata->getNumDimensions()) + ").");
       }
 
-      setHandle<Index>(
-          env, self,
-          loadTypedIndexFromMetadata(std::move(metadata), inputStream)
-              .release());
+      setHandle<Index>(env, self, loadTypedIndexFromMetadata(std::move(metadata), inputStream).release());
       return;
     }
 
     switch (toStorageDataType(env, storageDataType)) {
     case StorageDataType::Float32:
-      setHandle<Index>(env, self,
-                       new TypedIndex<float>(inputStream,
-                                             toSpaceType(env, spaceType),
-                                             numDimensions));
+      setHandle<Index>(env, self, new TypedIndex<float>(inputStream, toSpaceType(env, spaceType), numDimensions));
       break;
     case StorageDataType::Float8:
       setHandle<Index>(
           env, self,
-          new TypedIndex<float, int8_t, std::ratio<1, 127>>(
-              inputStream, toSpaceType(env, spaceType), numDimensions));
+          new TypedIndex<float, int8_t, std::ratio<1, 127>>(inputStream, toSpaceType(env, spaceType), numDimensions));
       break;
     case StorageDataType::E4M3:
-      setHandle<Index>(env, self,
-                       new TypedIndex<float, E4M3>(inputStream,
-                                                   toSpaceType(env, spaceType),
-                                                   numDimensions));
+      setHandle<Index>(env, self, new TypedIndex<float, E4M3>(inputStream, toSpaceType(env, spaceType), numDimensions));
       break;
     }
   } catch (std::exception const &e) {
@@ -821,61 +735,46 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromFileWithParameters(
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
-    JNIEnv *env, jobject self, jobject jInputStream, jobject spaceType,
-    jint numDimensions, jobject storageDataType) {
+void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(JNIEnv *env, jobject self,
+                                                                                jobject jInputStream, jobject spaceType,
+                                                                                jint numDimensions,
+                                                                                jobject storageDataType) {
   try {
     auto inputStream = std::make_shared<JavaInputStream>(env, jInputStream);
-    std::unique_ptr<voyager::Metadata::V1> metadata =
-        voyager::Metadata::loadFromStream(inputStream);
+    std::unique_ptr<voyager::Metadata::V1> metadata = voyager::Metadata::loadFromStream(inputStream);
 
     if (metadata) {
-      if (metadata->getStorageDataType() !=
-          toStorageDataType(env, storageDataType)) {
-        throw std::domain_error(
-            "Provided storage data type (" +
-            toString(toStorageDataType(env, storageDataType)) +
-            ") does not match the data type used in this file (" +
-            toString(metadata->getStorageDataType()) + ").");
+      if (metadata->getStorageDataType() != toStorageDataType(env, storageDataType)) {
+        throw std::domain_error("Provided storage data type (" + toString(toStorageDataType(env, storageDataType)) +
+                                ") does not match the data type used in this file (" +
+                                toString(metadata->getStorageDataType()) + ").");
       }
       if (metadata->getSpaceType() != toSpaceType(env, spaceType)) {
-        throw std::domain_error(
-            "Provided space type (" + toString(toSpaceType(env, spaceType)) +
-            ") does not match the space type used in this file (" +
-            toString(metadata->getSpaceType()) + ").");
+        throw std::domain_error("Provided space type (" + toString(toSpaceType(env, spaceType)) +
+                                ") does not match the space type used in this file (" +
+                                toString(metadata->getSpaceType()) + ").");
       }
       if (metadata->getNumDimensions() != numDimensions) {
-        throw std::domain_error(
-            "Provided number of dimensions (" + std::to_string(numDimensions) +
-            ") does not match the number of dimensions used in this file (" +
-            std::to_string(metadata->getNumDimensions()) + ").");
+        throw std::domain_error("Provided number of dimensions (" + std::to_string(numDimensions) +
+                                ") does not match the number of dimensions used in this file (" +
+                                std::to_string(metadata->getNumDimensions()) + ").");
       }
 
-      setHandle<Index>(
-          env, self,
-          loadTypedIndexFromMetadata(std::move(metadata), inputStream)
-              .release());
+      setHandle<Index>(env, self, loadTypedIndexFromMetadata(std::move(metadata), inputStream).release());
       return;
     }
 
     switch (toStorageDataType(env, storageDataType)) {
     case StorageDataType::Float32:
-      setHandle<Index>(env, self,
-                       new TypedIndex<float>(inputStream,
-                                             toSpaceType(env, spaceType),
-                                             numDimensions));
+      setHandle<Index>(env, self, new TypedIndex<float>(inputStream, toSpaceType(env, spaceType), numDimensions));
       break;
     case StorageDataType::Float8:
       setHandle<Index>(
           env, self,
-          new TypedIndex<float, int8_t, std::ratio<1, 127>>(
-              inputStream, toSpaceType(env, spaceType), numDimensions));
+          new TypedIndex<float, int8_t, std::ratio<1, 127>>(inputStream, toSpaceType(env, spaceType), numDimensions));
       break;
     case StorageDataType::E4M3:
-      setHandle<Index>(env, self,
-                       new TypedIndex<float, E4M3>(inputStream,
-                                                   toSpaceType(env, spaceType),
-                                                   numDimensions));
+      setHandle<Index>(env, self, new TypedIndex<float, E4M3>(inputStream, toSpaceType(env, spaceType), numDimensions));
       break;
     }
   } catch (std::exception const &e) {
@@ -885,25 +784,17 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStreamWithParameters(
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(JNIEnv *env,
-                                                           jobject self,
-                                                           jstring filename) {
+void Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(JNIEnv *env, jobject self, jstring filename) {
   try {
-    auto inputStream =
-        std::make_shared<FileInputStream>(toString(env, filename));
-    std::unique_ptr<voyager::Metadata::V1> metadata =
-        voyager::Metadata::loadFromStream(inputStream);
+    auto inputStream = std::make_shared<FileInputStream>(toString(env, filename));
+    std::unique_ptr<voyager::Metadata::V1> metadata = voyager::Metadata::loadFromStream(inputStream);
 
     if (metadata) {
-      setHandle<Index>(
-          env, self,
-          loadTypedIndexFromMetadata(std::move(metadata), inputStream)
-              .release());
+      setHandle<Index>(env, self, loadTypedIndexFromMetadata(std::move(metadata), inputStream).release());
     } else {
-      throw std::domain_error(
-          "Provided index file has no metadata and no index parameters were "
-          "specified. Must either provide an index with metadata or specify "
-          "storageDataType, spaceType, and numDimensions.");
+      throw std::domain_error("Provided index file has no metadata and no index parameters were "
+                              "specified. Must either provide an index with metadata or specify "
+                              "storageDataType, spaceType, and numDimensions.");
     }
 
   } catch (std::exception const &e) {
@@ -913,23 +804,17 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromFile(JNIEnv *env,
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(
-    JNIEnv *env, jobject self, jobject jInputStream) {
+void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(JNIEnv *env, jobject self, jobject jInputStream) {
   try {
     auto inputStream = std::make_shared<JavaInputStream>(env, jInputStream);
-    std::unique_ptr<voyager::Metadata::V1> metadata =
-        voyager::Metadata::loadFromStream(inputStream);
+    std::unique_ptr<voyager::Metadata::V1> metadata = voyager::Metadata::loadFromStream(inputStream);
 
     if (metadata) {
-      setHandle<Index>(
-          env, self,
-          loadTypedIndexFromMetadata(std::move(metadata), inputStream)
-              .release());
+      setHandle<Index>(env, self, loadTypedIndexFromMetadata(std::move(metadata), inputStream).release());
     } else {
-      throw std::domain_error(
-          "Provided index file has no metadata and no index parameters were "
-          "specified. Must either provide an index with metadata or specify "
-          "storageDataType, spaceType, and numDimensions.");
+      throw std::domain_error("Provided index file has no metadata and no index parameters were "
+                              "specified. Must either provide an index with metadata or specify "
+                              "storageDataType, spaceType, and numDimensions.");
     }
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
@@ -938,8 +823,7 @@ void Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_nativeDestructor(JNIEnv *env,
-                                                         jobject self) {
+void Java_com_spotify_voyager_jni_Index_nativeDestructor(JNIEnv *env, jobject self) {
   try {
     deleteHandle<Index>(env, self);
   } catch (std::exception const &e) {

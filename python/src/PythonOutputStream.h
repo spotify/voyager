@@ -23,8 +23,8 @@ namespace py = pybind11;
 #include <StreamUtils.h>
 
 bool isWriteableFileLike(py::object fileLike) {
-  return py::hasattr(fileLike, "write") && py::hasattr(fileLike, "seek") &&
-         py::hasattr(fileLike, "tell") && py::hasattr(fileLike, "seekable");
+  return py::hasattr(fileLike, "write") && py::hasattr(fileLike, "seek") && py::hasattr(fileLike, "tell") &&
+         py::hasattr(fileLike, "seekable");
 }
 
 /**
@@ -55,9 +55,7 @@ public:
     for (unsigned long long i = 0; i < numBytes; i += MAX_BUFFER_SIZE) {
       unsigned long long chunkSize = std::min(numBytes - i, MAX_BUFFER_SIZE);
 
-      int bytesWritten =
-          fileLike.attr("write")(py::bytes((const char *)ptr, chunkSize))
-              .cast<int>();
+      int bytesWritten = fileLike.attr("write")(py::bytes((const char *)ptr, chunkSize)).cast<int>();
 
       if (bytesWritten < 0)
         return false;
