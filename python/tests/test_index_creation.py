@@ -101,6 +101,9 @@ def test_create_and_query(
             assert labels[0] == i
         assert distances[0] < (distance_tolerance * num_dimensions)
 
+    labels, _ = index.query(input_data[0], k=len(ids))
+    assert set(ids) == set(labels)
+
     output_file = tmp_path / "index.voy"
     index.save(str(output_file))
     assert output_file.stat().st_size > 0
