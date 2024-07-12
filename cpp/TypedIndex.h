@@ -360,7 +360,7 @@ public:
 
     int start = 0;
     if (!ep_added) {
-      size_t id = ids.size() ? ids.at(0) : (currentLabel);
+      size_t id = ids.size() ? ids.at(0) : (currentLabel.load());
       // TODO(psobot): Should inputVector be on the stack instead?
       std::vector<float> inputVector(actualDimensions);
       std::vector<data_t> convertedVector(actualDimensions);
