@@ -99,7 +99,7 @@ private:
   bool normalize = false;
   bool useOrderPreservingTransform = false;
   int numThreadsDefault;
-  hnswlib::labeltype currentLabel;
+  std::atomic<hnswlib::labeltype> currentLabel;
   std::unique_ptr<hnswlib::HierarchicalNSW<dist_t, data_t>> algorithmImpl;
   std::unique_ptr<hnswlib::Space<dist_t, data_t>> spaceImpl;
   std::unique_ptr<voyager::Metadata::V1> metadata;
@@ -360,7 +360,7 @@ public:
 
     int start = 0;
     if (!ep_added) {
-      size_t id = ids.size() ? ids.at(0) : (currentLabel);
+      size_t id = ids.size() ? ids.at(0) : (currentLabel.fetch_add(1));
       // TODO(psobot): Should inputVector be on the stack instead?
       std::vector<float> inputVector(actualDimensions);
       std::vector<data_t> convertedVector(actualDimensions);
@@ -402,7 +402,7 @@ public:
         floatToDataType<data_t, scalefactor>(&inputArray[startIndex],
                                              &convertedArray[startIndex],
                                              actualDimensions);
-        size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
+        size_t id = ids.size() ? ids.at(row) : (currentLabel.fetch_add(1));
         try {
           algorithmImpl->addPoint(convertedArray.data() + startIndex, id);
         } catch (IndexFullError &e) {
@@ -438,7 +438,7 @@ public:
         normalizeVector<dist_t, data_t, scalefactor>(
             &inputArray[startIndex], &normalizedArray[startIndex],
             actualDimensions);
-        size_t id = ids.size() ? ids.at(row) : (currentLabel + row);
+        size_t id = ids.size() ? ids.at(row) : (currentLabel.fetch_add(1));
 
         try {
           algorithmImpl->addPoint(normalizedArray.data() + startIndex, id);
@@ -459,8 +459,6 @@ public:
         idsToReturn[row] = id;
       });
     };
-
-    currentLabel += rows;
 
     return idsToReturn;
   }
