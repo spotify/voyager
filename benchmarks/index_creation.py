@@ -30,7 +30,7 @@ class IndexCreationSuite:
     param_names = ['num_dimensions','num_elements', 'space', 'storage_data_type', 'ef_construction']
 
 
-    def create(
+    def time_create(
         self,
         num_dimensions: int,
         num_elements: int,
