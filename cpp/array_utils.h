@@ -225,26 +225,54 @@ NDArray<float, 2> dataTypeToFloat(NDArray<data_t, 2> input) {
 template <typename dist_t, typename data_t = dist_t,
           typename scalefactor = std::ratio<1, 1>>
 void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
-  dist_t norm = 0.0;
-  for (int i = 0; i < dimensions; i++) {
-    if constexpr (scalefactor::num != scalefactor::den) {
-      dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) /
-                     (dist_t)scalefactor::den;
-      norm += point * point;
-    } else {
-      norm += data[i] * data[i];
+  dist_t outputNorm = 1.1;
+  dist_t errorCompensationFactor = 1.0;
+
+  for (int iterations = 2; outputNorm > 1.0f && iterations < 10; iterations++) {
+    dist_t norm = 0.0;
+    dist_t error = 0.0;
+    for (int i = 0; i < dimensions; i++) {
+      if constexpr (scalefactor::num != scalefactor::den) {
+        dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) /
+                       (dist_t)scalefactor::den;
+        norm += point * point;
+      } else {
+        norm += data[i] * data[i];
+      }
     }
-  }
-  norm = 1.0f / (sqrtf(norm) + 1e-30f);
-  for (int i = 0; i < dimensions; i++) {
-    if constexpr (scalefactor::num != scalefactor::den) {
-      dist_t element =
-          (data[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
-      dist_t normalizedElement = element * norm;
-      norm_array[i] = (normalizedElement * scalefactor::den) / scalefactor::num;
+    norm = errorCompensationFactor / (sqrtf(norm) + 1e-30f);
+    for (int i = 0; i < dimensions; i++) {
+      if constexpr (scalefactor::num != scalefactor::den) {
+        dist_t element =
+            (data[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
+        dist_t normalizedElement = element * norm;
+        dist_t elementToInsert =
+            (normalizedElement * scalefactor::den) / scalefactor::num;
+        ;
+        norm_array[i] = elementToInsert;
+        error += (norm_array[i] - elementToInsert);
+      } else {
+        dist_t new_value = data[i] * norm;
+        norm_array[i] = new_value;
+        error += (norm_array[i] - new_value);
+      }
+    }
+
+    if constexpr (scalefactor::num == scalefactor::den) {
+      // If using E4M3 or other reduced-precision vectors, the resulting norm
+      // may be less than 1.0f. If so, we need to re-normalize the vector by
+      // scaling it up.
+      outputNorm = 0.0;
+      for (int i = 0; i < dimensions; i++) {
+        outputNorm += (dist_t)norm_array[i] * (dist_t)norm_array[i];
+      }
+      outputNorm = sqrtf(outputNorm);
+
+      if (outputNorm > 1.0f) {
+        errorCompensationFactor = 1.0 - error;
+      }
     } else {
-      dist_t new_value = data[i] * norm;
-      norm_array[i] = new_value;
+      break;
     }
   }
 }
