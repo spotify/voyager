@@ -5,8 +5,8 @@
     "repo": ".",
     "build_command": [
           "python -m pip install build",
-          "/usr/bin/cp -r {build_dir}/cpp {build_dir}/python/cpp",
-          "in-dir={build_dir}/python python -m build",
+          "pip install -r {build_dir}/python/dev-requirements.txt",
+          "in-dir={build_dir}/python python -m build --no-isolation",
           "/usr/bin/cp -r {build_dir}/python/dist/. {build_cache_dir}"
      ],
     "benchmark_dir": "benchmarks",
