@@ -3,11 +3,10 @@
     "project": "voyager",
     "project_url": "https://spotify.github.io/voyager/",
     "repo": ".",
-    "repo_subdir": "python",
     "build_command": [
           "python -m pip install build",
-          "python -m build",
-          "/usr/bin/cp -r {build_dir}/dist/. {build_cache_dir}"
+          "in-dir={build_dir}/python python -m build",
+          "/usr/bin/cp -r {build_dir}/python/dist/. {build_cache_dir}"
      ],
     "benchmark_dir": "benchmarks",
     "environment_type": "virtualenv",
