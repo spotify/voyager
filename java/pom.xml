@@ -66,11 +66,6 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>com.spotify</groupId>
-      <artifactId>vector-math</artifactId>
-      <version>0.1.20</version>
-    </dependency>
     <!-- test -->
     <dependency>
       <groupId>com.google.guava</groupId>

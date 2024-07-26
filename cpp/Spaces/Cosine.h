@@ -1,19 +1,21 @@
 #pragma once
-#include "Space.h"
-#include <ratio>
-#include <cmath>
 #include "InnerProduct.h"
+#include "Space.h"
+#include <cmath>
+#include <ratio>
 
 namespace hnswlib {
 
 template <typename dist_t, typename data_t = dist_t, int K = 1,
           typename scalefactor = std::ratio<1, 1>>
-static dist_t Cosine(const data_t *pVect1, const data_t *pVect2,
-                           size_t qty) {
-  dist_t res = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(pVect1, pVect2, qty);
+static dist_t Cosine(const data_t *pVect1, const data_t *pVect2, size_t qty) {
+  dist_t res = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(
+      pVect1, pVect2, qty);
 
-  dist_t magSquared1 = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(pVect1, pVect1, qty);
-  dist_t magSquared2 = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(pVect2, pVect2, qty);
+  dist_t magSquared1 = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(
+      pVect1, pVect1, qty);
+  dist_t magSquared2 = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(
+      pVect2, pVect2, qty);
   dist_t denominator = sqrtf(magSquared1) * sqrtf(magSquared2);
 
   constexpr dist_t scale = (dist_t)scalefactor::num / (dist_t)scalefactor::den;
@@ -28,16 +30,17 @@ static dist_t Cosine(const data_t *pVect1, const data_t *pVect2,
 template <typename dist_t, typename data_t = dist_t, int K,
           typename scalefactor = std::ratio<1, 1>>
 static dist_t CosineAtLeast(const data_t *__restrict pVect1,
-                                  const data_t *__restrict pVect2,
-                                  const size_t qty) {
+                            const data_t *__restrict pVect2, const size_t qty) {
   size_t remainder = qty - K;
   dist_t res = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(
                    pVect1, pVect2, K) +
                InnerProductWithoutScale<dist_t, data_t, 1, scalefactor>(
                    pVect1 + K, pVect2 + K, remainder);
 
-  dist_t magSquared1 = InnerProductAtLeast<dist_t, data_t, K, scalefactor>(pVect1, pVect1, qty);
-  dist_t magSquared2 = InnerProductAtLeast<dist_t, data_t, K, scalefactor>(pVect2, pVect2, qty);
+  dist_t magSquared1 =
+      InnerProductAtLeast<dist_t, data_t, K, scalefactor>(pVect1, pVect1, qty);
+  dist_t magSquared2 =
+      InnerProductAtLeast<dist_t, data_t, K, scalefactor>(pVect2, pVect2, qty);
   dist_t denominator = sqrtf(magSquared1) * sqrtf(magSquared2);
 
   constexpr dist_t scale = (dist_t)scalefactor::num / (dist_t)scalefactor::den;

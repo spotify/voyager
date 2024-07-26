@@ -63,7 +63,6 @@ static dist_t InnerProduct(const data_t *pVect1, const data_t *pVect2,
   return res;
 }
 
-
 template <typename dist_t, typename data_t = dist_t, int K,
           typename scalefactor = std::ratio<1, 1>>
 static dist_t InnerProductAtLeast(const data_t *__restrict pVect1,
@@ -79,13 +78,14 @@ static dist_t InnerProductAtLeast(const data_t *__restrict pVect1,
   return res;
 }
 
-
 template <typename dist_t, typename data_t = dist_t, int K,
           typename scalefactor = std::ratio<1, 1>>
 static dist_t InnerProductDistanceAtLeast(const data_t *__restrict pVect1,
-                                  const data_t *__restrict pVect2,
-                                  const size_t qty) {
-  return (static_cast<dist_t>(1.0f) - InnerProductAtLeast<dist_t, data_t, K, scalefactor>(pVect1, pVect2, qty));
+                                          const data_t *__restrict pVect2,
+                                          const size_t qty) {
+  return (
+      static_cast<dist_t>(1.0f) -
+      InnerProductAtLeast<dist_t, data_t, K, scalefactor>(pVect1, pVect2, qty));
 }
 
 #if defined(USE_AVX)
@@ -356,17 +356,23 @@ public:
       fstdistfunc_ = InnerProduct<dist_t, data_t, 4, scalefactor>;
 
     else if (dim > 128)
-      fstdistfunc_ = InnerProductDistanceAtLeast<dist_t, data_t, 128, scalefactor>;
+      fstdistfunc_ =
+          InnerProductDistanceAtLeast<dist_t, data_t, 128, scalefactor>;
     else if (dim > 64)
-      fstdistfunc_ = InnerProductDistanceAtLeast<dist_t, data_t, 64, scalefactor>;
+      fstdistfunc_ =
+          InnerProductDistanceAtLeast<dist_t, data_t, 64, scalefactor>;
     else if (dim > 32)
-      fstdistfunc_ = InnerProductDistanceAtLeast<dist_t, data_t, 32, scalefactor>;
+      fstdistfunc_ =
+          InnerProductDistanceAtLeast<dist_t, data_t, 32, scalefactor>;
     else if (dim > 16)
-      fstdistfunc_ = InnerProductDistanceAtLeast<dist_t, data_t, 16, scalefactor>;
+      fstdistfunc_ =
+          InnerProductDistanceAtLeast<dist_t, data_t, 16, scalefactor>;
     else if (dim > 8)
-      fstdistfunc_ = InnerProductDistanceAtLeast<dist_t, data_t, 8, scalefactor>;
+      fstdistfunc_ =
+          InnerProductDistanceAtLeast<dist_t, data_t, 8, scalefactor>;
     else if (dim > 4)
-      fstdistfunc_ = InnerProductDistanceAtLeast<dist_t, data_t, 4, scalefactor>;
+      fstdistfunc_ =
+          InnerProductDistanceAtLeast<dist_t, data_t, 4, scalefactor>;
     else
       fstdistfunc_ = InnerProduct<dist_t, data_t, 1, scalefactor>;
   }
