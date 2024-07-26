@@ -5,6 +5,7 @@ pybind11-stubgen==0.16.2
 ruff
 psutil
 mypy
+asv==0.6.3
 # Needed for sphinx documentation
 sphinx
 sphinxext-opengraph
