@@ -91,6 +91,7 @@ private:
 
   SpaceType space;
   int dimensions;
+  StorageDataType dataType;
 
   size_t seed;
   size_t defaultEF;
@@ -114,10 +115,9 @@ public:
              const size_t efConstruction = 200, const size_t randomSeed = 1,
              const size_t maxElements = 1,
              const bool enableOrderPreservingTransform = true)
-      : space(space), dimensions(dimensions),
+      : space(space), dimensions(dimensions), dataType(getStorageDataType()),
         metadata(std::make_unique<voyager::Metadata::V1>(
-            dimensions, space, getStorageDataType(), 0.0,
-            space == InnerProduct)) {
+            dimensions, space, dataType, 0.0, space == InnerProduct)) {
     switch (space) {
     case Euclidean:
       spaceImpl = std::make_unique<
@@ -130,9 +130,16 @@ public:
           dimensions + (useOrderPreservingTransform ? 1 : 0));
       break;
     case Cosine:
-      spaceImpl = std::make_unique<
-          hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(dimensions);
-      normalize = true;
+      if (dataType == StorageDataType::E4M3) {
+        spaceImpl =
+            std::make_unique<hnswlib::CosineSpace<dist_t, data_t, scalefactor>>(
+                dimensions);
+      } else {
+        spaceImpl = std::make_unique<
+            hnswlib::InnerProductSpace<dist_t, data_t, scalefactor>>(
+            dimensions);
+        normalize = true;
+      }
       break;
     default:
       throw new std::runtime_error(

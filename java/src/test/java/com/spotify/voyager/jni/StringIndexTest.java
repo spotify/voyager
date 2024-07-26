@@ -75,7 +75,8 @@ public class StringIndexTest {
       }
 
       List<CustomResult> results =
-          RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
+          RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 100, testVectors.size()));
+      System.out.println(results);
       assertThat(results)
           .extracting(CustomResult::getName)
           .containsExactly("my-vector-78", "my-vector-93");
@@ -276,6 +277,10 @@ public class StringIndexTest {
 
     public float getDistance() {
       return this.distance;
+    }
+
+    public String toString() {
+      return "[ name = " + this.name + ", distance = " + this.distance + " ]";
     }
   }
 

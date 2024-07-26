@@ -109,6 +109,7 @@ AlgorithmInterface<dist_t, data_t>::searchKnnCloserFirst(
 
 } // namespace hnswlib
 
+#include "Spaces/Cosine.h"
 #include "Spaces/Euclidean.h"
 #include "Spaces/InnerProduct.h"
 #include "hnswalg.h"
