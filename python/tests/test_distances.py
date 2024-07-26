@@ -63,9 +63,6 @@ def test_distance(dimensions: int, space: Space, storage_data_type: StorageDataT
 
     actual = index.get_distance(a, b)
 
-    if space == Space.Cosine:
-        a, b = normalized(a), normalized(b)
-
     if storage_data_type == StorageDataType.Float8:
         a, b = quantize_to_float8(a), quantize_to_float8(b)
     elif storage_data_type == StorageDataType.E4M3:
@@ -74,7 +71,7 @@ def test_distance(dimensions: int, space: Space, storage_data_type: StorageDataT
     if space == Space.Cosine:
         # Don't re-normalize here, as we may have already
         # quantized to a lower-precision datatype:
-        expected = inner_product_distance(a, b)
+        expected = cosine_distance(a, b)
     elif space == Space.InnerProduct:
         expected = inner_product_distance(a, b)
     elif space == Space.Euclidean:

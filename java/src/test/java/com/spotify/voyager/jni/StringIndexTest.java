@@ -23,7 +23,10 @@ package com.spotify.voyager.jni;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.Comparators;
 import com.google.common.io.Resources;
+import com.spotify.vectormath.distance.Measure;
+import com.spotify.vectormath.distance.measure.CosineIter;
 import com.spotify.voyager.jni.Index.SpaceType;
 import com.spotify.voyager.jni.Index.StorageDataType;
 import com.spotify.voyager.jni.StringIndex.QueryResults;
@@ -33,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -75,11 +79,11 @@ public class StringIndexTest {
       }
 
       List<CustomResult> results =
-          RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 100, testVectors.size()));
-      System.out.println(results);
+          RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
+
       assertThat(results)
           .extracting(CustomResult::getName)
-          .containsExactly("my-vector-78", "my-vector-93");
+          .containsExactly("my-vector-78", "my-vector-1");
     }
   }
 
@@ -135,7 +139,7 @@ public class StringIndexTest {
           RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
       assertThat(results)
           .extracting(CustomResult::getName)
-          .containsExactly("my-vector-78", "my-vector-93");
+          .containsExactly("my-vector-78", "my-vector-1");
     }
   }
 
@@ -177,7 +181,7 @@ public class StringIndexTest {
             RESULT_MAPPER.apply(reloadedIndex.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
         assertThat(results)
             .extracting(CustomResult::getName)
-            .containsExactly("my-vector-78", "my-vector-93");
+            .containsExactly("my-vector-78", "my-vector-1");
       } finally {
         FileUtils.deleteDirectory(tempDir);
       }
@@ -279,8 +283,19 @@ public class StringIndexTest {
       return this.distance;
     }
 
+    @Override
     public String toString() {
       return "[ name = " + this.name + ", distance = " + this.distance + " ]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof CustomResult)) {
+        return false;
+      }
+
+      final CustomResult other = (CustomResult) o;
+      return this.name.equals(other.name) && this.distance == other.distance;
     }
   }
 

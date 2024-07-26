@@ -2,43 +2,25 @@
 #include "Space.h"
 #include <ratio>
 #include <cmath>
+#include "InnerProduct.h"
 
 namespace hnswlib {
-
-/**
- * For a given loop unrolling factor K, distance type dist_t, data type data_t, calculate the cosine
- * distance between two vectors. The compiler should automatically do the loop unrolling and vectorize
- * as appropriate.
-*/
-template <typename dist_t, typename data_t = dist_t, int K = 1, typename scalefactor = std::ratio<1, 1>>
-static dist_t CosineWithoutScale(const data_t *pVect1, const data_t *pVect2, size_t qty) {
-  dist_t dot = 0;
-  dist_t normV1 = 0;
-  dist_t normV2 = 0;
-
-  qty = qty / K;
-
-  for (size_t i = 0; i < qty; i++) {
-    for (size_t j = 0; j < K; j++) {
-      const size_t index = (i * K) + j;
-      const dist_t _a = pVect1[index];
-      const dist_t _b = pVect2[index];
-      dot += _a * _b;
-      normV1 += _a * _a;
-      normV2 += _b * _b;
-    }
-  }
-
-  return dot / (sqrtf(normV1) * sqrtf(normV2));
-}
 
 template <typename dist_t, typename data_t = dist_t, int K = 1,
           typename scalefactor = std::ratio<1, 1>>
 static dist_t Cosine(const data_t *pVect1, const data_t *pVect2,
                            size_t qty) {
-  dist_t res = CosineWithoutScale<dist_t, data_t, K, scalefactor>(pVect1, pVect2, qty);
+  dist_t res = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(pVect1, pVect2, qty);
+
+  dist_t magSquared1 = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(pVect1, pVect1, qty);
+  dist_t magSquared2 = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(pVect2, pVect2, qty);
+  dist_t denominator = sqrtf(magSquared1) * sqrtf(magSquared2);
+
   constexpr dist_t scale = (dist_t)scalefactor::num / (dist_t)scalefactor::den;
   res *= scale * scale;
+
+  res /= denominator;
+
   res = (static_cast<dist_t>(1.0f) - res);
   return res;
 }
@@ -49,12 +31,20 @@ static dist_t CosineAtLeast(const data_t *__restrict pVect1,
                                   const data_t *__restrict pVect2,
                                   const size_t qty) {
   size_t remainder = qty - K;
-  dist_t res = CosineWithoutScale<dist_t, data_t, K, scalefactor>(
+  dist_t res = InnerProductWithoutScale<dist_t, data_t, K, scalefactor>(
                    pVect1, pVect2, K) +
-               CosineWithoutScale<dist_t, data_t, 1, scalefactor>(
+               InnerProductWithoutScale<dist_t, data_t, 1, scalefactor>(
                    pVect1 + K, pVect2 + K, remainder);
+
+  dist_t magSquared1 = InnerProductAtLeast<dist_t, data_t, K, scalefactor>(pVect1, pVect1, qty);
+  dist_t magSquared2 = InnerProductAtLeast<dist_t, data_t, K, scalefactor>(pVect2, pVect2, qty);
+  dist_t denominator = sqrtf(magSquared1) * sqrtf(magSquared2);
+
   constexpr dist_t scale = (dist_t)scalefactor::num / (dist_t)scalefactor::den;
   res *= scale * scale;
+
+  res /= denominator;
+
   res = (static_cast<dist_t>(1.0f) - res);
   return res;
 }
