@@ -213,7 +213,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install wheel
           pip install -r python/dev-requirements.txt
-      - name: Run profiling
+      - name: Run benchmarks
         run: |
              asv machine --yes
              asv continuous --sort name --no-only-changed refs/remotes/origin/main ${{ github.sha }} | tee >(sed '1,/All benchmarks:/d' > $GITHUB_STEP_SUMMARY)
