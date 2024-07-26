@@ -17,3 +17,4 @@ java/com_*.h
 java/classpath.txt
 java/linux-build/include/*
 python/voyager-headers
+.asv/

@@ -13,9 +13,8 @@
           "/usr/bin/cp -r {build_dir}/python/dist/. {build_cache_dir}"
      ],
     "benchmark_dir": "benchmarks",
-    "environment_type": "virtualenv",
     "env_dir": ".asv/env",
     "results_dir": ".asv/results",
-    "html_dir": ".asv/html",
+    "environment_type": "virtualenv",
     "build_cache_size": 2,
 }

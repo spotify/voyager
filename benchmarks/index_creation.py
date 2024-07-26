@@ -20,23 +20,23 @@ import voyager
 
 class IndexCreationSuite:
 
+    repeat = (1, 10, 30.0)
     params = (
         [256],
-        [1024], 
+        [1024],
         [voyager.Space.Euclidean, voyager.Space.Cosine],
-        [voyager.StorageDataType.E4M3,voyager.StorageDataType.Float8,voyager.StorageDataType.Float32],
-        [24]
-        )
-    param_names = ['num_dimensions','num_elements', 'space', 'storage_data_type', 'ef_construction']
+        [voyager.StorageDataType.E4M3, voyager.StorageDataType.Float8, voyager.StorageDataType.Float32],
+        [24],
+    )
+    param_names = ["num_dimensions", "num_elements", "space", "storage_data_type", "ef_construction"]
 
-
-    def time_create(
+    def setup(
         self,
         num_dimensions: int,
         num_elements: int,
         space: voyager.Space,
         storage_data_type: voyager.StorageDataType,
-        ef_construction: float
+        ef_construction: float,
     ):
         generator = np.random.default_rng(seed=1234)
         input_data = generator.random((num_elements, num_dimensions)).astype(np.float32) * 2 - 1
@@ -52,6 +52,8 @@ class IndexCreationSuite:
             storage_data_type=storage_data_type,
         )
 
-        index.add_items(input_data)
+        self.input_data = input_data
+        self.index = index
 
-
+    def time_create(self, *_):
+        self.index.add_items(self.input_data, num_threads=1)
