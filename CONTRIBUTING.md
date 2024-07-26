@@ -93,7 +93,7 @@ tox
 ## Benchmarking
 
 We use `airspeed-velocity` for benchmarking - running all benchmarks to compare latest 
-commit againt previous should be as simple as:
+commit against previous should be as simple as:
 
 ```
 pip3 install asv
@@ -108,7 +108,7 @@ asv continuous --sort name --no-only-changed HEAD main
 ```
 
 Please note that `airspeed-velocity` can only run benchmarks against a git commit, so if 
-you have uncommited code that you want to run benchmarks for, you need to commit it first.
+you have uncommited code that you want to run benchmarks for you need to commit it first.
 
 ## Style
 
