@@ -36,7 +36,7 @@ else:
     raise OSError(
         "Unable to find the 'cpp' folder to build voyager. "
         f"Current working directory is: {os.getcwd()}, directory contains: "
-        f"{', '.join([repr(x) for x in dir_contents])} and {len(dir_contents) - 5} more files."
+        f"{', '.join([repr(x) for x in dir_contents[:5]])} and {len(dir_contents) - 5} more files."
     )
 
 
