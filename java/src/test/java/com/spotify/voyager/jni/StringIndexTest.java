@@ -23,10 +23,7 @@ package com.spotify.voyager.jni;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
-import com.google.common.collect.Comparators;
 import com.google.common.io.Resources;
-import com.spotify.vectormath.distance.Measure;
-import com.spotify.vectormath.distance.measure.CosineIter;
 import com.spotify.voyager.jni.Index.SpaceType;
 import com.spotify.voyager.jni.Index.StorageDataType;
 import com.spotify.voyager.jni.StringIndex.QueryResults;
@@ -36,7 +33,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
