@@ -216,7 +216,7 @@ jobs:
       - name: Run profiling
         run: |
              asv machine --yes
-             asv continuous --sort name --no-only-changed refs/remotes/origin/master ${{ github.sha }} | tee >(sed '1,/All benchmarks:/d' > $GITHUB_STEP_SUMMARY)
+             asv continuous --sort name --no-only-changed refs/remotes/origin/main ${{ github.sha }} | tee >(sed '1,/All benchmarks:/d' > $GITHUB_STEP_SUMMARY)
 
   build-python-wheels:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
