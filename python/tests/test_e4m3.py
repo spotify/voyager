@@ -14,12 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
+import math
 
 import numpy as np
-
+import pytest
 from voyager import E4M3T, Index, Space, StorageDataType
-
 
 RANGES_AND_EXPECTED_ERRORS = [
     # (Min value, max value, step), expected maximum error
@@ -45,6 +44,17 @@ def test_range():
             assert roundtrip_value < 0
         elif _input > 0 and roundtrip_value != 0.0:
             assert roundtrip_value > 0
+
+
+@pytest.mark.parametrize("_input", list(range(256)))
+def test_to_float(_input: int):
+    wrapper = E4M3T.from_char(_input)
+
+    if wrapper.raw_exponent == 0b1111 and wrapper.raw_mantissa == 0b111:
+        assert np.isnan(float(wrapper))
+    else:
+        expected = (-1 if wrapper.sign else 1) * math.pow(2, wrapper.exponent) * wrapper.mantissa
+        assert float(wrapper) == expected, f"Expected {expected}, but got {wrapper}"
 
 
 @pytest.mark.parametrize("_input", list(range(256)))
@@ -85,8 +95,8 @@ def test_rounding():
         expected = min([closest_above, closest_below], key=lambda v: abs(v - _input))
         if closest_above != closest_below and abs(closest_above - _input) == abs(closest_below - _input):
             # Round to nearest, ties to even:
-            above_is_even = E4M3T(closest_above).mantissa % 2 == 0
-            below_is_even = E4M3T(closest_below).mantissa % 2 == 0
+            above_is_even = E4M3T(closest_above).raw_mantissa % 2 == 0
+            below_is_even = E4M3T(closest_below).raw_mantissa % 2 == 0
             if above_is_even and below_is_even:
                 raise NotImplementedError(
                     "Both numbers above and below the target are even!"

@@ -298,14 +298,13 @@ memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
       .def_property_readonly(
           "raw_exponent", [](E4M3 &self) { return self.exponent; },
           "The raw value of the exponent part of this E4M3 number, expressed "
-          "as "
-          "an integer.")
+          "as an integer.")
       .def_property_readonly(
-          "mantissa", [](E4M3 &self) { return self.mantissa; },
+          "mantissa", [](E4M3 &self) { return self.effectiveMantissa(); },
           "The effective mantissa (non-exponent part) of this E4M3 number, "
           "expressed as an integer.")
       .def_property_readonly(
-          "raw_mantissa", [](E4M3 &self) { return self.effectiveMantissa(); },
+          "raw_mantissa", [](E4M3 &self) { return self.mantissa; },
           "The raw value of the mantissa (non-exponent part) of this E4M3 "
           "number, expressed as a floating point value.")
       .def_property_readonly(
