@@ -1,0 +1,20 @@
+{
+    "version": 1,
+    "project": "voyager",
+    "project_url": "https://spotify.github.io/voyager/",
+    "repo": ".",
+    "build_command": [
+          "python -m pip install build",
+          "/usr/bin/cp -r {build_dir}/cpp {build_dir}/python/cpp",
+          "/usr/bin/cp {build_dir}/README.md {build_dir}/python/README.md",
+          "/usr/bin/sed -i '$ a\graft cpp' {build_dir}/python/MANIFEST.in",
+          "/usr/bin/sed -i '$ a\include voyager/version.py' {build_dir}/python/MANIFEST.in",
+          "in-dir={build_dir}/python python -m build",
+          "/usr/bin/cp -r {build_dir}/python/dist/. {build_cache_dir}"
+     ],
+    "benchmark_dir": "benchmarks",
+    "env_dir": ".asv/env",
+    "results_dir": ".asv/results",
+    "environment_type": "virtualenv",
+    "build_cache_size": 2,
+}
