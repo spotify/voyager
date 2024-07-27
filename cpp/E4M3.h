@@ -400,7 +400,7 @@ public:
     }
   }
 
-  operator float() const {
+  inline operator float() const {
     // This is implemented with a 512-byte lookup table for speed.
     // Note that the Python tests ensure that this matches the expected logic.
     return ALL_E4M3_VALUES[*(const uint8_t *)this];
