@@ -78,4 +78,10 @@ def test_recreate_index(
     for _id in ids:
         assert _id in index
         assert _id in recreated
-        np.testing.assert_allclose(index[_id], recreated[_id], 0.08, 1e-2)
+        np.testing.assert_allclose(
+            index[_id],
+            recreated[_id],
+            0.08,
+            # E4M3 normalization is not idempotent:
+            0.1 if storage_data_type == voyager.StorageDataType.E4M3 else 1e-2,
+        )

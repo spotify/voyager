@@ -226,9 +226,9 @@ template <typename dist_t, typename data_t = dist_t,
           typename scalefactor = std::ratio<1, 1>>
 void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
   dist_t outputNorm = 1.1;
-  dist_t errorCompensationFactor = 1.0;
+  dist_t errorCorrection = 0.0;
 
-  for (int iterations = 2; outputNorm > 1.0f && iterations < 10; iterations++) {
+  for (int iteration = 0; outputNorm > 1.0f && iteration < 100; iteration++) {
     dist_t norm = 0.0;
     dist_t error = 0.0;
     for (int i = 0; i < dimensions; i++) {
@@ -240,7 +240,7 @@ void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
         norm += data[i] * data[i];
       }
     }
-    norm = errorCompensationFactor / (sqrtf(norm) + 1e-30f);
+    norm = 1 / (sqrtf(norm) + 1e-30f + errorCorrection);
     for (int i = 0; i < dimensions; i++) {
       if constexpr (scalefactor::num != scalefactor::den) {
         dist_t element =
@@ -248,7 +248,6 @@ void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
         dist_t normalizedElement = element * norm;
         dist_t elementToInsert =
             (normalizedElement * scalefactor::den) / scalefactor::num;
-        ;
         norm_array[i] = elementToInsert;
         error += (norm_array[i] - elementToInsert);
       } else {
@@ -258,7 +257,7 @@ void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
       }
     }
 
-    if constexpr (scalefactor::num == scalefactor::den) {
+    if constexpr (std::is_same<data_t, E4M3>::value) {
       // If using E4M3 or other reduced-precision vectors, the resulting norm
       // may be less than 1.0f. If so, we need to re-normalize the vector by
       // scaling it up.
@@ -269,7 +268,7 @@ void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
       outputNorm = sqrtf(outputNorm);
 
       if (outputNorm > 1.0f) {
-        errorCompensationFactor = 1.0 - error;
+        errorCorrection += SMALLEST_POSITIVE_E4M3_VALUE;
       }
     } else {
       break;

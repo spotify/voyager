@@ -14,11 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
 import numpy as np
-
-from voyager import Index, Space, StorageDataType, E4M3T
+import pytest
+from voyager import E4M3T, Index, Space, StorageDataType
 
 
 def normalized(vec: np.ndarray) -> np.ndarray:
@@ -56,7 +54,9 @@ def quantize_to_e4m3(vec: np.ndarray) -> np.ndarray:
     ],
     ids=str,
 )
-def test_distance(dimensions: int, space: Space, storage_data_type: StorageDataType, tolerance: float):
+def test_distance(
+    dimensions: int, space: Space, storage_data_type: StorageDataType, tolerance: float
+):
     index = Index(space=space, num_dimensions=dimensions, storage_data_type=storage_data_type)
     a = np.random.rand(dimensions)
     b = np.random.rand(dimensions)

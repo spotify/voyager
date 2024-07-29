@@ -22,6 +22,7 @@
 
 #include <cmath>
 
+static constexpr float SMALLEST_POSITIVE_E4M3_VALUE = 0.0009765625f;
 static constexpr float ALL_E4M3_VALUES[256] = {
     0,
     -0,

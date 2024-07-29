@@ -270,6 +270,20 @@ memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
             return v;
           },
           "Create an E4M3 number given a raw 8-bit value.", py::arg("value"))
+      .def_static(
+          "normalize",
+          [](py::array_t<float> vector) {
+            std::vector<float> input = pyArrayToVector<float>(vector);
+            std::vector<E4M3> output(input.size());
+            normalizeVector<float, E4M3>(input.data(), output.data(),
+                                         input.size());
+            std::vector<float> outputAsFloat(input.size());
+            for (size_t i = 0; i < input.size(); i++) {
+              outputAsFloat[i] = (float)output[i];
+            }
+            return vectorToPyArray(outputAsFloat);
+          },
+          "Normalize the given vector to have magnitude <= 1.")
       .def(
           "__float__", [](E4M3 &self) { return (float)self; },
           "Cast the given E4M3 number to a float.")
@@ -825,8 +839,7 @@ Use the ``in`` operator to call this method::
     1234 in index # => returns True or False
 )");
 
-  index.def(
-      "__len__", [](Index &self) { return self.getIDsMap().size(); }, R"(
+  index.def("__len__", [](Index &self) { return self.getIDsMap().size(); }, R"(
 Returns the number of non-deleted vectors in this index.
 
 Use the ``len`` operator to call this method::
