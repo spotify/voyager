@@ -110,7 +110,6 @@ class BuildExt(build_ext):
                     "-fno-trapping-math",
                     "-fno-signed-zeros",
                     "-freciprocal-math",
-                    "-ffinite-math-only",
                     "-fno-math-errno",
                 ]
             )
