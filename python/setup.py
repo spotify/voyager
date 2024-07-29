@@ -14,8 +14,8 @@
 
 
 import os
-import sys
 import platform
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -23,7 +23,6 @@ import pybind11
 import setuptools
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-
 
 # Find the "cpp" folder depending on where this script is run from:
 for search_path in ["./cpp/", "../cpp/", "../../cpp/"]:
@@ -100,6 +99,20 @@ class BuildExt(build_ext):
         if ct == "unix":
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
             opts.append("-std=c++17")
+            # Allow reordering floating-point operations for
+            # better automatic vectorization, even without -ffast-math
+            # See: https://simonbyrne.github.io/notes/fastmath/#flushing_subnormals_to_zero
+            # for why -ffast-math is not included:
+            opts.extend(
+                [
+                    "-fassociative-math",
+                    "-fno-signaling-nans",
+                    "-fno-trapping-math",
+                    "-fno-signed-zeros",
+                    "-freciprocal-math",
+                    "-fno-math-errno",
+                ]
+            )
             if has_flag(self.compiler, "-fvisibility=hidden"):
                 opts.append("-fvisibility=hidden")
         elif ct == "msvc":
