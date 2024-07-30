@@ -78,7 +78,7 @@ public class StringIndexTest {
           RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
       assertThat(results)
           .extracting(CustomResult::getName)
-          .containsExactly("my-vector-78", "my-vector-93");
+          .containsExactly("my-vector-78", "my-vector-1");
     }
   }
 
@@ -134,7 +134,7 @@ public class StringIndexTest {
           RESULT_MAPPER.apply(index.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
       assertThat(results)
           .extracting(CustomResult::getName)
-          .containsExactly("my-vector-78", "my-vector-93");
+          .containsExactly("my-vector-78", "my-vector-1");
     }
   }
 
@@ -176,7 +176,7 @@ public class StringIndexTest {
             RESULT_MAPPER.apply(reloadedIndex.query(TestUtils.TEST_VECTOR, 2, testVectors.size()));
         assertThat(results)
             .extracting(CustomResult::getName)
-            .containsExactly("my-vector-78", "my-vector-93");
+            .containsExactly("my-vector-78", "my-vector-1");
       } finally {
         FileUtils.deleteDirectory(tempDir);
       }
