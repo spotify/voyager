@@ -416,4 +416,64 @@ public:
   }
 
   float operator*(float other) const { return ((float)*this) * other; }
+  E4M3 next() const {
+    // Return the next-highest value in the E4M3 format, or NAN if already too
+    // high.
+    if (exponent == 15 && mantissa == 7) {
+      return E4M3(NAN);
+    }
+
+    if (sign == 1) {
+      // Number is negative, so the direction is flipped:
+      if (mantissa == 0) {
+        return E4M3(sign, exponent - 1, 7);
+      }
+      return E4M3(sign, exponent, mantissa - 1);
+    } else {
+      if (mantissa == 7) {
+        return E4M3(sign, exponent + 1, 0);
+      }
+      return E4M3(sign, exponent, mantissa + 1);
+    }
+  }
+
+  E4M3 previous() const {
+    // Return the next-lowest value in the E4M3 format, or NAN if already too
+    // low.
+    if (exponent == 0 && mantissa == 0) {
+      return E4M3(NAN);
+    }
+    if (sign == 0) {
+      if (mantissa == 0) {
+        return E4M3(sign, exponent - 1, 7);
+      }
+      return E4M3(sign, exponent, mantissa - 1);
+    } else {
+      // Number is negative, so the direction is flipped:
+      if (mantissa == 7) {
+        return E4M3(sign, exponent + 1, 0);
+      }
+      return E4M3(sign, exponent, mantissa + 1);
+    }
+  }
+
+  E4M3 nextSmallest() const {
+    // Return the next-smallest value in the E4M3 format, or 0.
+    if (exponent == 0 && mantissa == 0) {
+      return E4M3((uint8_t)0);
+    }
+    if (mantissa == 0) {
+      return E4M3(sign, exponent - 1, 7);
+    }
+    return E4M3(sign, exponent, mantissa - 1);
+  }
+
+  static bool areAdjacentOrEqual(float a, float b) {
+    E4M3 aE(a);
+    E4M3 bE(b);
+
+    // Return true iff a and b are adjacent values in the E4M3 format.
+    return aE == bE || (aE.next() == bE || bE.next() == aE) ||
+           (aE.previous() == bE || bE.previous() == aE);
+  }
 };

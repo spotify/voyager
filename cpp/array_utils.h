@@ -225,53 +225,94 @@ NDArray<float, 2> dataTypeToFloat(NDArray<data_t, 2> input) {
 template <typename dist_t, typename data_t = dist_t,
           typename scalefactor = std::ratio<1, 1>>
 void normalizeVector(const float *data, data_t *norm_array, int dimensions) {
+
   dist_t outputNorm = 1.1;
-  dist_t errorCorrection = 0.0;
 
-  for (int iteration = 0; outputNorm > 1.0f && iteration < 100; iteration++) {
-    dist_t norm = 0.0;
-    dist_t error = 0.0;
-    for (int i = 0; i < dimensions; i++) {
-      if constexpr (scalefactor::num != scalefactor::den) {
-        dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) /
-                       (dist_t)scalefactor::den;
-        norm += point * point;
-      } else {
-        norm += data[i] * data[i];
-      }
+  dist_t norm = 0.0;
+  for (int i = 0; i < dimensions; i++) {
+    if constexpr (scalefactor::num != scalefactor::den) {
+      dist_t point = (dist_t)(data[i] * (dist_t)scalefactor::num) /
+                     (dist_t)scalefactor::den;
+      norm += point * point;
+    } else {
+      norm += data[i] * data[i];
     }
-    norm = 1 / (sqrtf(norm) + 1e-30f + errorCorrection);
-    for (int i = 0; i < dimensions; i++) {
-      if constexpr (scalefactor::num != scalefactor::den) {
-        dist_t element =
-            (data[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
-        dist_t normalizedElement = element * norm;
-        dist_t elementToInsert =
-            (normalizedElement * scalefactor::den) / scalefactor::num;
-        norm_array[i] = elementToInsert;
-        error += (norm_array[i] - elementToInsert);
-      } else {
-        dist_t new_value = data[i] * norm;
-        norm_array[i] = new_value;
-        error += (norm_array[i] - new_value);
-      }
-    }
+  }
+  if (norm == 0)
+    norm = 1e-30f;
+  norm = (sqrtf(norm));
 
-    if constexpr (std::is_same<data_t, E4M3>::value) {
-      // If using E4M3 or other reduced-precision vectors, the resulting norm
-      // may be less than 1.0f. If so, we need to re-normalize the vector by
-      // scaling it up.
+  dist_t reciprocal = 1 / norm;
+  for (int i = 0; i < dimensions; i++) {
+    if constexpr (scalefactor::num != scalefactor::den) {
+      dist_t element =
+          (data[i] * (dist_t)scalefactor::num) / (dist_t)scalefactor::den;
+      dist_t normalizedElement = element * reciprocal;
+      dist_t elementToInsert =
+          (normalizedElement * scalefactor::den) / scalefactor::num;
+      norm_array[i] = elementToInsert;
+    } else {
+      dist_t new_value = data[i] * reciprocal;
+      norm_array[i] = new_value;
+    }
+  }
+
+  if constexpr (std::is_same<data_t, E4M3>::value) {
+    // If using E4M3 or other reduced-precision vectors, the resulting norm
+    // may be less than 1.0f. If so, we need to re-normalize the vector by
+    // scaling it up.
+    outputNorm = 0.0;
+    for (int i = 0; i < dimensions; i++) {
+      outputNorm += (dist_t)norm_array[i] * (dist_t)norm_array[i];
+    }
+    outputNorm = sqrtf(outputNorm);
+
+    if (outputNorm > 1.0f) {
+      for (int i = 0; i < dimensions; i++) {
+        // Pick the next-smallest E4M3 number in each dimension that would
+        // increase the norm:
+        E4M3 existing_value = norm_array[i];
+        float nextReciprocal = 1.0 / outputNorm;
+        while (norm_array[i] != E4M3((uint8_t)0) &&
+               E4M3((float)((float)norm_array[i] * nextReciprocal)) ==
+                   existing_value) {
+          norm_array[i] = norm_array[i].nextSmallest();
+        }
+      }
+
       outputNorm = 0.0;
       for (int i = 0; i < dimensions; i++) {
         outputNorm += (dist_t)norm_array[i] * (dist_t)norm_array[i];
       }
       outputNorm = sqrtf(outputNorm);
+    }
 
-      if (outputNorm > 1.0f) {
-        errorCorrection += SMALLEST_POSITIVE_E4M3_VALUE;
+    // A trick: if the output vector, once converted back to
+    // full-precision floating-point is within epsilon of the
+    // input vector, then just return the input vector as it's likely
+    // that we're just introducing rounding error by re-normalizing it.
+    bool allAdjacentOrEqual = true;
+    for (int i = 0; i < dimensions; i++) {
+      if (!E4M3::areAdjacentOrEqual((float)norm_array[i], data[i])) {
+        allAdjacentOrEqual = false;
+        break;
       }
-    } else {
-      break;
+    }
+
+    if (allAdjacentOrEqual) {
+      // Compute the input norm:
+      float inputNorm = 0.0;
+      for (int i = 0; i < dimensions; i++) {
+        inputNorm += (dist_t)data[i] * (dist_t)data[i];
+      }
+      inputNorm = sqrtf(inputNorm);
+
+      if (inputNorm < 1.0f) {
+        // Just use the input:
+        for (int i = 0; i < dimensions; i++) {
+          norm_array[i] = data[i];
+        }
+      }
     }
   }
 }

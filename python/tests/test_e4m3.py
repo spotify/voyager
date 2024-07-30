@@ -57,6 +57,36 @@ def test_to_float(_input: int):
         assert float(wrapper) == expected, f"Expected {expected}, but got {wrapper}"
 
 
+@pytest.mark.parametrize("_input", list(range(126)))
+def test_next(_input: int):
+    if np.isnan(float(E4M3T.from_char(_input))):
+        pytest.skip("NaNs are not ordered")
+    assert E4M3T.from_char(_input).next() == E4M3T.from_char(_input + 1)
+
+
+@pytest.mark.parametrize("_input", list(range(255)))
+def test_next_ordering(_input: int):
+    if np.isnan(float(E4M3T.from_char(_input))) or np.isnan(float(E4M3T.from_char(_input).next())):
+        pytest.skip("NaNs are not ordered")
+    assert float(E4M3T.from_char(_input).next()) > float(E4M3T.from_char(_input))
+
+
+@pytest.mark.parametrize("_input", list(range(1, 128)))
+def test_previous(_input: int):
+    if np.isnan(float(E4M3T.from_char(_input))):
+        pytest.skip("NaNs are not ordered")
+    assert E4M3T.from_char(_input).previous() == E4M3T.from_char(_input - 1)
+
+
+@pytest.mark.parametrize("_input", list(range(1, 128)))
+def test_previous_ordering(_input: int):
+    if np.isnan(float(E4M3T.from_char(_input))) or np.isnan(
+        float(E4M3T.from_char(_input).previous())
+    ):
+        pytest.skip("NaNs are not ordered")
+    assert float(E4M3T.from_char(_input).previous()) < float(E4M3T.from_char(_input))
+
+
 @pytest.mark.parametrize("_input", list(range(256)))
 def test_rounding_exact(_input: int):
     expected = E4M3T.from_char(_input)
@@ -268,15 +298,16 @@ def test_cosine():
     )
     index = Index(Space.Cosine, num_dimensions=80, storage_data_type=StorageDataType.E4M3)
     index.add_item(REAL_WORLD_VECTOR)
-    expected = normalize_e4m3(REAL_WORLD_VECTOR)
+    expected = REAL_WORLD_VECTOR / np.sqrt(np.sum(np.power(REAL_WORLD_VECTOR, 2)))
     actual = index.get_vector(0)
     # Ensure the normalized E4M3's vector has a magnitude of at most 1:
     assert np.sqrt(np.sum(np.power(actual, 2))) <= 1
-    assert np.sqrt(np.sum(np.power(actual, 2))) > 0.98
+    np.testing.assert_allclose(actual, E4M3T.normalize(actual))
     mismatch_indices = [i for i, (a, b) in enumerate(zip(expected, actual)) if a != b]
     np.testing.assert_allclose(
         expected,
         actual,
+        atol=0.04,
         err_msg=(
             f"Got mismatches at indices: {mismatch_indices}:\n\tExpected:"
             f" {expected[mismatch_indices]}\n\tGot: "
@@ -285,16 +316,19 @@ def test_cosine():
         ),
     )
 
+    labels, distances = index.query(actual)
+    assert distances[0] < 0.17
+
 
 @pytest.mark.parametrize(
     "input,expected",
     [
         # Nice round numbers should be normalized as expected:
         ([1], [1]),
-        ([1, 2, 3], [0.25, 0.5, 0.8125]),
+        ([1, 2, 3], [0.25, 0.5, 0.75]),
         # Numbers that don't round nicely to E4M3 should be
         # normalized to have a magnitude of at most 1:
-        ([0.003, 0.002, 0.001], [0.625, 0.4375, 0.21875]),
+        ([0.003, 0.002, 0.001], [0.75, 0.5, 0.25]),
     ],
 )
 def test_normalization(input, expected):
@@ -302,3 +336,29 @@ def test_normalization(input, expected):
     assert magnitude <= 1, "Expected a magnitude of at most 1!"
 
     np.testing.assert_allclose(E4M3T.normalize(input), expected)
+
+
+def random_vectors(n: int = 1000) -> list[list[np.ndarray]]:
+    # Return a collection of random vectors of random lengths on [-448, 448]
+    np.random.seed(42)
+    return [
+        np.random.uniform(-448, 448, size=np.random.randint(1, 1000)).tolist() for _ in range(n)
+    ]
+
+
+@pytest.mark.parametrize(
+    "input",
+    [
+        # Nice round numbers should be normalized as expected:
+        [1],
+        [1, 2, 3],
+        # Numbers that don't round nicely to E4M3 should be
+        # normalized to have a magnitude of at most 1:
+        [0.003, 0.002, 0.001],
+    ]
+    + random_vectors(),
+)
+def test_normalization_is_idempotent(input):
+    once_normalized = E4M3T.normalize(input)
+    twice_normalized = E4M3T.normalize(once_normalized)
+    np.testing.assert_allclose(once_normalized, twice_normalized)

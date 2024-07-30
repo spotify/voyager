@@ -301,6 +301,21 @@ memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
              ss << ">";
              return ss.str();
            })
+      .def("__eq__",
+           [](E4M3 &self, E4M3 &other) {
+             // -NAN and +NAN are equal to each other:
+             if (self.exponent == 15 && other.exponent == 15 &&
+                 self.mantissa == 7 && other.mantissa == 7)
+               return true;
+
+             return self.sign == other.sign &&
+                    self.exponent == other.exponent &&
+                    self.mantissa == other.mantissa;
+           })
+      .def("next", &E4M3::next,
+           "Get the next-highest-representable E4M3 number.")
+      .def("previous", &E4M3::previous,
+           "Get the next-lowest-representable E4M3 number.")
       .def_property_readonly(
           "sign", [](E4M3 &self) { return self.sign; },
           "The sign bit from this E4M3 number. Will be ``1`` if the number is "
