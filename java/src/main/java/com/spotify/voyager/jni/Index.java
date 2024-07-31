@@ -110,8 +110,8 @@ public class Index implements Closeable {
      * <p>E4M3 uses a 4-bit exponent and 3-bit mantissa field, and was inspired by the paper "FP8
      * Formats for Deep Learning" by Micikevicus et al (arXiv:2209.05433).
      *
-     * <p>Note that using E4M3 with the Cosine space may result in negative distances at query
-     * time due to reduced floating-point precision. While confusing, the query results are still
+     * <p>Note that using E4M3 with the Cosine space may result in negative distances at query time
+     * due to reduced floating-point precision. While confusing, the query results are still
      * correctly ordered.
      */
     E4M3
