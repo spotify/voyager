@@ -239,7 +239,11 @@ memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
       .value("E4M3", StorageDataType::E4M3,
              "8-bit floating point with a range of [-448, 448], from "
              "the paper \"FP8 Formats for Deep Learning\" by Micikevicius et "
-             "al.")
+             "al.\n\n.. warning::\n    Using E4M3 with the Cosine "
+             ":py:class:`Space` may cause some queries to return "
+             "negative distances due to the reduced floating-point precision. "
+             "While confusing, these negative distances still result in a "
+             "correct ordering between results.")
       .export_values();
 
   py::class_<E4M3>(
@@ -544,6 +548,14 @@ Query with multiple vectors simultaneously::
         print(f"For query vector {query_vector}:")
         for i, (neighbor_ids, distances) in enumerate(query_neighbor_ids, query_distances):
             print(f"\t{i}-th closest neighbor is {neighbor_id}, {distance} away")
+
+.. warning::
+
+    If using E4M3 storage with the Cosine :py:class:`Space`, some queries may return
+    negative distances due to the reduced floating-point precision of the storage
+    data type. While confusing, these negative distances still result in a correct
+    ordering between results.
+
 )");
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
