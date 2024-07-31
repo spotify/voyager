@@ -523,11 +523,10 @@ class Index:
                     print(f"\t{i}-th closest neighbor is {neighbor_id}, {distance} away")
 
         .. warning::
-
             If using E4M3 storage with the Cosine :py:class:`Space`, some queries may return
             negative distances due to the reduced floating-point precision of the storage
             data type. While confusing, these negative distances still result in a correct
-            ordering between results.
+            ordering between results.                    
         """
 
     def resize(self, new_size: int) -> None:
