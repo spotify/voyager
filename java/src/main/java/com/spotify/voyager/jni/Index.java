@@ -419,8 +419,8 @@ public class Index implements Closeable {
   public native void saveIndex(OutputStream outputStream);
 
   /**
-   * Returns the contents of this index as an array of bytes. The resulting object will contain the same data as if
-   * this index was serialized to disk and then read back into memory again.
+   * Returns the contents of this index as an array of bytes. The resulting bytes will contain the
+   * same data as if this index was serialized to disk and then read back into memory again.
    *
    * @return A {@link byte} array representing the contents of the index
    */
