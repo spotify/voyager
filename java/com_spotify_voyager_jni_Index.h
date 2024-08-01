@@ -131,6 +131,14 @@ Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2(JNIEnv *,
 
 /*
  * Class:     com_spotify_voyager_jni_Index
+ * Method:    asBytes
+ * Signature: ()[B
+ */
+JNIEXPORT jbyteArray JNICALL
+Java_com_spotify_voyager_jni_Index_asBytes(JNIEnv *, jobject);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
  * Method:    addItem
  * Signature: ([F)V
  */

@@ -241,6 +241,10 @@ public class IndexTest {
       index.saveIndex(outputStream);
       assertTrue(outputStream.size() > 0);
 
+      byte[] indexAsBytes = index.asBytes();
+      assertTrue(indexAsBytes.length > 0);
+      Arrays.equals(indexAsBytes, outputStream.toByteArray());
+
       // Recreate the index from the outputStream alone and ensure queries still work:
       try (Index reloadedIndex = Index.load(new ByteArrayInputStream(outputStream.toByteArray()))) {
         // TODO: Add ef to the set of metadata parameters that gets saved along with the index:
