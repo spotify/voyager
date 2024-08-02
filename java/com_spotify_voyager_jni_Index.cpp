@@ -753,18 +753,23 @@ void Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2(
 jbyteArray Java_com_spotify_voyager_jni_Index_asBytes(JNIEnv *env,
                                                       jobject self) {
   try {
-    // save Index to MemoryOutputStream
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
-    std::shared_ptr<MemoryOutputStream> outputStream =
-        std::make_shared<MemoryOutputStream>();
-    index->saveIndex(outputStream);
-    // Write value of index to byte array
-    std::string nativeIndexValue = outputStream->getValue();
-    jbyteArray byteArray = env->NewByteArray(nativeIndexValue.length());
-    env->SetByteArrayRegion(byteArray, 0, nativeIndexValue.length(),
-                            (jbyte *)nativeIndexValue.c_str());
-
-    return byteArray;
+    // create ByteArrayOutputStream object
+    jclass byteArrayOutputStreamClass =
+        env->FindClass("java/io/ByteArrayOutputStream");
+    jmethodID constructor =
+        env->GetMethodID(byteArrayOutputStreamClass, "<init>", "()V");
+    jobject byteArrayOutputStream =
+        env->NewObject(byteArrayOutputStreamClass, constructor);
+    // wrap byteArrayOutputStream in JavaOutputStream and save Index to it
+    std::shared_ptr<JavaOutputStream> javaOutputStream =
+        std::make_shared<JavaOutputStream>(env, byteArrayOutputStream);
+    index->saveIndex(javaOutputStream);
+    // return bytes by calling .toByteArray() method of ByteArrayOutputStream
+    jmethodID toByteArrayMethodId =
+        env->GetMethodID(byteArrayOutputStreamClass, "toByteArray", "()[B");
+    return (jbyteArray)env->CallObjectMethod(byteArrayOutputStream,
+                                             toByteArrayMethodId);
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
