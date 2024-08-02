@@ -243,7 +243,7 @@ public class IndexTest {
 
       byte[] indexAsBytes = index.asBytes();
       assertTrue(indexAsBytes.length > 0);
-      Arrays.equals(indexAsBytes, outputStream.toByteArray());
+      assertTrue(Arrays.equals(indexAsBytes, outputStream.toByteArray()));
 
       // Recreate the index from the outputStream alone and ensure queries still work:
       try (Index reloadedIndex = Index.load(new ByteArrayInputStream(outputStream.toByteArray()))) {
