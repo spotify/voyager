@@ -27,8 +27,8 @@ class IndexQuerySuite:
     repeat = (1, 10, 30.0)
     params = (
         [256],
-        [1024],
-        [voyager.Space.Euclidean, voyager.Space.Cosine],
+        [4096],
+        [voyager.Space.Euclidean, voyager.Space.InnerProduct, voyager.Space.Cosine],
         [voyager.StorageDataType.E4M3, voyager.StorageDataType.Float8, voyager.StorageDataType.Float32],
         [24],
     )
@@ -54,8 +54,9 @@ class IndexQuerySuite:
                 ef_construction=ef_construction,
                 M=20,
                 storage_data_type=storage_data_type,
+                random_seed=4321,
             )
-            index.add_items(input_data)
+            index.add_items(input_data, num_threads=1)
 
             data[param_combination] = (index.as_bytes(), input_data)
 

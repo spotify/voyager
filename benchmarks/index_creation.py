@@ -24,7 +24,7 @@ class IndexCreationSuite:
     params = (
         [256],
         [1024],
-        [voyager.Space.Euclidean, voyager.Space.Cosine],
+        [voyager.Space.Euclidean, voyager.Space.InnerProduct, voyager.Space.Cosine],
         [voyager.StorageDataType.E4M3, voyager.StorageDataType.Float8, voyager.StorageDataType.Float32],
         [24],
     )
@@ -50,6 +50,7 @@ class IndexCreationSuite:
             ef_construction=ef_construction,
             M=20,
             storage_data_type=storage_data_type,
+            random_seed=4321,
         )
 
         self.input_data = input_data
