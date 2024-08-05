@@ -21,6 +21,7 @@
 package com.spotify.voyager.jni;
 
 import com.spotify.voyager.jni.utils.JniLibExtractor;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -417,6 +418,18 @@ public class Index implements Closeable {
    *     automatically.
    */
   public native void saveIndex(OutputStream outputStream);
+
+  /**
+   * Returns the contents of this index as an array of bytes. The resulting bytes will contain the
+   * same data as if this index was serialized to disk and then read back into memory again.
+   *
+   * @return A {@link byte} array representing the contents of the index
+   */
+  public byte[] asBytes() {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    saveIndex(byteArrayOutputStream);
+    return byteArrayOutputStream.toByteArray();
+  }
 
   /**
    * Add an item (a vector) to this {@link Index}. The item will automatically be given an
