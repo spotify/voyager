@@ -702,3 +702,4 @@ std::unique_ptr<Index> loadTypedIndexFromMetadata(std::unique_ptr<voyager::Metad
 
 std::unique_ptr<Index> loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
   return loadTypedIndexFromMetadata(voyager::Metadata::loadFromStream(inputStream), inputStream);
+}
