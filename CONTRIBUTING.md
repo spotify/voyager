@@ -67,8 +67,7 @@ To build the C++ library with `cmake`, use the following commands:
 ```shell
 cd cpp
 git submodule update --init --recursive
-cmake .
-make
+make build
 ```
 
 ## Testing
@@ -114,8 +113,6 @@ To run the C++ tests, use the following commands:
 ```shell
 cd cpp
 git submodule update --init --recursive
-cmake .
-make
 make test
 ```
 

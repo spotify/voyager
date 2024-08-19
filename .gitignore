@@ -1,5 +1,6 @@
 *.egg-info/
-build/
+*/build/*
+!build/.gitkeep
 dist/
 tmp/
 __pycache__/
@@ -26,6 +27,7 @@ CMakeFiles
 CMakeScripts
 Testing
 Makefile
+!cpp/Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json

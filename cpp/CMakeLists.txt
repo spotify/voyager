@@ -16,6 +16,8 @@ if (MSVC)
     string(REGEX REPLACE "/RTC1" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 
+enable_testing()
+
 add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(test)
@@ -37,4 +39,3 @@ add_custom_target(format
     COMMENT "Running C++ formatter"
 )
 
-enable_testing()
