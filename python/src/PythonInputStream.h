@@ -23,8 +23,8 @@ namespace py = pybind11;
 #include <StreamUtils.h>
 
 bool isReadableFileLike(py::object fileLike) {
-  return py::hasattr(fileLike, "read") && py::hasattr(fileLike, "seek") && py::hasattr(fileLike, "tell") &&
-         py::hasattr(fileLike, "seekable");
+  return py::hasattr(fileLike, "read") && py::hasattr(fileLike, "seek") &&
+         py::hasattr(fileLike, "tell") && py::hasattr(fileLike, "seekable");
 }
 
 /**
@@ -74,8 +74,9 @@ public:
   long long read(char *buffer, long long bytesToRead) {
     py::gil_scoped_acquire acquire;
     if (buffer == nullptr) {
-      throw py::buffer_error("C++ code attempted to read from a Python file-like object into a "
-                             "null destination buffer.");
+      throw py::buffer_error(
+          "C++ code attempted to read from a Python file-like object into a "
+          "null destination buffer.");
     }
 
     if (bytesToRead < 0) {
@@ -86,7 +87,8 @@ public:
     long long bytesRead = 0;
 
     if (peekValue.size()) {
-      long long bytesToCopy = std::min(bytesToRead, (long long)peekValue.size());
+      long long bytesToCopy =
+          std::min(bytesToRead, (long long)peekValue.size());
       std::memcpy(buffer, peekValue.data(), bytesToCopy);
       for (int i = 0; i < bytesToCopy; i++)
         peekValue.erase(peekValue.begin());
@@ -95,15 +97,19 @@ public:
     }
 
     while (bytesRead < bytesToRead) {
-      auto readResult = fileLike.attr("read")(std::min(MAX_BUFFER_SIZE, bytesToRead - bytesRead));
+      auto readResult = fileLike.attr("read")(
+          std::min(MAX_BUFFER_SIZE, bytesToRead - bytesRead));
 
       if (!py::isinstance<py::bytes>(readResult)) {
         std::string message = "Python file-like object was expected to return "
                               "bytes from its read(...) method, but "
                               "returned " +
-                              py::str(readResult.get_type().attr("__name__")).cast<std::string>() + ".";
+                              py::str(readResult.get_type().attr("__name__"))
+                                  .cast<std::string>() +
+                              ".";
 
-        if (py::hasattr(fileLike, "mode") && py::str(fileLike.attr("mode")).cast<std::string>() == "r") {
+        if (py::hasattr(fileLike, "mode") &&
+            py::str(fileLike.attr("mode")).cast<std::string>() == "r") {
           message += " (Try opening the stream in \"rb\" mode instead of "
                      "\"r\" mode if possible.)";
         }
@@ -116,8 +122,10 @@ public:
       char *pythonBuffer = nullptr;
       py::ssize_t pythonLength = 0;
 
-      if (PYBIND11_BYTES_AS_STRING_AND_SIZE(bytesObject.ptr(), &pythonBuffer, &pythonLength)) {
-        throw py::buffer_error("Internal error: failed to read bytes from bytes object!");
+      if (PYBIND11_BYTES_AS_STRING_AND_SIZE(bytesObject.ptr(), &pythonBuffer,
+                                            &pythonLength)) {
+        throw py::buffer_error(
+            "Internal error: failed to read bytes from bytes object!");
       }
 
       if (!buffer && pythonLength > 0) {
@@ -126,8 +134,10 @@ public:
       }
 
       if (bytesRead + pythonLength > bytesToRead) {
-        throw py::buffer_error("Python returned " + std::to_string(pythonLength) + " bytes, but only " +
-                               std::to_string(bytesToRead - bytesRead) + " bytes were requested.");
+        throw py::buffer_error(
+            "Python returned " + std::to_string(pythonLength) +
+            " bytes, but only " + std::to_string(bytesToRead - bytesRead) +
+            " bytes were requested.");
       }
 
       if (buffer && pythonLength > 0) {
@@ -180,8 +190,10 @@ public:
       peekValue.push_back(resultAsCharacters[3]);
       return result;
     } else {
-      throw std::runtime_error("Failed to peek " + std::to_string(sizeof(result)) +
-                               " bytes from file-like object at index " + std::to_string(lastPosition) + ".");
+      throw std::runtime_error("Failed to peek " +
+                               std::to_string(sizeof(result)) +
+                               " bytes from file-like object at index " +
+                               std::to_string(lastPosition) + ".");
     }
   }
 

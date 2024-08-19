@@ -294,9 +294,11 @@ public:
 
   E4M3() : E4M3(0, 0, 0) {}
 
-  E4M3(uint8_t sign, uint8_t exponent, uint8_t mantissa) : sign(sign), exponent(exponent), mantissa(mantissa) {}
+  E4M3(uint8_t sign, uint8_t exponent, uint8_t mantissa)
+      : sign(sign), exponent(exponent), mantissa(mantissa) {}
 
-  E4M3(uint8_t c) : sign(c >> 7), exponent((c >> 3) & 0b1111), mantissa(c & 0b111) {}
+  E4M3(uint8_t c)
+      : sign(c >> 7), exponent((c >> 3) & 0b1111), mantissa(c & 0b111) {}
 
   E4M3(float input) {
     if (std::isnan(input) || std::isinf(input)) {
@@ -314,11 +316,15 @@ public:
     // TODO: Don't hard-code these, and instead compute them based on the bit
     // widths above!
     if (input < -448 || input > 448) {
-      throw std::domain_error("E4M3 cannot represent values outside of [-448, 448].");
+      throw std::domain_error(
+          "E4M3 cannot represent values outside of [-448, 448].");
     }
 
-    int originalExponent = ((*((const unsigned int *)&input) & 0b01111111100000000000000000000000) >> 23);
-    int originalMantissa = (*((const unsigned int *)&input) & 0b00000000011111111111111111111111);
+    int originalExponent = ((*((const unsigned int *)&input) &
+                             0b01111111100000000000000000000000) >>
+                            23);
+    int originalMantissa =
+        (*((const unsigned int *)&input) & 0b00000000011111111111111111111111);
 
     sign = input < 0;
 
@@ -380,9 +386,10 @@ public:
       if (mantissa == 0b111) {
         if (exponent == 0b1111) {
           // Rounding up would push us just outside of the representable range!
-          throw std::domain_error("E4M3 cannot represent values outside of [-448, "
-                                  "448] - tried to convert " +
-                                  std::to_string(input) + ".");
+          throw std::domain_error(
+              "E4M3 cannot represent values outside of [-448, "
+              "448] - tried to convert " +
+              std::to_string(input) + ".");
         } else {
           exponent++;
           mantissa = 0;

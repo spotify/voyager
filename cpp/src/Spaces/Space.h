@@ -26,7 +26,8 @@
 
 namespace hnswlib {
 template <typename MTYPE, typename data_t = MTYPE>
-using DISTFUNC = std::function<MTYPE(const data_t *, const data_t *, const size_t)>;
+using DISTFUNC =
+    std::function<MTYPE(const data_t *, const data_t *, const size_t)>;
 
 /**
  * An abstract class representing a type of space to search through,

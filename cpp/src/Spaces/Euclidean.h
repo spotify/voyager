@@ -32,8 +32,10 @@ namespace hnswlib {
  * should automatically do the loop unrolling for us here and vectorize as
  * appropriate.
  */
-template <typename dist_t, typename data_t = dist_t, int K = 1, typename scalefactor = std::ratio<1, 1>>
-static dist_t L2Sqr(const data_t *__restrict pVect1, const data_t *__restrict pVect2, const size_t qty) {
+template <typename dist_t, typename data_t = dist_t, int K = 1,
+          typename scalefactor = std::ratio<1, 1>>
+static dist_t L2Sqr(const data_t *__restrict pVect1,
+                    const data_t *__restrict pVect2, const size_t qty) {
   dist_t res = 0;
 
   for (size_t i = 0; i < qty / K; i++) {
@@ -49,18 +51,22 @@ static dist_t L2Sqr(const data_t *__restrict pVect1, const data_t *__restrict pV
   return (res * scale * scale);
 }
 
-template <typename dist_t, typename data_t = dist_t, int K, typename scalefactor = std::ratio<1, 1>>
-static dist_t L2SqrAtLeast(const data_t *__restrict pVect1, const data_t *__restrict pVect2, const size_t qty) {
+template <typename dist_t, typename data_t = dist_t, int K,
+          typename scalefactor = std::ratio<1, 1>>
+static dist_t L2SqrAtLeast(const data_t *__restrict pVect1,
+                           const data_t *__restrict pVect2, const size_t qty) {
   size_t remainder = qty - K;
 
   return L2Sqr<dist_t, data_t, K, scalefactor>(pVect1, pVect2, K) +
-         L2Sqr<dist_t, data_t, 1, scalefactor>(pVect1 + K, pVect2 + K, remainder);
+         L2Sqr<dist_t, data_t, 1, scalefactor>(pVect1 + K, pVect2 + K,
+                                               remainder);
 }
 
 #if defined(USE_AVX512)
 
 // Favor using AVX512 if available.
-static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2, const size_t qty) {
+static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2,
+                            const size_t qty) {
   float PORTABLE_ALIGN64 TmpRes[16];
   size_t qty16 = qty >> 4;
 
@@ -80,8 +86,10 @@ static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2, const size
   }
 
   _mm512_store_ps(TmpRes, sum);
-  float res = TmpRes[0] + TmpRes[1] + TmpRes[2] + TmpRes[3] + TmpRes[4] + TmpRes[5] + TmpRes[6] + TmpRes[7] +
-              TmpRes[8] + TmpRes[9] + TmpRes[10] + TmpRes[11] + TmpRes[12] + TmpRes[13] + TmpRes[14] + TmpRes[15];
+  float res = TmpRes[0] + TmpRes[1] + TmpRes[2] + TmpRes[3] + TmpRes[4] +
+              TmpRes[5] + TmpRes[6] + TmpRes[7] + TmpRes[8] + TmpRes[9] +
+              TmpRes[10] + TmpRes[11] + TmpRes[12] + TmpRes[13] + TmpRes[14] +
+              TmpRes[15];
 
   return (res);
 }
@@ -89,7 +97,8 @@ static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2, const size
 #elif defined(USE_AVX)
 
 // Favor using AVX if available.
-static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2, const size_t qty) {
+static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2,
+                            const size_t qty) {
   float PORTABLE_ALIGN32 TmpRes[8];
   size_t qty16 = qty >> 4;
 
@@ -115,12 +124,14 @@ static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2, const size
   }
 
   _mm256_store_ps(TmpRes, sum);
-  return TmpRes[0] + TmpRes[1] + TmpRes[2] + TmpRes[3] + TmpRes[4] + TmpRes[5] + TmpRes[6] + TmpRes[7];
+  return TmpRes[0] + TmpRes[1] + TmpRes[2] + TmpRes[3] + TmpRes[4] + TmpRes[5] +
+         TmpRes[6] + TmpRes[7];
 }
 
 #elif defined(USE_SSE)
 
-static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2, const size_t qty) {
+static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2,
+                            const size_t qty) {
   float PORTABLE_ALIGN32 TmpRes[8];
   size_t qty16 = qty >> 4;
 
@@ -166,18 +177,21 @@ static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2, const size
 #endif
 
 #if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512)
-static float L2SqrSIMD16ExtResiduals(const float *pVect1, const float *pVect2, const size_t qty) {
+static float L2SqrSIMD16ExtResiduals(const float *pVect1, const float *pVect2,
+                                     const size_t qty) {
   size_t qty16 = qty >> 4 << 4;
   float res = L2SqrSIMD16Ext(pVect1, pVect2, qty16);
 
   size_t qty_left = qty - qty16;
-  float res_tail = L2Sqr<float, float>(pVect1 + qty16, pVect2 + qty16, qty_left);
+  float res_tail =
+      L2Sqr<float, float>(pVect1 + qty16, pVect2 + qty16, qty_left);
   return (res + res_tail);
 }
 #endif
 
 #ifdef USE_SSE
-static float L2SqrSIMD4Ext(const float *pVect1, const float *pVect2, const size_t qty) {
+static float L2SqrSIMD4Ext(const float *pVect1, const float *pVect2,
+                           const size_t qty) {
   float PORTABLE_ALIGN32 TmpRes[8];
   size_t qty4 = qty >> 2;
 
@@ -198,7 +212,8 @@ static float L2SqrSIMD4Ext(const float *pVect1, const float *pVect2, const size_
   return TmpRes[0] + TmpRes[1] + TmpRes[2] + TmpRes[3];
 }
 
-static float L2SqrSIMD4ExtResiduals(const float *pVect1, const float *pVect2, const size_t qty) {
+static float L2SqrSIMD4ExtResiduals(const float *pVect1, const float *pVect2,
+                                    const size_t qty) {
   size_t qty4 = qty >> 2 << 2;
 
   float res = L2SqrSIMD4Ext(pVect1, pVect2, qty4);
@@ -210,7 +225,8 @@ static float L2SqrSIMD4ExtResiduals(const float *pVect1, const float *pVect2, co
 }
 #endif
 
-template <typename dist_t, typename data_t = dist_t, typename scalefactor = std::ratio<1, 1>>
+template <typename dist_t, typename data_t = dist_t,
+          typename scalefactor = std::ratio<1, 1>>
 class EuclideanSpace : public Space<dist_t, data_t> {
   DISTFUNC<dist_t, data_t> fstdistfunc_;
   size_t data_size_;
@@ -256,7 +272,9 @@ public:
   ~EuclideanSpace() {}
 };
 
-template <> EuclideanSpace<float, float>::EuclideanSpace(size_t dim) : data_size_(dim * sizeof(float)), dim_(dim) {
+template <>
+EuclideanSpace<float, float>::EuclideanSpace(size_t dim)
+    : data_size_(dim * sizeof(float)), dim_(dim) {
   fstdistfunc_ = L2Sqr<float, float>;
 #if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512)
   if (dim % 16 == 0)

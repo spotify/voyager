@@ -33,9 +33,10 @@ namespace Metadata {
  */
 class V1 {
 public:
-  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType, float maxNorm,
-     bool useOrderPreservingTransform)
-      : numDimensions(numDimensions), spaceType(spaceType), storageDataType(storageDataType), maxNorm(maxNorm),
+  V1(int numDimensions, SpaceType spaceType, StorageDataType storageDataType,
+     float maxNorm, bool useOrderPreservingTransform)
+      : numDimensions(numDimensions), spaceType(spaceType),
+        storageDataType(storageDataType), maxNorm(maxNorm),
         useOrderPreservingTransform(useOrderPreservingTransform) {}
 
   V1() {}
@@ -51,12 +52,20 @@ public:
 
   float getMaxNorm() { return maxNorm; }
 
-  bool getUseOrderPreservingTransform() const { return useOrderPreservingTransform; }
-  void setUseOrderPreservingTransform(bool newValue) { useOrderPreservingTransform = newValue; }
+  bool getUseOrderPreservingTransform() const {
+    return useOrderPreservingTransform;
+  }
+  void setUseOrderPreservingTransform(bool newValue) {
+    useOrderPreservingTransform = newValue;
+  }
 
-  void setNumDimensions(int newNumDimensions) { numDimensions = newNumDimensions; }
+  void setNumDimensions(int newNumDimensions) {
+    numDimensions = newNumDimensions;
+  }
 
-  void setStorageDataType(StorageDataType newStorageDataType) { storageDataType = newStorageDataType; }
+  void setStorageDataType(StorageDataType newStorageDataType) {
+    storageDataType = newStorageDataType;
+  }
 
   void setSpaceType(SpaceType newSpaceType) { spaceType = newSpaceType; }
 
@@ -89,7 +98,8 @@ private:
   bool useOrderPreservingTransform;
 };
 
-static std::unique_ptr<Metadata::V1> loadFromStream(std::shared_ptr<InputStream> inputStream) {
+static std::unique_ptr<Metadata::V1>
+loadFromStream(std::shared_ptr<InputStream> inputStream) {
   uint32_t header = inputStream->peek();
   if (header != 'AYOV') {
     return nullptr;

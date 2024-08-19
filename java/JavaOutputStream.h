@@ -25,19 +25,23 @@ class JavaOutputStream : public OutputStream {
   static constexpr unsigned long long MAX_BUFFER_SIZE = 1024 * 1024 * 100;
 
 public:
-  JavaOutputStream(JNIEnv *env, jobject outputStream) : env(env), outputStream(outputStream) {
+  JavaOutputStream(JNIEnv *env, jobject outputStream)
+      : env(env), outputStream(outputStream) {
     jclass outputStreamClass = env->FindClass("java/io/OutputStream");
     if (!outputStreamClass) {
-      throw std::runtime_error("Native code failed to find OutputStream class!");
+      throw std::runtime_error(
+          "Native code failed to find OutputStream class!");
     }
 
     if (!env->IsInstanceOf(outputStream, outputStreamClass)) {
-      throw std::runtime_error("Provided Java object is not a java.io.OutputStream!");
+      throw std::runtime_error(
+          "Provided Java object is not a java.io.OutputStream!");
     }
   };
 
   virtual void flush() {
-    jmethodID flushMethod = env->GetMethodID(env->FindClass("java/io/OutputStream"), "flush", "()V");
+    jmethodID flushMethod = env->GetMethodID(
+        env->FindClass("java/io/OutputStream"), "flush", "()V");
     env->CallVoidMethod(outputStream, flushMethod);
 
     if (env->ExceptionCheck()) {
@@ -46,7 +50,8 @@ public:
   }
 
   virtual bool write(const char *ptr, unsigned long long numBytes) {
-    jmethodID writeMethod = env->GetMethodID(env->FindClass("java/io/OutputStream"), "write", "([B)V");
+    jmethodID writeMethod = env->GetMethodID(
+        env->FindClass("java/io/OutputStream"), "write", "([B)V");
 
     if (!writeMethod) {
       throw std::runtime_error("Native code failed to find "
@@ -58,7 +63,9 @@ public:
 
       jbyteArray byteArray = env->NewByteArray(chunkSize);
       if (!byteArray) {
-        throw std::domain_error("Failed to instantiate Java byte array of size: " + std::to_string(chunkSize));
+        throw std::domain_error(
+            "Failed to instantiate Java byte array of size: " +
+            std::to_string(chunkSize));
       }
 
       env->SetByteArrayRegion(byteArray, 0, chunkSize, (const jbyte *)ptr);
