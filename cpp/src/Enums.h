@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 /**
  * The space (i.e. distance metric) to use for searching.
  */

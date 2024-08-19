@@ -52,9 +52,6 @@ jobs:
         # TODO: Switch back to macos-latest once https://github.com/actions/python-versions/pull/114 is fixed
         os:
           - 'ubuntu-latest'
-          # TODO: Fix failing CMake build on windows:
-          #   Error: `cl : command line  error D8016: '/O2' and '/RTC1' command-line options are incompatible [D:\a\voyager\voyager\cpp\test\test.vcxproj]`
-          #   I've tried passing CXX flags, but windows doesn't seem to respect disabling runtime checks with /RTC1 or disabling optimizations with /O2
           - windows-latest
           - macos-12
     name: Test C++ on ${{ matrix.os }}
@@ -66,7 +63,6 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-          choco install ninja
       - name: Install CMake (MacOS)
         if: matrix.os == 'macos-12'
         run: brew install cmake

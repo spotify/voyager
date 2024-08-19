@@ -21,6 +21,7 @@
 #pragma once
 
 #include <cmath>
+#include <string>
 
 static constexpr float ALL_E4M3_VALUES[256] = {
     0,

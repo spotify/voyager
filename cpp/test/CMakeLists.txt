@@ -13,9 +13,6 @@ target_link_libraries(VoyagerTests
         doctest
 )
 
-# Add the tests
-add_test(NAME VoyagerTests COMMAND VoyagerTests)
-
 # Discover tests using Doctest
 include(${CMAKE_SOURCE_DIR}/include/doctest/scripts/cmake/doctest.cmake)
 doctest_discover_tests(VoyagerTests)
