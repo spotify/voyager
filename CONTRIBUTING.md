@@ -115,8 +115,8 @@ To run the C++ tests, use the following commands:
 cd cpp
 git submodule update --init --recursive
 cmake .
+make
 make test
-./test/test
 ```
 
 ## Style
@@ -166,7 +166,7 @@ cd java
 mvn package
 ```
 
-this will update the java documentation located in [docs/java/](https://github.com/spotify/voyager/tree/main/docs/java).
+This will update the java documentation located in [docs/java/](https://github.com/spotify/voyager/tree/main/docs/java).
 
 ## Issues
 When creating an issue please try to ahere to the following format:

@@ -22,11 +22,13 @@ TEST_CASE("Test combinations of different instantiations and sizes") {
   std::vector<StorageDataType> storageTypesSet = {
       StorageDataType::Float8, StorageDataType::Float32, StorageDataType::E4M3};
 
+  auto count = 0;
+
   for (auto spaceType : spaceTypesSet) {
     for (auto numDimensions : numDimensionsSet) {
       for (auto numElements : numElementsSet) {
         for (auto storageType : storageTypesSet) {
-          SUBCASE("Combination test") {
+          SUBCASE("Test instantiation ") {
             CAPTURE(spaceType);
             CAPTURE(numDimensions);
             CAPTURE(numElements);
@@ -41,7 +43,7 @@ TEST_CASE("Test combinations of different instantiations and sizes") {
               testCombination(index, spaceType, numDimensions, storageType);
             } else if (storageType == StorageDataType::E4M3) {
               auto index = TypedIndex<float, E4M3>(spaceType, numDimensions);
-              testCombination(index, spaceType, 20, storageType);
+              testCombination(index, spaceType, numDimensions, storageType);
             }
           }
         }

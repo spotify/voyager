@@ -1,12 +1,17 @@
-add_executable(test doctest_setup.cpp test_main.cpp)
+# List the test source files
+set(TEST_FILES test_main.cpp doctest_setup.cpp)  # Add any test files here
 
-target_link_libraries(test
+# Create an executable for the tests
+add_executable(VoyagerTests ${TEST_FILES})
+
+# Link the test executable with the main project and Doctest
+# target_link_libraries(MyProjectTests PRIVATE MyProject doctest::doctest)
+target_link_libraries(VoyagerTests
     PUBLIC
         VoyagerLib
     PRIVATE 
         doctest
 )
 
-target_compile_options(test PRIVATE -O2 -g)
-
-include(CTest)
+# Add the tests
+add_test(NAME VoyagerTests COMMAND VoyagerTests)
