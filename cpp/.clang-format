@@ -1,6 +1,7 @@
 ---
 BasedOnStyle: LLVM
 IndentWidth: 2
+InsertNewlineAtEOF: true
 ---
 Language: Cpp
 # Use 120 columns since we have big screens now
