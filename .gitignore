@@ -1,5 +1,6 @@
 *.egg-info/
-build/
+*/build/*
+!build/.gitkeep
 dist/
 tmp/
 __pycache__/
@@ -18,3 +19,19 @@ java/classpath.txt
 java/linux-build/include/*
 python/voyager-headers
 .asv/
+
+# Cmake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+!cpp/Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+DartConfiguration.tcl
+VoyagerTests

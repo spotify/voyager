@@ -39,8 +39,38 @@ jobs:
       - name: Check C++ Formatting
         uses: jidicula/clang-format-action@v4.13.0
         with:
-          clang-format-version: 14
-          fallback-style: LLVM
+          clang-format-version: 16
+
+  run-cpp-tests:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: cpp
+    strategy:
+      matrix:
+        # TODO: Switch back to macos-latest once https://github.com/actions/python-versions/pull/114 is fixed
+        os:
+          - 'ubuntu-latest'
+          - windows-latest
+          - macos-12
+    name: Test C++ on ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install CMake (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+      - name: Install CMake (MacOS)
+        if: matrix.os == 'macos-12'
+        run: brew install cmake
+      - name: Install CMake (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y cmake
+      - name: Run tests
+        run: make test
 
   run-java-tests:
     continue-on-error: true
