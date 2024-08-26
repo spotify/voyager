@@ -291,6 +291,24 @@ public:
   }
 
   std::vector<hnswlib::labeltype>
+  addItems(const std::vector<std::vector<float>> vectors,
+           std::vector<hnswlib::labeltype> ids = {}, int numThreads = -1) {
+    // Convert the 2D array of float to NDArray<float, 2>
+    int numVectors = vectors.size();
+    int dimensions = numVectors > 0 ? vectors[0].size() : 0;
+    std::array<int, 2> shape = {numVectors, dimensions};
+
+    // flatten the 2d array of floats
+    std::vector<float> flatArray;
+    for (const auto &vector : vectors) {
+      flatArray.insert(flatArray.end(), vector.begin(), vector.end());
+    }
+    NDArray<float, 2> ndarray(flatArray, shape);
+
+    return addItems(ndarray, ids, numThreads);
+  }
+
+  std::vector<hnswlib::labeltype>
   addItems(NDArray<float, 2> floatInput,
            std::vector<hnswlib::labeltype> ids = {}, int numThreads = -1) {
     if (numThreads <= 0)
@@ -500,6 +518,24 @@ public:
   const std::unordered_map<hnswlib::labeltype, hnswlib::tableint> &
   getIDsMap() const {
     return algorithmImpl->label_lookup_;
+  }
+
+  std::tuple<NDArray<hnswlib::labeltype, 2>, NDArray<dist_t, 2>>
+  query(std::vector<std::vector<float>> floatQueryVectors, int k = 1,
+        int numThreads = -1, long queryEf = -1) {
+    // Convert the 2D array of float to NDArray<float, 2>
+    int numVectors = floatQueryVectors.size();
+    int dimensions = numVectors > 0 ? floatQueryVectors[0].size() : 0;
+    std::array<int, 2> shape = {numVectors, dimensions};
+
+    // flatten the 2d array of floats
+    std::vector<float> flatArray;
+    for (const auto &vector : floatQueryVectors) {
+      flatArray.insert(flatArray.end(), vector.begin(), vector.end());
+    }
+    NDArray<float, 2> ndarray(flatArray, shape);
+
+    return query(ndarray, k, numThreads, queryEf);
   }
 
   std::tuple<NDArray<hnswlib::labeltype, 2>, NDArray<dist_t, 2>>

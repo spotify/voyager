@@ -44,7 +44,7 @@
  */
 class Index {
 public:
-  virtual ~Index(){};
+  virtual ~Index() {};
 
   virtual void setEF(size_t ef) = 0;
   virtual int getEF() const = 0;
@@ -71,6 +71,11 @@ public:
 
   virtual hnswlib::labeltype addItem(std::vector<float> vector,
                                      std::optional<hnswlib::labeltype> id) = 0;
+
+  virtual std::vector<hnswlib::labeltype>
+  addItems(std::vector<std::vector<float>> input,
+           std::vector<hnswlib::labeltype> ids = {}, int numThreads = -1) = 0;
+
   virtual std::vector<hnswlib::labeltype>
   addItems(NDArray<float, 2> input, std::vector<hnswlib::labeltype> ids = {},
            int numThreads = -1) = 0;
@@ -85,6 +90,10 @@ public:
 
   virtual std::tuple<std::vector<hnswlib::labeltype>, std::vector<float>>
   query(std::vector<float> queryVector, int k = 1, long queryEf = -1) = 0;
+
+  virtual std::tuple<NDArray<hnswlib::labeltype, 2>, NDArray<float, 2>>
+  query(std::vector<std::vector<float>> queryVectors, int k = 1,
+        int numThreads = -1, long queryEf = -1) = 0;
 
   virtual std::tuple<NDArray<hnswlib::labeltype, 2>, NDArray<float, 2>>
   query(NDArray<float, 2> queryVectors, int k = 1, int numThreads = -1,
