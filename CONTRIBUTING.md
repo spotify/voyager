@@ -130,7 +130,7 @@ tox -e format
 ```
 
 ### C++
-If you are working on any C++ code throughout the repo, ensure you have `clang-format` (version 16) installed, and then use clang-format to handle C++ formatting:
+If you are working on any C++ code throughout the repo, ensure you have `clang-format` (version 18) installed, and then use clang-format to handle C++ formatting:
 ```bash
 cd cpp
 cmake .
