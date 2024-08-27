@@ -39,7 +39,7 @@ jobs:
       - name: Check C++ Formatting
         uses: jidicula/clang-format-action@v4.13.0
         with:
-          clang-format-version: 18
+          clang-format-version: 16
 
   run-cpp-tests:
     runs-on: ${{ matrix.os }}

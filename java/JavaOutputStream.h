@@ -82,7 +82,7 @@ public:
     return true;
   }
 
-  virtual ~JavaOutputStream() {};
+  virtual ~JavaOutputStream(){};
 
 private:
   JNIEnv *env;

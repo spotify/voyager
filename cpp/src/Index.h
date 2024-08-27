@@ -44,7 +44,7 @@
  */
 class Index {
 public:
-  virtual ~Index() {};
+  virtual ~Index(){};
 
   virtual void setEF(size_t ef) = 0;
   virtual int getEF() const = 0;
