@@ -82,32 +82,30 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
 
   // Use the bulk-query interface  (query with multiple target vectors at once)
   for (long queryEf = 100; queryEf <= numVectors; queryEf *= 10) {
+    auto nearestNeighbors = index.query(
+        inputData, /* k= */ k, /* numThreads= */ -1, /* queryEf= */ queryEf);
+    NDArray<hnswlib::labeltype, 2> labels = std::get<0>(nearestNeighbors);
+    NDArray<dist_t, 2> distances = std::get<1>(nearestNeighbors);
+    REQUIRE(labels.shape[0] == numVectors);
+    REQUIRE(labels.shape[1] == k);
+    REQUIRE(distances.shape[0] == numVectors);
+    REQUIRE(distances.shape[1] == k);
+
     for (int i = 0; i < numVectors; i++) {
-      auto nearestNeighbors = index.query(
-          inputData, /* k= */ 1, /* numThreads= */ -1, /* queryEf= */ queryEf);
-      NDArray<hnswlib::labeltype, 2> labels = std::get<0>(nearestNeighbors);
-      NDArray<dist_t, 2> distances = std::get<1>(nearestNeighbors);
-      REQUIRE(labels.shape[0] == numVectors);
-      REQUIRE(labels.shape[1] == k);
-      REQUIRE(distances.shape[0] == numVectors);
-      REQUIRE(distances.shape[1] == k);
+      auto label = labels.data[i];
+      auto distance = distances.data[i];
 
-      for (int i = 0; i < numVectors; i++) {
-        auto label = labels.data[i];
-        auto distance = distances.data[i];
-
-        /**
-         * E4M3 is too low precision for us to confidently assume that querying
-         * with the unquantized (fp32) vector will return the quantized vector
-         * as its NN InnerProduct will have negative distance to the closest
-         * item, not zero
-         */
-        if (storageType != StorageDataType::E4M3 &&
-            spaceType != SpaceType::InnerProduct) {
-          REQUIRE(i == label);
-          REQUIRE(distance >= lowerBound);
-          REQUIRE(distance <= upperBound);
-        }
+      /**
+       * E4M3 is too low precision for us to confidently assume that querying
+       * with the unquantized (fp32) vector will return the quantized vector
+       * as its NN InnerProduct will have negative distance to the closest
+       * item, not zero
+       */
+      if (storageType != StorageDataType::E4M3 &&
+          spaceType != SpaceType::InnerProduct) {
+        REQUIRE(i == label);
+        REQUIRE(distance >= lowerBound);
+        REQUIRE(distance <= upperBound);
       }
     }
   }
@@ -122,7 +120,7 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
   std::vector<SpaceType> spaceTypesSet = {
       SpaceType::Euclidean, SpaceType::InnerProduct, SpaceType::Cosine};
   std::vector<int> numDimensionsSet = {32};
-  std::vector<int> numVectorsSet = {500};
+  std::vector<int> numVectorsSet = {2000};
   std::vector<StorageDataType> storageTypesSet = {
       StorageDataType::Float8, StorageDataType::Float32, StorageDataType::E4M3};
   std::vector<bool> testSingleVectorMethods = {true, false};
@@ -138,6 +136,7 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
               CAPTURE(numDimensions);
               CAPTURE(numVectors);
               CAPTURE(storageType);
+              CAPTURE(testSingleVectorMethod);
 
               if (storageType == StorageDataType::Float8) {
                 auto index = TypedIndex<float, int8_t, std::ratio<1, 127>>(
