@@ -68,7 +68,7 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
       /**
        * E4M3 is too low precision for us to confidently assume that querying
        * with the unquantized (fp32) vector will return the quantized vector as
-       * its NN InnerProduct will have negative distance to the closest item,
+       * its NN. InnerProduct will have negative distance to the closest item,
        * not zero
        */
       if (storageType != StorageDataType::E4M3 &&
@@ -98,7 +98,7 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
       /**
        * E4M3 is too low precision for us to confidently assume that querying
        * with the unquantized (fp32) vector will return the quantized vector
-       * as its NN InnerProduct will have negative distance to the closest
+       * as its NN. InnerProduct will have negative distance to the closest
        * item, not zero
        */
       if (storageType != StorageDataType::E4M3 &&
