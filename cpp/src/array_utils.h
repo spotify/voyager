@@ -309,3 +309,20 @@ std::string toFloatVectorString(std::vector<data_t> vec) {
   return toFloatVectorString<dist_t, data_t, scalefactor>(vec.data(),
                                                           vec.size());
 }
+
+/**
+ * Convert a 2D vector of float to NDArray<float, 2>
+ */
+NDArray<float, 2> vectorsToNDArray(std::vector<std::vector<float>> vectors) {
+  int numVectors = vectors.size();
+  int dimensions = numVectors > 0 ? vectors[0].size() : 0;
+  std::array<int, 2> shape = {numVectors, dimensions};
+
+  // flatten the 2d array into the NDArray's underlying 1D vector
+  std::vector<float> flatArray;
+  for (const auto &vector : vectors) {
+    flatArray.insert(flatArray.end(), vector.begin(), vector.end());
+  }
+
+  return NDArray<float, 2>(flatArray, shape);
+}
