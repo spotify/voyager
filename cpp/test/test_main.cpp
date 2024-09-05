@@ -28,8 +28,13 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
                StorageDataType storageType, bool testSingleVectorMethod,
                float precisionTolerance) {
   // create test data and ids
-  std::vector<std::vector<float>> inputData =
-      randomVectors(numVectors, numDimensions);
+  std::vector<std::vector<float>> inputData;
+  if (storageType == StorageDataType::Float8 ||
+      storageType == StorageDataType::E4M3) {
+    inputData = randomQuantizedVectors(numVectors, numDimensions);
+  } else if (storageType == StorageDataType::Float32) {
+    inputData = randomVectors(numVectors, numDimensions);
+  }
   std::vector<hnswlib::labeltype> ids(numVectors);
   for (int i = 0; i < numVectors; i++) {
     ids[i] = i;
