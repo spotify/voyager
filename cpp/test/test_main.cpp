@@ -27,7 +27,11 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
                int numDimensions, SpaceType spaceType,
                StorageDataType storageType, bool testSingleVectorMethod,
                float precisionTolerance) {
-  // create test data and ids
+  /**
+   * Create test data and ids. If we are using Float8 or E4M3 storage, quantize
+   * the vector values, if we are using Float32 storage, keep the float values
+   * as-is. We want to match the storage type use case with the input data.
+   */
   std::vector<std::vector<float>> inputData;
   if (storageType == StorageDataType::Float8 ||
       storageType == StorageDataType::E4M3) {
@@ -172,4 +176,43 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
       }
     }
   }
+}
+
+TEST_CASE("Test vectorsToNDArray converts 2D vector of float to NDArray<float, "
+          "2>") {
+  std::vector<std::vector<float>> vectors = {{1.0f, 2.0f, 3.0f, 4.0f},
+                                             {5.0f, 6.0f, 7.0f, 8.0f},
+                                             {9.0f, 10.0f, 11.0f, 12.0f}};
+  NDArray<float, 2> ndArray = vectorsToNDArray(vectors);
+  REQUIRE(ndArray.shape.size() == 2);
+  REQUIRE(ndArray.shape[0] == 3);
+  REQUIRE(ndArray.shape[1] == 4);
+  REQUIRE(ndArray.data.size() == 12);
+  REQUIRE(ndArray.data[0] == 1.0f);
+  REQUIRE(ndArray.data[1] == 2.0f);
+  REQUIRE(ndArray.data[2] == 3.0f);
+  REQUIRE(ndArray.data[3] == 4.0f);
+  REQUIRE(ndArray.data[4] == 5.0f);
+  REQUIRE(ndArray.data[5] == 6.0f);
+  REQUIRE(ndArray.data[6] == 7.0f);
+  REQUIRE(ndArray.data[7] == 8.0f);
+  REQUIRE(ndArray.data[8] == 9.0f);
+  REQUIRE(ndArray.data[9] == 10.0f);
+  REQUIRE(ndArray.data[10] == 11.0f);
+  REQUIRE(ndArray.data[11] == 12.0f);
+  REQUIRE(*ndArray[0] == 1.0f);
+  REQUIRE(*ndArray[1] == 5.0f);
+  REQUIRE(*ndArray[2] == 9.0f);
+}
+
+TEST_CASE("Test vectorsToNDArray throws error if vectors are not of the same "
+          "size") {
+  std::vector<std::vector<float>> vectors1 = {{1.0f, 2.0f, 3.0f, 4.0f},
+                                              {5.0f, 6.0f, 7.0f},
+                                              {9.0f, 10.0f, 11.0f, 12.0f}};
+  REQUIRE_THROWS_AS(vectorsToNDArray(vectors1), std::invalid_argument);
+
+  std::vector<std::vector<float>> vectors2 = {
+      {1.0f}, {5.0f, 6.0f, 7.0f}, {9.0f, 10.0f, 11.0f}};
+  REQUIRE_THROWS_AS(vectorsToNDArray(vectors2), std::invalid_argument);
 }
