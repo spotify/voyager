@@ -309,3 +309,30 @@ std::string toFloatVectorString(std::vector<data_t> vec) {
   return toFloatVectorString<dist_t, data_t, scalefactor>(vec.data(),
                                                           vec.size());
 }
+
+/** Convert a 2D vector of float to NDArray<float, 2> */
+NDArray<float, 2> vectorsToNDArray(std::vector<std::vector<float>> vectors) {
+  int numVectors = vectors.size();
+  int dimensions = numVectors > 0 ? vectors[0].size() : 0;
+  std::array<int, 2> shape = {numVectors, dimensions};
+
+  // Flatten the 2d array into the NDArray's underlying 1D vector
+  std::vector<float> flatArray(numVectors * dimensions);
+  // Pointer to the beginning of the flat array
+  float *flatArrayPtr = flatArray.data();
+  for (const auto &vector : vectors) {
+    // check that all provided vectors are same size, using the 1st vector as
+    // the reference
+    if (vector.size() != dimensions) {
+      throw std::invalid_argument("All vectors must be of the same size, but "
+                                  "received vectors of size: " +
+                                  std::to_string(dimensions) + " and " +
+                                  std::to_string(vector.size()) + ".");
+    }
+    // Use std::memcpy to copy the elements directly into the flat array
+    std::memcpy(flatArrayPtr, vector.data(), vector.size() * sizeof(float));
+    flatArrayPtr += vector.size(); // Increment the pointer
+  }
+
+  return NDArray<float, 2>(flatArray, shape);
+}

@@ -291,6 +291,12 @@ public:
   }
 
   std::vector<hnswlib::labeltype>
+  addItems(const std::vector<std::vector<float>> vectors,
+           std::vector<hnswlib::labeltype> ids = {}, int numThreads = -1) {
+    return addItems(vectorsToNDArray(vectors), ids, numThreads);
+  }
+
+  std::vector<hnswlib::labeltype>
   addItems(NDArray<float, 2> floatInput,
            std::vector<hnswlib::labeltype> ids = {}, int numThreads = -1) {
     if (numThreads <= 0)
@@ -500,6 +506,12 @@ public:
   const std::unordered_map<hnswlib::labeltype, hnswlib::tableint> &
   getIDsMap() const {
     return algorithmImpl->label_lookup_;
+  }
+
+  std::tuple<NDArray<hnswlib::labeltype, 2>, NDArray<dist_t, 2>>
+  query(std::vector<std::vector<float>> floatQueryVectors, int k = 1,
+        int numThreads = -1, long queryEf = -1) {
+    return query(vectorsToNDArray(floatQueryVectors), k, numThreads, queryEf);
   }
 
   std::tuple<NDArray<hnswlib::labeltype, 2>, NDArray<dist_t, 2>>
