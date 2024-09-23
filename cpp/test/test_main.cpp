@@ -26,7 +26,7 @@ template <typename dist_t, typename data_t = dist_t,
 void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
                int numDimensions, SpaceType spaceType,
                StorageDataType storageType, bool testSingleVectorMethod,
-               float precisionTolerance) {
+               float precisionTolerance, int k) {
   /**
    * Create test data and ids. If we are using Float8 or E4M3 storage, quantize
    * the vector values, if we are using Float32 storage, keep the float values
@@ -53,7 +53,6 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
     index.addItems(inputData, ids, -1);
   }
 
-  int k = 1;
   float lowerBound = 0.0f - precisionTolerance;
   float upperBound = 0.0f + precisionTolerance;
 
@@ -120,8 +119,94 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
   }
 }
 
+/**
+ * Test querying the index when k is equal to the total number of items in the
+ * index.
+ */
+template <typename dist_t, typename data_t = dist_t,
+          typename scalefactor = std::ratio<1, 1>>
+void testQueryAllNearestNeighbors(
+    TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
+    int numDimensions, bool testSingleVectorMethod) {
+
+  std::vector<std::vector<float>> inputData =
+      randomVectors(numVectors, numDimensions);
+  std::vector<hnswlib::labeltype> ids(numVectors);
+  for (int i = 0; i < numVectors; i++) {
+    ids[i] = i;
+  }
+
+  // add items to index
+  if (testSingleVectorMethod == true) {
+    for (auto id : ids) {
+      index.addItem(inputData[id], id);
+    }
+  } else {
+    index.addItems(inputData, ids, -1);
+  }
+  REQUIRE(index.getNumElements() == numVectors);
+
+  std::vector<float> targetVector = inputData[0];
+  REQUIRE_THROWS_AS(index.query(targetVector, numVectors, -1), RecallError);
+}
+
+/**
+ * This test reproduces https://github.com/spotify/voyager/issues/38, an issue
+ * where we cannot achieve 100% recall. testQueryAllNearestNeighbors() asserts
+ * that a custom RecallError is thrown.
+ */
+TEST_CASE(
+    "Test querying for kNN when k equals the number of items in the index") {
+  std::vector<SpaceType> spaceTypesSet = {
+      SpaceType::Euclidean, SpaceType::InnerProduct, SpaceType::Cosine};
+  std::vector<StorageDataType> storageTypesSet = {
+      StorageDataType::Float8, StorageDataType::Float32, StorageDataType::E4M3};
+  std::vector<int> numDimensionsSet = {32};
+  std::vector<int> numVectorsSet = {30000};
+  std::vector<bool> testSingleVectorMethods = {true};
+
+  // Use a small M value to exacerbate the issue where a graph becomes
+  // disconnected. This helps to reproduce this nondeterministic issue.
+  size_t M_ = 4;
+
+  for (auto spaceType : spaceTypesSet) {
+    for (auto storageType : storageTypesSet) {
+      for (auto numDimensions : numDimensionsSet) {
+        for (auto numVectors : numVectorsSet) {
+          for (auto testSingleVectorMethod : testSingleVectorMethods) {
+
+            SUBCASE("Test instantiation ") {
+              CAPTURE(spaceType);
+              CAPTURE(numDimensions);
+              CAPTURE(numVectors);
+              CAPTURE(storageType);
+              CAPTURE(std::to_string(testSingleVectorMethod));
+
+              if (storageType == StorageDataType::Float8) {
+                auto index = TypedIndex<float, int8_t, std::ratio<1, 127>>(
+                    spaceType, numDimensions, M_);
+                testQueryAllNearestNeighbors(index, numVectors, numDimensions,
+                                             testSingleVectorMethod);
+              } else if (storageType == StorageDataType::Float32) {
+                auto index = TypedIndex<float>(spaceType, numDimensions, M_);
+                testQueryAllNearestNeighbors(index, numVectors, numDimensions,
+                                             testSingleVectorMethod);
+              } else if (storageType == StorageDataType::E4M3) {
+                auto index =
+                    TypedIndex<float, E4M3>(spaceType, numDimensions, M_);
+                testQueryAllNearestNeighbors(index, numVectors, numDimensions,
+                                             testSingleVectorMethod);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 TEST_CASE("Test combinations of different instantiations. Test that each "
-          "vector's NN is itself and distance is approximately zero.") {
+          "vector's ANN is itself and distance is approximately zero.") {
   std::unordered_map<StorageDataType, float> PRECISION_TOLERANCE_PER_DATA_TYPE =
       {{StorageDataType::Float32, 0.00001f},
        {StorageDataType::Float8, 0.10f},
@@ -133,6 +218,7 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
   std::vector<StorageDataType> storageTypesSet = {
       StorageDataType::Float8, StorageDataType::Float32, StorageDataType::E4M3};
   std::vector<bool> testSingleVectorMethods = {true, false};
+  int k = 1;
 
   for (auto spaceType : spaceTypesSet) {
     for (auto storageType : storageTypesSet) {
@@ -154,21 +240,21 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
                                     storageType);
                 testQuery(index, numVectors, numDimensions, spaceType,
                           storageType, testSingleVectorMethod,
-                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType]);
+                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType], k);
               } else if (storageType == StorageDataType::Float32) {
                 auto index = TypedIndex<float>(spaceType, numDimensions);
                 testIndexProperties(index, spaceType, numDimensions,
                                     storageType);
                 testQuery(index, numVectors, numDimensions, spaceType,
                           storageType, testSingleVectorMethod,
-                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType]);
+                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType], k);
               } else if (storageType == StorageDataType::E4M3) {
                 auto index = TypedIndex<float, E4M3>(spaceType, numDimensions);
                 testIndexProperties(index, spaceType, numDimensions,
                                     storageType);
                 testQuery(index, numVectors, numDimensions, spaceType,
                           storageType, testSingleVectorMethod,
-                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType]);
+                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType], k);
               }
             }
           }
@@ -178,8 +264,8 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
   }
 }
 
-TEST_CASE("Test vectorsToNDArray converts 2D vector of float to NDArray<float, "
-          "2>") {
+TEST_CASE(
+    "Test vectorsToNDArray converts 2D vector of float to NDArray<float,2>") {
   std::vector<std::vector<float>> vectors = {{1.0f, 2.0f, 3.0f, 4.0f},
                                              {5.0f, 6.0f, 7.0f, 8.0f},
                                              {9.0f, 10.0f, 11.0f, 12.0f}};
@@ -205,8 +291,8 @@ TEST_CASE("Test vectorsToNDArray converts 2D vector of float to NDArray<float, "
   REQUIRE(*ndArray[2] == 9.0f);
 }
 
-TEST_CASE("Test vectorsToNDArray throws error if vectors are not of the same "
-          "size") {
+TEST_CASE(
+    "Test vectorsToNDArray throws error if vectors are not of the same size") {
   std::vector<std::vector<float>> vectors1 = {{1.0f, 2.0f, 3.0f, 4.0f},
                                               {5.0f, 6.0f, 7.0f},
                                               {9.0f, 10.0f, 11.0f, 12.0f}};
