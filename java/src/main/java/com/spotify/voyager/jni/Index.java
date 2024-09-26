@@ -20,6 +20,7 @@
 
 package com.spotify.voyager.jni;
 
+import com.spotify.voyager.jni.exception.RecallException;
 import com.spotify.voyager.jni.utils.JniLibExtractor;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -513,7 +514,7 @@ public class Index implements Closeable {
    * @param k The number of nearest neighbors to return.
    * @return A {@link QueryResults} object, containing the neighbors found that are (approximately)
    *     nearest to the query vector.
-   * @throws RuntimeException if fewer than {@code k} results can be found in the index.
+   * @throws RecallException if fewer than {@code k} results can be found in the index.
    */
   public QueryResults query(float[] queryVector, int k) {
     return query(queryVector, k, -1);
@@ -531,7 +532,7 @@ public class Index implements Closeable {
    * @return An array of {@link QueryResults} objects, each containing the neighbors found that are
    *     (approximately) nearest to the corresponding query vector. The returned list of {@link
    *     QueryResults} will contain the same number of elements as {@code queryVectors}.
-   * @throws RuntimeException if fewer than {@code k} results can be found in the index for one or
+   * @throws RecallException if fewer than {@code k} results can be found in the index for one or
    *     more queries.
    */
   public QueryResults[] query(float[][] queryVectors, int k, int numThreads) {
@@ -547,7 +548,7 @@ public class Index implements Closeable {
    *     the expense of query time.
    * @return A {@link QueryResults} object, containing the neighbors found that are (approximately)
    *     nearest to the query vector.
-   * @throws RuntimeException if fewer than {@code k} results can be found in the index.
+   * @throws RecallException if fewer than {@code k} results can be found in the index.
    */
   public native QueryResults query(float[] queryVector, int k, long queryEf);
 
@@ -565,7 +566,7 @@ public class Index implements Closeable {
    * @return An array of {@link QueryResults} objects, each containing the neighbors found that are
    *     (approximately) nearest to the corresponding query vector. The returned list of {@link
    *     QueryResults} will contain the same number of elements as {@code queryVectors}.
-   * @throws RuntimeException if fewer than {@code k} results can be found in the index for one or
+   * @throws RecallException if fewer than {@code k} results can be found in the index for one or
    *     more queries.
    */
   public native QueryResults[] query(float[][] queryVectors, int k, int numThreads, long queryEf);

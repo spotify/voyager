@@ -578,7 +578,7 @@ public:
               "Fewer than expected results were retrieved; only found " +
               std::to_string(result.size()) + " of " + std::to_string(k) +
               " requested neighbors. Reconstruct the index with a higher M "
-              "value to increase recall");
+              "value to increase recall.");
         }
 
         for (int i = k - 1; i >= 0; i--) {
@@ -616,7 +616,7 @@ public:
               "Fewer than expected results were retrieved; only found " +
               std::to_string(result.size()) + " of " + std::to_string(k) +
               " requested neighbors. Reconstruct the index with a higher M "
-              "value to increase recall");
+              "value to increase recall.");
         }
 
         for (int i = k - 1; i >= 0; i--) {
@@ -673,7 +673,7 @@ public:
             "Fewer than expected results were retrieved; only found " +
             std::to_string(result.size()) + " of " + std::to_string(k) +
             " requested neighbors. Reconstruct the index with a higher M value "
-            "to increase recall");
+            "to increase recall.");
       }
 
       for (int i = k - 1; i >= 0; i--) {
@@ -695,7 +695,7 @@ public:
             "Fewer than expected results were retrieved; only found " +
             std::to_string(result.size()) + " of " + std::to_string(k) +
             " requested neighbors. Reconstruct the index with a higher M value "
-            "to increase recall");
+            "to increase recall.");
       }
 
       for (int i = k - 1; i >= 0; i--) {

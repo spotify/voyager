@@ -440,6 +440,13 @@ jobject Java_com_spotify_voyager_jni_Index_query___3FIJ(JNIEnv *env,
                              std::get<1>(queryResults).data());
 
     return env->NewObject(queryResultsClass, constructor, labels, distances);
+  } catch (RecallError const &e) {
+    if (!env->ExceptionCheck()) {
+      env->ThrowNew(
+          env->FindClass("com/spotify/voyager/jni/exception/RecallException"),
+          e.what());
+    }
+    return nullptr;
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
@@ -502,6 +509,13 @@ jobjectArray Java_com_spotify_voyager_jni_Index_query___3_3FIIJ(
     }
 
     return javaQueryResults;
+  } catch (RecallError const &e) {
+    if (!env->ExceptionCheck()) {
+      env->ThrowNew(
+          env->FindClass("com/spotify/voyager/jni/exception/RecallException"),
+          e.what());
+    }
+    return nullptr;
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
