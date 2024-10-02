@@ -36,6 +36,11 @@
 #include "hnswlib.h"
 #include "std_utils.h"
 
+class RecallError : public std::runtime_error {
+public:
+  RecallError(const std::string &what) : std::runtime_error(what) {}
+};
+
 template <typename T> inline const StorageDataType storageDataType();
 template <typename T> inline const std::string storageDataTypeName();
 
@@ -569,10 +574,11 @@ public:
                                      nullptr, queryEf);
 
         if (result.size() != (unsigned long)k) {
-          throw std::runtime_error(
+          throw RecallError(
               "Fewer than expected results were retrieved; only found " +
               std::to_string(result.size()) + " of " + std::to_string(k) +
-              " requested neighbors.");
+              " requested neighbors. Reconstruct the index with a higher M "
+              "value to increase recall.");
         }
 
         for (int i = k - 1; i >= 0; i--) {
@@ -606,10 +612,11 @@ public:
                                      queryEf);
 
         if (result.size() != (unsigned long)k) {
-          throw std::runtime_error(
+          throw RecallError(
               "Fewer than expected results were retrieved; only found " +
               std::to_string(result.size()) + " of " + std::to_string(k) +
-              " requested neighbors.");
+              " requested neighbors. Reconstruct the index with a higher M "
+              "value to increase recall.");
         }
 
         for (int i = k - 1; i >= 0; i--) {
@@ -662,10 +669,11 @@ public:
           algorithmImpl->searchKnn(queryVector.data(), k, nullptr, queryEf);
 
       if (result.size() != (unsigned long)k) {
-        throw std::runtime_error(
+        throw RecallError(
             "Fewer than expected results were retrieved; only found " +
             std::to_string(result.size()) + " of " + std::to_string(k) +
-            " requested neighbors.");
+            " requested neighbors. Reconstruct the index with a higher M value "
+            "to increase recall.");
       }
 
       for (int i = k - 1; i >= 0; i--) {
@@ -683,10 +691,11 @@ public:
           algorithmImpl->searchKnn(norm_array.data(), k, nullptr, queryEf);
 
       if (result.size() != (unsigned long)k) {
-        throw std::runtime_error(
+        throw RecallError(
             "Fewer than expected results were retrieved; only found " +
             std::to_string(result.size()) + " of " + std::to_string(k) +
-            " requested neighbors.");
+            " requested neighbors. Reconstruct the index with a higher M value "
+            "to increase recall.");
       }
 
       for (int i = k - 1; i >= 0; i--) {

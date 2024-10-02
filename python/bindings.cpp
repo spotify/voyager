@@ -209,6 +209,8 @@ inline void register_index_class(py::module &m, std::string className,
 };
 
 PYBIND11_MODULE(voyager, m) {
+  py::register_exception<RecallError>(m, "RecallError");
+
   init_LabelSetView(m);
 
   py::enum_<SpaceType>(
