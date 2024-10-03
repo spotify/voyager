@@ -15,7 +15,10 @@ def patch_overload(func):
     if func.__doc__:
         # Work around the fact that pybind11-stubgen generates
         # duplicate docstrings sometimes, once for each overload:
-        while func.__doc__[len(func.__doc__) // 2 :].strip() == func.__doc__[: -len(func.__doc__) // 2].strip():
+        while (
+            func.__doc__[len(func.__doc__) // 2 :].strip()
+            == func.__doc__[: -len(func.__doc__) // 2].strip()
+        ):
             func.__doc__ = func.__doc__[len(func.__doc__) // 2 :].strip()
     return func
 
@@ -40,6 +43,7 @@ __all__ = [
     "Index",
     "InnerProduct",
     "LabelSetView",
+    "RecallError",
     "Space",
     "StorageDataType",
 ]
@@ -523,10 +527,11 @@ class Index:
                     print(f"\t{i}-th closest neighbor is {neighbor_id}, {distance} away")
 
         .. warning::
+
             If using E4M3 storage with the Cosine :py:class:`Space`, some queries may return
             negative distances due to the reduced floating-point precision of the storage
             data type. While confusing, these negative distances still result in a correct
-            ordering between results.                    
+            ordering between results.
         """
 
     def resize(self, new_size: int) -> None:
@@ -885,4 +890,7 @@ class LabelSetView:
     def __iter__(self) -> object: ...
     def __len__(self) -> int: ...
     def __repr__(self) -> str: ...
+    pass
+
+class RecallError(Exception, BaseException):
     pass
