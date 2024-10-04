@@ -1457,19 +1457,17 @@ public:
       }
     }
 
-    typedef std::priority_queue<std::pair<dist_t, tableint>,
+    size_t effective_ef = queryEf > 0 ? queryEf : ef_;
+    std::priority_queue<std::pair<dist_t, tableint>,
                         std::vector<std::pair<dist_t, tableint>>,
                         CompareByFirst>
-        top_candidates_t;
-
-    size_t effective_ef = queryEf > 0 ? queryEf : ef_;
-    if (num_deleted_) {
-      top_candidates_t&& top_candidates = searchBaseLayerST<true, true>(
-          currObj, query_data, std::max(effective_ef, k), vl);
-    } else {
-      top_candidates_t&& top_candidates = searchBaseLayerST<false, true>(
-          currObj, query_data, std::max(effective_ef, k), vl);
-    }
+        top_candidates&& = num_deleted_ ? (
+      searchBaseLayerST<true, true>(
+          currObj, query_data, std::max(effective_ef, k), vl)
+    ) : (
+      searchBaseLayerST<false, true>(
+          currObj, query_data, std::max(effective_ef, k), vl)
+    );
 
     while (top_candidates.size() > k) {
       top_candidates.pop();
