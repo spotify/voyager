@@ -1460,8 +1460,8 @@ public:
     size_t effective_ef = queryEf > 0 ? queryEf : ef_;
     std::priority_queue<std::pair<dist_t, tableint>,
                         std::vector<std::pair<dist_t, tableint>>,
-                        CompareByFirst>
-        top_candidates&& = num_deleted_ ? (
+                        CompareByFirst>&&
+        top_candidates = num_deleted_ ? (
       searchBaseLayerST<true, true>(
           currObj, query_data, std::max(effective_ef, k), vl)
     ) : (
