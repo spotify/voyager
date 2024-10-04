@@ -1457,12 +1457,17 @@ public:
       }
     }
 
+    typedef std::priority_queue<std::pair<dist_t, tableint>,
+                        std::vector<std::pair<dist_t, tableint>>,
+                        CompareByFirst>
+        top_candidates_t;
+
     size_t effective_ef = queryEf > 0 ? queryEf : ef_;
     if (num_deleted_) {
-      auto&& top_candidates = searchBaseLayerST<true, true>(
+      top_candidates_t&& top_candidates = searchBaseLayerST<true, true>(
           currObj, query_data, std::max(effective_ef, k), vl);
     } else {
-      auto&& top_candidates = searchBaseLayerST<false, true>(
+      top_candidates_t&& top_candidates = searchBaseLayerST<false, true>(
           currObj, query_data, std::max(effective_ef, k), vl);
     }
 
