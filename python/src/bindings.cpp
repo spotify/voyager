@@ -74,7 +74,7 @@ template <typename T, int Dims>
 nb::ndarray<T, nb::numpy> ndArrayToPyArray(NDArray<T, Dims> input) {
   T *outputPtr = new T[input.data.size()];
   std::copy(input.data.begin(), input.data.end(), outputPtr);
-  nb::capsule owner(outputPtr, [](void *p) noexcept { delete[](float *) p; });
+  nb::capsule owner(outputPtr, [](void *p) noexcept { delete[] (float *)p; });
   size_t shape[Dims];
   for (int i = 0; i < Dims; i++) {
     shape[i] = input.shape[i];
@@ -112,7 +112,7 @@ template <typename T>
 nb::ndarray<T, nb::numpy> vectorToPyArray(std::vector<T> input) {
   T *data = new T[input.size()];
   std::copy(input.begin(), input.end(), data);
-  nb::capsule owner(data, [](void *p) noexcept { delete[](float *) p; });
+  nb::capsule owner(data, [](void *p) noexcept { delete[] (float *)p; });
   return nb::ndarray<T, nb::numpy>(data, {input.size()}, owner);
 };
 
