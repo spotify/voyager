@@ -165,6 +165,8 @@ jobs:
           NPY_LAPACK_ORDER: ""
         run: |
           python -m pip install --upgrade pip
+          pip install wheel
+          pip install -r dev-requirements.txt
       - name: Build voyager locally
         run: python -m pip install .
       - name: Run tox tests
