@@ -165,10 +165,8 @@ jobs:
           NPY_LAPACK_ORDER: ""
         run: |
           python -m pip install --upgrade pip
-          pip install wheel
-          pip install -r dev-requirements.txt
       - name: Build voyager locally
-        run: python setup.py develop
+        run: python -m pip install .
       - name: Run tox tests
         run: tox
 
@@ -209,7 +207,7 @@ jobs:
           USE_ASAN: "1"
           CC: clang
           CXX: clang++
-        run: python setup.py develop
+        run: python -m pip install .
       - name: Run tox tests with ASan loaded
         # pytest can exit before all Python objects have been destroyed,
         # so we tell ASan to ignore leaks.

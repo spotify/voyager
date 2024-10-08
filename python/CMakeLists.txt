@@ -48,6 +48,12 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE nanobind_ROOT)
 find_package(nanobind CONFIG REQUIRED)
 
+# Check the USE_ASAN environment variable, and if set to 1, enable AddressSanitizer
+if (DEFINED ENV{USE_ASAN} AND "$ENV{USE_ASAN}" STREQUAL "1")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+endif()
+
 nanobind_add_module(
   voyager_ext
   # Target the stable ABI for Python 3.12+, which reduces
