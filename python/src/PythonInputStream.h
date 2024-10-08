@@ -17,14 +17,14 @@
 #include <mutex>
 #include <optional>
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
+#include "../../cpp/src/StreamUtils.h"
 #include "PythonFileLike.h"
-#include <StreamUtils.h>
 
-bool isReadableFileLike(py::object fileLike) {
-  return py::hasattr(fileLike, "read") && py::hasattr(fileLike, "seek") &&
-         py::hasattr(fileLike, "tell") && py::hasattr(fileLike, "seekable");
+bool isReadableFileLike(nb::object fileLike) {
+  return nb::hasattr(fileLike, "read") && nb::hasattr(fileLike, "seek") &&
+         nb::hasattr(fileLike, "tell") && nb::hasattr(fileLike, "seekable");
 }
 
 /**
@@ -38,33 +38,33 @@ public:
   // hundreds of GB at once, which would allocate 2x that amount.
   static constexpr long long MAX_BUFFER_SIZE = 1024 * 1024 * 100;
 
-  PythonInputStream(py::object fileLike) : PythonFileLike(fileLike) {
+  PythonInputStream(nb::object fileLike) : PythonFileLike(fileLike) {
     if (!isReadableFileLike(fileLike)) {
-      throw py::type_error("Expected a file-like object (with read, seek, "
+      throw nb::type_error("Expected a file-like object (with read, seek, "
                            "seekable, and tell methods).");
     }
   }
 
   bool isSeekable() {
-    py::gil_scoped_acquire acquire;
-    return fileLike.attr("seekable")().cast<bool>();
+    nb::gil_scoped_acquire acquire;
+    return nb::cast<bool>(fileLike.attr("seekable")());
   }
 
   long long getTotalLength() {
-    py::gil_scoped_acquire acquire;
+    nb::gil_scoped_acquire acquire;
 
     // TODO: Try reading a couple of Python properties that may contain the
     // total length: urllib3.response.HTTPResponse provides `length_remaining`,
     // for instance
 
-    if (!fileLike.attr("seekable")().cast<bool>()) {
+    if (!nb::cast<bool>(fileLike.attr("seekable")())) {
       return -1;
     }
 
     if (totalLength == -1) {
-      long long pos = fileLike.attr("tell")().cast<long long>();
+      long long pos = nb::cast<long long>(fileLike.attr("tell")());
       fileLike.attr("seek")(0, 2);
-      totalLength = fileLike.attr("tell")().cast<long long>();
+      totalLength = nb::cast<long long>(fileLike.attr("tell")());
       fileLike.attr("seek")(pos, 0);
     }
 
@@ -72,15 +72,15 @@ public:
   }
 
   long long read(char *buffer, long long bytesToRead) {
-    py::gil_scoped_acquire acquire;
+    nb::gil_scoped_acquire acquire;
     if (buffer == nullptr) {
-      throw py::buffer_error(
+      throw nb::buffer_error(
           "C++ code attempted to read from a Python file-like object into a "
           "null destination buffer.");
     }
 
     if (bytesToRead < 0) {
-      throw py::buffer_error("C++ code attempted to read a negative number "
+      throw nb::buffer_error("C++ code attempted to read a negative number "
                              "of bytes from a Python file-like object.");
     }
 
@@ -100,44 +100,39 @@ public:
       auto readResult = fileLike.attr("read")(
           std::min(MAX_BUFFER_SIZE, bytesToRead - bytesRead));
 
-      if (!py::isinstance<py::bytes>(readResult)) {
-        std::string message = "Python file-like object was expected to return "
-                              "bytes from its read(...) method, but "
-                              "returned " +
-                              py::str(readResult.get_type().attr("__name__"))
-                                  .cast<std::string>() +
-                              ".";
+      if (!nb::isinstance<nb::bytes>(readResult)) {
+        std::string message =
+            "Python file-like object was expected to return "
+            "bytes from its read(...) method, but "
+            "returned " +
+            nb::cast<std::string>(nb::str(readResult.type().attr("__name__"))) +
+            ".";
 
-        if (py::hasattr(fileLike, "mode") &&
-            py::str(fileLike.attr("mode")).cast<std::string>() == "r") {
+        if (nb::hasattr(fileLike, "mode") &&
+            nb::cast<std::string>(nb::str(fileLike.attr("mode"))) == "r") {
           message += " (Try opening the stream in \"rb\" mode instead of "
                      "\"r\" mode if possible.)";
         }
 
-        throw py::type_error(message);
+        throw nb::type_error(message.c_str());
         return 0;
       }
 
-      py::bytes bytesObject = readResult.cast<py::bytes>();
-      char *pythonBuffer = nullptr;
-      py::ssize_t pythonLength = 0;
-
-      if (PYBIND11_BYTES_AS_STRING_AND_SIZE(bytesObject.ptr(), &pythonBuffer,
-                                            &pythonLength)) {
-        throw py::buffer_error(
-            "Internal error: failed to read bytes from bytes object!");
-      }
+      nb::bytes bytesObject = nb::cast<nb::bytes>(readResult);
+      const char *pythonBuffer = bytesObject.c_str();
+      nb::ssize_t pythonLength = bytesObject.size();
 
       if (!buffer && pythonLength > 0) {
-        throw py::buffer_error("Internal error: bytes pointer is null, but a "
+        throw nb::buffer_error("Internal error: bytes pointer is null, but a "
                                "non-zero number of bytes were returned!");
       }
 
       if (bytesRead + pythonLength > bytesToRead) {
-        throw py::buffer_error(
-            "Python returned " + std::to_string(pythonLength) +
-            " bytes, but only " + std::to_string(bytesToRead - bytesRead) +
-            " bytes were requested.");
+        throw nb::buffer_error(
+            ("Python returned " + std::to_string(pythonLength) +
+             " bytes, but only " + std::to_string(bytesToRead - bytesRead) +
+             " bytes were requested.")
+                .c_str());
       }
 
       if (buffer && pythonLength > 0) {
@@ -154,7 +149,7 @@ public:
   }
 
   bool isExhausted() {
-    py::gil_scoped_acquire acquire;
+    nb::gil_scoped_acquire acquire;
 
     if (lastReadWasSmallerThanExpected) {
       return true;
@@ -164,15 +159,15 @@ public:
   }
 
   long long getPosition() {
-    py::gil_scoped_acquire acquire;
+    nb::gil_scoped_acquire acquire;
 
-    return fileLike.attr("tell")().cast<long long>() - peekValue.size();
+    return nb::cast<long long>(fileLike.attr("tell")()) - peekValue.size();
   }
 
   bool setPosition(long long pos) {
-    py::gil_scoped_acquire acquire;
+    nb::gil_scoped_acquire acquire;
 
-    if (fileLike.attr("seekable")().cast<bool>()) {
+    if (nb::cast<bool>(fileLike.attr("seekable")())) {
       fileLike.attr("seek")(pos);
     }
 
