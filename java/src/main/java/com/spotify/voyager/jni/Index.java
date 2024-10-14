@@ -440,7 +440,7 @@ public class Index implements Closeable {
    * @throws RuntimeException If the provided vector does not contain exactly {@link
    *     Index#getNumDimensions()} dimensions.
    */
-  public native void addItem(float[] vector);
+  public native long addItem(float[] vector);
 
   /**
    * Add an item (a vector) to this {@link Index} with the provided identifier.
@@ -450,7 +450,7 @@ public class Index implements Closeable {
    * @throws RuntimeException If the provided vector does not contain exactly {@link
    *     Index#getNumDimensions()} dimensions.
    */
-  public native void addItem(float[] vector, long id);
+  public native long addItem(float[] vector, long id);
 
   /**
    * Add multiple items (vectors) to this {@link Index}.
@@ -461,7 +461,7 @@ public class Index implements Closeable {
    * @throws RuntimeException If any of the provided vectors do not contain exactly {@link
    *     Index#getNumDimensions()} dimensions.
    */
-  public native void addItems(float[][] vectors, int numThreads);
+  public native long[] addItems(float[][] vectors, int numThreads);
 
   /**
    * Add multiple items (vectors) to this {@link Index}.
@@ -478,7 +478,7 @@ public class Index implements Closeable {
    * @throws RuntimeException If the list of IDs does not have the same length as the list of
    *     provided vectors.
    */
-  public native void addItems(float[][] vectors, long[] ids, int numThreads);
+  public native long[] addItems(float[][] vectors, long[] ids, int numThreads);
 
   /**
    * Get the vector for the provided identifier.
