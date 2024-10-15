@@ -437,6 +437,7 @@ public class Index implements Closeable {
    * identifier equal to the return value of {@link Index#getNumElements()}.
    *
    * @param vector The vector to add to the index.
+   * @return The {@link long} ID that was assigned to this vector.
    * @throws RuntimeException If the provided vector does not contain exactly {@link
    *     Index#getNumDimensions()} dimensions.
    */
@@ -447,6 +448,7 @@ public class Index implements Closeable {
    *
    * @param vector The vector to add to the index.
    * @param id The 64-bit integer denoting the identifier of this vector.
+   * @return The {@link long} ID that was assigned to this vector.
    * @throws RuntimeException If the provided vector does not contain exactly {@link
    *     Index#getNumDimensions()} dimensions.
    */
@@ -458,13 +460,15 @@ public class Index implements Closeable {
    * @param vectors The vectors to add to the index.
    * @param numThreads The number of threads to use when adding the provided vectors. If -1 (the
    *     default), the number of CPUs available on the current machine will be used.
+   * @return The auto-generated {@link long} IDs that were assigned to the provided vectors, in the
+   *     same order as the provided vectors.
    * @throws RuntimeException If any of the provided vectors do not contain exactly {@link
    *     Index#getNumDimensions()} dimensions.
    */
   public native long[] addItems(float[][] vectors, int numThreads);
 
   /**
-   * Add multiple items (vectors) to this {@link Index}.
+   * Add multiple items (vectors) to this {@link Index} with the provided identifiers.
    *
    * @param vectors The vectors to add to the index.
    * @param ids The 64-bit identifiers that correspond with each of the provided vectors.
@@ -473,6 +477,8 @@ public class Index implements Closeable {
    *     causes a temporary C++ thread pool to be used. Instead of calling {@link addItems} in a
    *     tight loop, consider passing more data to each {@link addItems} call instead to reduce
    *     overhead.
+   * @return The {@link long} IDs that were assigned to the provided vectors, in the same order as
+   *     the provided vectors.
    * @throws RuntimeException If any of the provided vectors do not contain exactly {@link
    *     Index#getNumDimensions()} dimensions.
    * @throws RuntimeException If the list of IDs does not have the same length as the list of
