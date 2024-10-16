@@ -132,34 +132,37 @@ Java_com_spotify_voyager_jni_Index_saveIndex__Ljava_io_OutputStream_2(JNIEnv *,
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addItem
- * Signature: ([F)V
+ * Signature: ([F)J
  */
-JNIEXPORT void JNICALL
+JNIEXPORT jlong JNICALL
 Java_com_spotify_voyager_jni_Index_addItem___3F(JNIEnv *, jobject, jfloatArray);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addItem
- * Signature: ([FJ)V
+ * Signature: ([FJ)J
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItem___3FJ(
+JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_addItem___3FJ(
     JNIEnv *, jobject, jfloatArray, jlong);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addItems
- * Signature: ([[FI)V
+ * Signature: ([[FI)[J
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItems___3_3FI(
-    JNIEnv *, jobject, jobjectArray, jint);
+JNIEXPORT jlongArray JNICALL
+Java_com_spotify_voyager_jni_Index_addItems___3_3FI(JNIEnv *, jobject,
+                                                    jobjectArray, jint);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addItems
- * Signature: ([[F[JI)V
+ * Signature: ([[F[JI)[J
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(
-    JNIEnv *, jobject, jobjectArray, jlongArray, jint);
+JNIEXPORT jlongArray JNICALL
+Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(JNIEnv *, jobject,
+                                                       jobjectArray, jlongArray,
+                                                       jint);
 
 /*
  * Class:     com_spotify_voyager_jni_Index

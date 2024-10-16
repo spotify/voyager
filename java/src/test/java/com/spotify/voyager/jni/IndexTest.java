@@ -122,10 +122,12 @@ public class IndexTest {
 
       if (testSingleVectorMethods) {
         for (int i = 0; i < inputData.length; i++) {
-          index.addItem(inputData[i], ids[i]);
+          long addedId = index.addItem(inputData[i], ids[i]);
+          assertEquals(ids[i], addedId);
         }
       } else {
-        index.addItems(inputData, ids, -1);
+        long[] addedIds = index.addItems(inputData, ids, -1);
+        assertArrayEquals(ids, addedIds);
       }
 
       // Test property methods
