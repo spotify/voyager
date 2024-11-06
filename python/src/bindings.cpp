@@ -463,8 +463,24 @@ Returns:
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   index.def(
       "query",
-      [](Index &index, nb::ndarray<float> &input, size_t k = 1,
-         int num_threads = -1, long queryEf = -1) {
+      [](Index &index,
+         std::variant<nb::ndarray<float>, std::vector<float>> &_input,
+         size_t k = 1, int num_threads = -1, long queryEf = -1) {
+        // Treat a single vector as a 1D array:
+        if (std::holds_alternative<std::vector<float>>(_input)) {
+          std::vector<float> stdArray = std::get<std::vector<float>>(_input);
+
+          auto idsAndDistances = index.query(stdArray, k, queryEf);
+          std::tuple<nb::ndarray<hnswlib::labeltype, nb::numpy>,
+                     nb::ndarray<float, nb::numpy>>
+              output = {vectorToPyArray<hnswlib::labeltype>(
+                            std::get<0>(idsAndDistances)),
+                        vectorToPyArray<float>(std::get<1>(idsAndDistances))};
+          return output;
+        }
+
+        nb::ndarray<float> input = std::get<nb::ndarray<float>>(_input);
+
         int inputNDim = input.ndim();
         switch (inputNDim) {
         case 1: {
