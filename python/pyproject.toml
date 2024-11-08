@@ -45,3 +45,7 @@ wheel.py-api = "cp312"
 
 [tool.ruff]
 line-length = 120
+
+# Needed for full C++17 support on macOS
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.14"
