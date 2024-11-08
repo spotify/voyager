@@ -1,7 +1,5 @@
 -r test-requirements.txt
 numpy
-pybind11
-pybind11-stubgen==0.16.2
 ruff
 psutil
 mypy

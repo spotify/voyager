@@ -58,7 +58,7 @@ public:
     nb::gil_scoped_acquire acquire;
 
     if (nb::hasattr(fileLike, "name")) {
-      return nb::cast<std::string>(nb::str(fileLike.attr("name")));
+      return nb::cast<std::string>(nb::str(nb::handle(fileLike.attr("name"))));
     } else {
       return {};
     }

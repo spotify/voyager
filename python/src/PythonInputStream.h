@@ -105,11 +105,13 @@ public:
             "Python file-like object was expected to return "
             "bytes from its read(...) method, but "
             "returned " +
-            nb::cast<std::string>(nb::str(readResult.type().attr("__name__"))) +
+            nb::cast<std::string>(
+                nb::str(nb::handle(readResult.type().attr("__name__")))) +
             ".";
 
         if (nb::hasattr(fileLike, "mode") &&
-            nb::cast<std::string>(nb::str(fileLike.attr("mode"))) == "r") {
+            nb::cast<std::string>(nb::str(nb::handle(fileLike.attr("mode")))) ==
+                "r") {
           message += " (Try opening the stream in \"rb\" mode instead of "
                      "\"r\" mode if possible.)";
         }
