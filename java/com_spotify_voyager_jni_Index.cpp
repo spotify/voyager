@@ -377,6 +377,8 @@ jlongArray Java_com_spotify_voyager_jni_Index_addItems___3_3FI(
         index->addItems(toNDArray(env, vectors), {}, numThreads);
 
     // Allocate a Java long array for the IDs:
+    static_assert(sizeof(hnswlib::labeltype) == sizeof(jlong),
+                  "addItems expects hnswlib::labeltype to be a 64-bit integer.");
     jlongArray javaIds = env->NewLongArray(nativeIds.size());
     env->SetLongArrayRegion(javaIds, 0, nativeIds.size(),
                             (jlong *)nativeIds.data());
