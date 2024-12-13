@@ -61,8 +61,7 @@ jobs:
           submodules: recursive
       - name: Install CMake (Windows)
         if: matrix.os == 'windows-latest'
-        run: |
-          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+        run: cmake --version
       - name: Install CMake (MacOS)
         if: matrix.os == 'macos-12'
         run: brew install cmake
