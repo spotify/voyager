@@ -40,7 +40,6 @@ __all__ = [
     "Index",
     "InnerProduct",
     "LabelSetView",
-    "RecallError",
     "Space",
     "StorageDataType",
 ]
@@ -772,7 +771,7 @@ class E4M3T:
         """
 
     @property
-    def mantissa(self) -> int:
+    def mantissa(self) -> float:
         """
         The effective mantissa (non-exponent part) of this E4M3 number, expressed as an integer.
 
@@ -788,7 +787,7 @@ class E4M3T:
         """
 
     @property
-    def raw_mantissa(self) -> float:
+    def raw_mantissa(self) -> int:
         """
         The raw value of the mantissa (non-exponent part) of this E4M3 number, expressed as a floating point value.
 
@@ -887,7 +886,4 @@ class LabelSetView:
     def __iter__(self) -> object: ...
     def __len__(self) -> int: ...
     def __repr__(self) -> str: ...
-    pass
-
-class RecallError(Exception, BaseException):
     pass
