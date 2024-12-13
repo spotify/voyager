@@ -15,10 +15,7 @@ def patch_overload(func):
     if func.__doc__:
         # Work around the fact that pybind11-stubgen generates
         # duplicate docstrings sometimes, once for each overload:
-        while (
-            func.__doc__[len(func.__doc__) // 2 :].strip()
-            == func.__doc__[: -len(func.__doc__) // 2].strip()
-        ):
+        while func.__doc__[len(func.__doc__) // 2 :].strip() == func.__doc__[: -len(func.__doc__) // 2].strip():
             func.__doc__ = func.__doc__[len(func.__doc__) // 2 :].strip()
     return func
 
@@ -307,9 +304,7 @@ class Index:
             originally added to this index.
         """
 
-    def get_vectors(
-        self, ids: typing.List[int]
-    ) -> numpy.ndarray[typing.Any, numpy.dtype[numpy.float32]]:
+    def get_vectors(self, ids: typing.List[int]) -> numpy.ndarray[typing.Any, numpy.dtype[numpy.float32]]:
         """
         Get one or more vectors stored in this index at the provided integer IDs.
         If one or more of the provided IDs cannot be found in the index, a
