@@ -15,10 +15,7 @@ def patch_overload(func):
     if func.__doc__:
         # Work around the fact that pybind11-stubgen generates
         # duplicate docstrings sometimes, once for each overload:
-        while (
-            func.__doc__[len(func.__doc__) // 2 :].strip()
-            == func.__doc__[: -len(func.__doc__) // 2].strip()
-        ):
+        while func.__doc__[len(func.__doc__) // 2 :].strip() == func.__doc__[: -len(func.__doc__) // 2].strip():
             func.__doc__ = func.__doc__[len(func.__doc__) // 2 :].strip()
     return func
 
@@ -178,6 +175,7 @@ class Index:
 
             1234 in index # => returns True or False
         """
+
     def __len__(self) -> int:
         """
         Returns the number of non-deleted vectors in this index.
@@ -189,6 +187,7 @@ class Index:
         .. note::
             This value may differ from :py:attr:`num_elements` if elements have been deleted.
         """
+
     @classmethod
     def __new__(
         cls,
@@ -205,6 +204,7 @@ class Index:
 
         See documentation for :py:meth:`Index.__init__` for details on required arguments.
         """
+
     def add_item(
         self,
         vector: numpy.ndarray[typing.Any, numpy.dtype[numpy.float32]],
@@ -232,6 +232,7 @@ class Index:
             If calling :py:meth:`add_item` in a loop, consider batching your
             calls by using :py:meth:`add_items` instead, which will be faster.
         """
+
     def add_items(
         self,
         vectors: numpy.ndarray[typing.Any, numpy.dtype[numpy.float32]],
@@ -264,6 +265,7 @@ class Index:
             The IDs that were assigned to the provided vectors (either auto-generated or provided), in the
             same order as the provided vectors.
         """
+
     def as_bytes(self) -> bytes:
         """
         Returns the contents of this index as a :py:class:`bytes` object. The resulting object
@@ -281,10 +283,12 @@ class Index:
                 index: voyager.Index = ...
                 serialized_index = bytes(index)
         """
+
     def get_distance(self, a: typing.List[float], b: typing.List[float]) -> float:
         """
         Get the distance between two provided vectors. The vectors must share the dimensionality of the index.
         """
+
     def get_vector(self, id: int) -> numpy.ndarray[typing.Any, numpy.dtype[numpy.float32]]:
         """
         Get the vector stored in this index at the provided integer ID.
@@ -299,9 +303,8 @@ class Index:
             will return a normalized version of the vector that was
             originally added to this index.
         """
-    def get_vectors(
-        self, ids: typing.List[int]
-    ) -> numpy.ndarray[typing.Any, numpy.dtype[numpy.float32]]:
+
+    def get_vectors(self, ids: typing.List[int]) -> numpy.ndarray[typing.Any, numpy.dtype[numpy.float32]]:
         """
         Get one or more vectors stored in this index at the provided integer IDs.
         If one or more of the provided IDs cannot be found in the index, a
@@ -312,6 +315,7 @@ class Index:
             will return normalized versions of the vector that were
             originally added to this index.
         """
+
     @staticmethod
     @typing.overload
     def load(
@@ -404,6 +408,7 @@ class Index:
             However, chunks of data of up to 100MB in size will be read from the file-like
             object at once, hopefully reducing the impact of the GIL.
         """
+
     @staticmethod
     @typing.overload
     def load(filename: str) -> Index: ...
@@ -450,6 +455,7 @@ class Index:
                 index: voyager.Index = ...
                 del index[1234]  # deletes the ID 1234
         """
+
     def query(
         self,
         vectors: numpy.ndarray[typing.Any, numpy.dtype[numpy.float32]],
@@ -523,6 +529,7 @@ class Index:
             data type. While confusing, these negative distances still result in a correct
             ordering between results.
         """
+
     def resize(self, new_size: int) -> None:
         """
         Resize this index, allocating space for up to ``new_size`` elements to
@@ -541,6 +548,7 @@ class Index:
         in advance, as subsequent calls to :py:meth:`add_items` will not need
         to resize the index on-the-fly.
         """
+
     @typing.overload
     def save(self, output_path: str) -> None:
         """
@@ -563,6 +571,7 @@ class Index:
         one or more chunks of data (of up to 100MB each) to the provided object for writing.
 
         """
+
     @typing.overload
     def save(self, file_like: typing.BinaryIO) -> None: ...
     def unmark_deleted(self, id: int) -> None:
@@ -572,6 +581,7 @@ class Index:
         Once unmarked as deleted, an existing ID will show up in the results of
         calls to :py:meth:`query` again.
         """
+
     @property
     def M(self) -> int:
         """
@@ -582,6 +592,7 @@ class Index:
 
 
         """
+
     @property
     def ef(self) -> int:
         """
@@ -599,6 +610,7 @@ class Index:
 
 
         """
+
     @ef.setter
     def ef(self, arg1: int) -> None:
         """
@@ -614,6 +626,7 @@ class Index:
           by passing the ``query_ef`` parameter, allowing finer-grained control over query
           speed and recall.
         """
+
     @property
     def ef_construction(self) -> int:
         """
@@ -623,6 +636,7 @@ class Index:
 
 
         """
+
     @property
     def ids(self) -> LabelSetView:
         """
@@ -644,6 +658,7 @@ class Index:
 
 
         """
+
     @property
     def max_elements(self) -> int:
         """
@@ -664,6 +679,7 @@ class Index:
 
 
         """
+
     @max_elements.setter
     def max_elements(self, arg1: int) -> None:
         """
@@ -682,6 +698,7 @@ class Index:
         Note that assigning to this property is functionally identical to
         calling :py:meth:`resize`.
         """
+
     @property
     def num_dimensions(self) -> int:
         """
@@ -689,6 +706,7 @@ class Index:
 
 
         """
+
     @property
     def num_elements(self) -> int:
         """
@@ -699,6 +717,7 @@ class Index:
 
 
         """
+
     @property
     def space(self) -> Space:
         """
@@ -706,6 +725,7 @@ class Index:
 
 
         """
+
     @property
     def storage_data_type(self) -> StorageDataType:
         """
@@ -724,6 +744,7 @@ class E4M3T:
         """
         Cast the given E4M3 number to a float.
         """
+
     @typing.overload
     def __init__(self, value: float) -> None:
         """
@@ -731,6 +752,7 @@ class E4M3T:
 
         Create an E4M3 number given a sign, exponent, and mantissa. If out of range, the values will be clipped.
         """
+
     @typing.overload
     def __init__(self, sign: int, exponent: int, mantissa: int) -> None: ...
     def __repr__(self) -> str: ...
@@ -739,6 +761,7 @@ class E4M3T:
         """
         Create an E4M3 number given a raw 8-bit value.
         """
+
     @property
     def exponent(self) -> int:
         """
@@ -746,6 +769,7 @@ class E4M3T:
 
 
         """
+
     @property
     def mantissa(self) -> float:
         """
@@ -753,6 +777,7 @@ class E4M3T:
 
 
         """
+
     @property
     def raw_exponent(self) -> int:
         """
@@ -760,6 +785,7 @@ class E4M3T:
 
 
         """
+
     @property
     def raw_mantissa(self) -> int:
         """
@@ -767,6 +793,7 @@ class E4M3T:
 
 
         """
+
     @property
     def sign(self) -> int:
         """
@@ -774,6 +801,7 @@ class E4M3T:
 
 
         """
+
     @property
     def size(self) -> int:
         """
@@ -800,6 +828,7 @@ class Float8Index(Index):
         """
         Create a new, empty index.
         """
+
     def __repr__(self) -> str: ...
     pass
 
@@ -820,6 +849,7 @@ class FloatIndex(Index):
         """
         Create a new, empty index.
         """
+
     def __repr__(self) -> str: ...
     pass
 
@@ -840,6 +870,7 @@ class E4M3Index(Index):
         """
         Create a new, empty index.
         """
+
     def __repr__(self) -> str: ...
     pass
 
