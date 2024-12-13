@@ -165,7 +165,7 @@ jobs:
           pip install wheel
           pip install -r dev-requirements.txt
       - name: Build voyager locally
-        run: python setup.py develop
+        run: python -m pip install .
       - name: Run tox tests
         run: tox
 
@@ -206,7 +206,7 @@ jobs:
           USE_ASAN: "1"
           CC: clang
           CXX: clang++
-        run: python setup.py develop
+        run: python -m pip install .
       - name: Run tox tests with ASan loaded
         # pytest can exit before all Python objects have been destroyed,
         # so we tell ASan to ignore leaks.
@@ -330,9 +330,8 @@ jobs:
           # on macOS and with Python 3.10: building NumPy from source fails without these options:
           CIBW_ENVIRONMENT: NPY_BLAS_ORDER="" NPY_LAPACK_ORDER=""
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: pip install auditwheel-symbols && (auditwheel repair -w {dest_dir} {wheel} || auditwheel-symbols --manylinux 2010 {wheel})
-          # Use the minimum macOS deployment target that has C++17 support:
           CIBW_TEST_SKIP: "*aarch64"
-          MACOSX_DEPLOYMENT_TARGET: "10.13"
+          MACOSX_DEPLOYMENT_TARGET: "10.14"
       - uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
