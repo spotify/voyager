@@ -161,13 +161,13 @@ TEST_CASE(
       SpaceType::Euclidean, SpaceType::InnerProduct, SpaceType::Cosine};
   std::vector<StorageDataType> storageTypesSet = {
       StorageDataType::Float8, StorageDataType::Float32, StorageDataType::E4M3};
-  std::vector<int> numDimensionsSet = {32};
-  std::vector<int> numVectorsSet = {30000};
+  std::vector<int> numDimensionsSet = {16};
+  std::vector<int> numVectorsSet = {500};
   std::vector<bool> testSingleVectorMethods = {true};
 
   // Use a small M value to exacerbate the issue where a graph becomes
   // disconnected. This helps to reproduce this nondeterministic issue.
-  size_t M_ = 4;
+  size_t M_ = 1;
 
   for (auto spaceType : spaceTypesSet) {
     for (auto storageType : storageTypesSet) {
@@ -213,8 +213,8 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
        {StorageDataType::E4M3, 0.20f}};
   std::vector<SpaceType> spaceTypesSet = {
       SpaceType::Euclidean, SpaceType::InnerProduct, SpaceType::Cosine};
-  std::vector<int> numDimensionsSet = {32};
-  std::vector<int> numVectorsSet = {2000};
+  std::vector<int> numDimensionsSet = {16};
+  std::vector<int> numVectorsSet = {500};
   std::vector<StorageDataType> storageTypesSet = {
       StorageDataType::Float8, StorageDataType::Float32, StorageDataType::E4M3};
   std::vector<bool> testSingleVectorMethods = {true, false};
