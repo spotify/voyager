@@ -353,6 +353,7 @@ jlong Java_com_spotify_voyager_jni_Index_addItem___3F(JNIEnv *env, jobject self,
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
     }
   }
+  return -1;
 }
 
 jlong Java_com_spotify_voyager_jni_Index_addItem___3FJ(JNIEnv *env,
@@ -367,6 +368,7 @@ jlong Java_com_spotify_voyager_jni_Index_addItem___3FJ(JNIEnv *env,
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
     }
   }
+  return -1;
 }
 
 jlongArray Java_com_spotify_voyager_jni_Index_addItems___3_3FI(
@@ -389,6 +391,7 @@ jlongArray Java_com_spotify_voyager_jni_Index_addItems___3_3FI(
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
     }
   }
+  return nullptr;
 }
 
 jlongArray Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(
@@ -412,6 +415,7 @@ jlongArray Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
     }
   }
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
