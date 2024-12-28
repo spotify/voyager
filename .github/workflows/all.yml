@@ -197,7 +197,7 @@ jobs:
           submodules: recursive
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y pkg-config libclang-rt-18-dev
+        run: sudo apt-get update && sudo apt-get install -y pkg-config 
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
@@ -217,6 +217,13 @@ jobs:
         run: |
           ASAN_OPTIONS=detect_leaks=0 \
           LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
+          # Check if the library path is empty
+          if [ -z "$LD_PRELOAD" ]; then
+            echo "Error: AddressSanitizer runtime library not found."
+            exit 1
+          else
+            echo "AddressSanitizer runtime library found at: $LD_PRELOAD"
+          fi
           tox
 
   run-benchmarks:
