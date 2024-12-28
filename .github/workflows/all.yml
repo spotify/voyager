@@ -164,6 +164,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel
+          pip install setuptools
           pip install -r dev-requirements.txt
       - name: Build voyager locally
         run: python setup.py develop
@@ -201,6 +202,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel
+          pip install setuptools
           pip install -r dev-requirements.txt
       - name: Build voyager locally
         env:
