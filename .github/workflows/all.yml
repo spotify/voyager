@@ -208,13 +208,6 @@ jobs:
         run: |
           ASAN_OPTIONS=detect_leaks=0 \
           LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
-          # Check if the library path is empty
-          if [ -z "$LD_PRELOAD" ]; then
-            echo "Error: AddressSanitizer runtime library not found."
-            exit 1
-          else
-            echo "AddressSanitizer runtime library found at: $LD_PRELOAD"
-          fi
           tox
 
   run-benchmarks:
