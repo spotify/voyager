@@ -15,7 +15,9 @@
 #include <assert.h>
 #include <atomic>
 #include <bitset>
+#include <cstring>
 #include <iostream>
+#include <mutex>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/bind_vector.h>
@@ -26,6 +28,7 @@
 #include <nanobind/stl/unique_ptr.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/stl/vector.h>
+#include <optional>
 #include <ratio>
 #include <stdlib.h>
 #include <thread>

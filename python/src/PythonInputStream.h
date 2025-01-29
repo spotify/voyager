@@ -17,10 +17,10 @@
 #include <mutex>
 #include <optional>
 
-namespace nb = nanobind;
-
-#include "../../cpp/src/StreamUtils.h"
 #include "PythonFileLike.h"
+#include "cpp/src/StreamUtils.h"
+
+namespace nb = nanobind;
 
 bool isReadableFileLike(nb::object fileLike) {
   return nb::hasattr(fileLike, "read") && nb::hasattr(fileLike, "seek") &&
