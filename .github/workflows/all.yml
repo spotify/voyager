@@ -317,9 +317,6 @@ jobs:
         uses: docker/setup-qemu-action@v1
         with:
           platforms: all
-      - name: Reify symlinks before build
-        if: runner.os == 'Linux'
-        run: find . -type l -exec readlink -f {} \;
       - name: Build wheels
         run: cp -r cpp python/cpp && cd python && python -m cibuildwheel --output-dir ../wheelhouse
         env:
