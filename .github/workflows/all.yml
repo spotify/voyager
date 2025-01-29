@@ -252,7 +252,7 @@ jobs:
   build-python-wheels:
     # needs: [run-python-tests, run-python-tests-with-address-sanitizer]
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
+    continue-on-error: false
     if: true # (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
     strategy:
       matrix:
@@ -318,7 +318,7 @@ jobs:
         with:
           platforms: all
       - name: Build wheels
-        run: rm -rfv python/cpp && cp -rv cpp python/cpp && cd python && python -m cibuildwheel --output-dir ../wheelhouse
+        run: rm -rf python/cpp && cp -r cpp python/cpp && cd python && python -m cibuildwheel --output-dir ../wheelhouse
         env:
           CIBW_TEST_REQUIRES: -r dev-requirements.txt
           CIBW_TEST_COMMAND: "pytest {project}/tests -x"
