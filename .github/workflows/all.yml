@@ -250,7 +250,7 @@ jobs:
              asv continuous --sort name --no-only-changed refs/remotes/origin/main ${{ github.sha }} | tee >(sed '1,/All benchmarks:/d' > $GITHUB_STEP_SUMMARY)
 
   build-python-wheels:
-    # needs: [run-python-tests, run-python-tests-with-address-sanitizer]
+    needs: [run-python-tests, run-python-tests-with-address-sanitizer]
     runs-on: ${{ matrix.os }}
     continue-on-error: false
     if: true # (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
