@@ -868,7 +868,8 @@ Use the ``in`` operator to call this method::
     1234 in index # => returns True or False
 )");
 
-  index.def("__len__", [](Index &self) { return self.getIDsMap().size(); }, R"(
+  index.def(
+      "__len__", [](Index &self) { return self.getIDsMap().size(); }, R"(
 Returns the number of non-deleted vectors in this index.
 
 Use the ``len`` operator to call this method::
