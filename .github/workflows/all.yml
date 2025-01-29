@@ -152,6 +152,8 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - name: Copy README into place
+        run: cp ../README.md ./
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y pkg-config 
@@ -165,7 +167,7 @@ jobs:
           pip install wheel
           pip install -r dev-requirements.txt
       - name: Build voyager locally
-        run: python setup.py develop
+        run: python -m pip install .
       - name: Run tox tests
         run: tox
 
@@ -192,6 +194,8 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - name: Copy README into place
+        run: cp ../README.md ./
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y pkg-config 
@@ -206,7 +210,7 @@ jobs:
           USE_ASAN: "1"
           CC: clang
           CXX: clang++
-        run: python setup.py develop
+        run: python -m pip install .
       - name: Run tox tests with ASan loaded
         # pytest can exit before all Python objects have been destroyed,
         # so we tell ASan to ignore leaks.
@@ -248,12 +252,11 @@ jobs:
   build-python-wheels:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
+    continue-on-error: false
     if: true # (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
     strategy:
       matrix:
         include:
-        - { os: macos-latest, build: cp37-macosx_x86_64 }
         - { os: macos-latest, build: cp38-macosx_x86_64 }
         - { os: macos-latest, build: cp39-macosx_x86_64 }
         - { os: macos-latest, build: cp310-macosx_x86_64 }
@@ -272,7 +275,6 @@ jobs:
         # - { os: macos-latest, build: pp37-macosx_x86_64 }
         # - { os: macos-latest, build: pp38-macosx_x86_64 }
         # - { os: macos-latest, build: pp39-macosx_x86_64 }
-        - { os: windows-latest, build: cp37-win_amd64 }
         - { os: windows-latest, build: cp38-win_amd64 }
         - { os: windows-latest, build: cp39-win_amd64 }
         - { os: windows-latest, build: cp310-win_amd64 }
@@ -281,8 +283,6 @@ jobs:
         # - { os: windows-latest, build: pp37-win_amd64 }
         # - { os: windows-latest, build: pp38-win_amd64 }
         # - { os: windows-latest, build: pp39-win_amd64 }
-        - { os: 'ubuntu-latest', build: cp37-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp37-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp38-manylinux_x86_64 }
         - { os: 'ubuntu-latest', build: cp38-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp39-manylinux_x86_64 }
@@ -317,8 +317,15 @@ jobs:
         uses: docker/setup-qemu-action@v1
         with:
           platforms: all
+      - name: Copy C++ code into place
+        run: rm -rfv python/src/cpp && cp -r cpp python/src
+        if: runner.os == 'Linux'
+      - name: Show directory structure for debugging
+        run: ls -lR .
+        if: runner.os == 'Linux'
       - name: Build wheels
-        run: cp -r cpp python/cpp && cd python && python -m cibuildwheel --output-dir ../wheelhouse
+        working-directory: python
+        run: python -m cibuildwheel --output-dir ../wheelhouse
         env:
           CIBW_TEST_REQUIRES: -r dev-requirements.txt
           CIBW_TEST_COMMAND: "pytest {project}/tests -x"
@@ -330,9 +337,8 @@ jobs:
           # on macOS and with Python 3.10: building NumPy from source fails without these options:
           CIBW_ENVIRONMENT: NPY_BLAS_ORDER="" NPY_LAPACK_ORDER=""
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: pip install auditwheel-symbols && (auditwheel repair -w {dest_dir} {wheel} || auditwheel-symbols --manylinux 2010 {wheel})
-          # Use the minimum macOS deployment target that has C++17 support:
           CIBW_TEST_SKIP: "*aarch64"
-          MACOSX_DEPLOYMENT_TARGET: "10.13"
+          MACOSX_DEPLOYMENT_TARGET: "10.14"
       - uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
