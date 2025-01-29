@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.spotify.voyager"},{"l":"com.spotify.voyager.jni"},{"l":"com.spotify.voyager.jni.exception"},{"l":"com.spotify.voyager.jni.utils"}];updateSearchResults();

@@ -12,7 +12,7 @@
 
   <name>voyager</name>
   <artifactId>voyager</artifactId>
-  <version>2.0.10</version>
+  <version>2.1.0</version>
 
   <description>
     Voyager is a library for performing fast approximate nearest-neighbor searches on an in-memory collection of vectors.
@@ -176,6 +176,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.7.0</version>
         <configuration>
           <source>8</source>
           <outputDirectory>../docs/java</outputDirectory>

@@ -343,57 +343,79 @@ void Java_com_spotify_voyager_jni_Index_nativeConstructor(
   }
 }
 
-void Java_com_spotify_voyager_jni_Index_addItem___3F(JNIEnv *env, jobject self,
-                                                     jfloatArray vector) {
+jlong Java_com_spotify_voyager_jni_Index_addItem___3F(JNIEnv *env, jobject self,
+                                                      jfloatArray vector) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
-    index->addItem(toStdVector(env, vector), {});
+    return index->addItem(toStdVector(env, vector), {});
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
     }
   }
+  return -1;
 }
 
-void Java_com_spotify_voyager_jni_Index_addItem___3FJ(JNIEnv *env, jobject self,
-                                                      jfloatArray vector,
-                                                      jlong id) {
+jlong Java_com_spotify_voyager_jni_Index_addItem___3FJ(JNIEnv *env,
+                                                       jobject self,
+                                                       jfloatArray vector,
+                                                       jlong id) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
-    index->addItem(toStdVector(env, vector), {id});
+    return index->addItem(toStdVector(env, vector), {id});
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
     }
   }
+  return -1;
 }
 
-void Java_com_spotify_voyager_jni_Index_addItems___3_3FI(JNIEnv *env,
-                                                         jobject self,
-                                                         jobjectArray vectors,
-                                                         jint numThreads) {
+jlongArray Java_com_spotify_voyager_jni_Index_addItems___3_3FI(
+    JNIEnv *env, jobject self, jobjectArray vectors, jint numThreads) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
-    index->addItems(toNDArray(env, vectors), {}, numThreads);
+    std::vector<hnswlib::labeltype> nativeIds =
+        index->addItems(toNDArray(env, vectors), {}, numThreads);
+
+    // Allocate a Java long array for the IDs:
+    static_assert(
+        sizeof(hnswlib::labeltype) == sizeof(jlong),
+        "addItems expects hnswlib::labeltype to be a 64-bit integer.");
+    jlongArray javaIds = env->NewLongArray(nativeIds.size());
+    env->SetLongArrayRegion(javaIds, 0, nativeIds.size(),
+                            (jlong *)nativeIds.data());
+    return javaIds;
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
     }
   }
+  return nullptr;
 }
 
-void Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(
+jlongArray Java_com_spotify_voyager_jni_Index_addItems___3_3F_3JI(
     JNIEnv *env, jobject self, jobjectArray vectors, jlongArray ids,
     jint numThreads) {
   try {
     std::shared_ptr<Index> index = getHandle<Index>(env, self);
-    index->addItems(toNDArray(env, vectors), toUnsignedStdVector(env, ids),
-                    numThreads);
+    std::vector<hnswlib::labeltype> nativeIds = index->addItems(
+        toNDArray(env, vectors), toUnsignedStdVector(env, ids), numThreads);
+
+    // Allocate a Java long array for the IDs:
+    static_assert(
+        sizeof(hnswlib::labeltype) == sizeof(jlong),
+        "addItems expects hnswlib::labeltype to be a 64-bit integer.");
+    jlongArray javaIds = env->NewLongArray(nativeIds.size());
+    env->SetLongArrayRegion(javaIds, 0, nativeIds.size(),
+                            (jlong *)nativeIds.data());
+    return javaIds;
   } catch (std::exception const &e) {
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
     }
   }
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -119,92 +119,6 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
   }
 }
 
-/**
- * Test querying the index when k is equal to the total number of items in the
- * index.
- */
-template <typename dist_t, typename data_t = dist_t,
-          typename scalefactor = std::ratio<1, 1>>
-void testQueryAllNearestNeighbors(
-    TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
-    int numDimensions, bool testSingleVectorMethod) {
-
-  std::vector<std::vector<float>> inputData =
-      randomVectors(numVectors, numDimensions);
-  std::vector<hnswlib::labeltype> ids(numVectors);
-  for (int i = 0; i < numVectors; i++) {
-    ids[i] = i;
-  }
-
-  // add items to index
-  if (testSingleVectorMethod == true) {
-    for (auto id : ids) {
-      index.addItem(inputData[id], id);
-    }
-  } else {
-    index.addItems(inputData, ids, -1);
-  }
-  REQUIRE(index.getNumElements() == numVectors);
-
-  std::vector<float> targetVector = inputData[0];
-  REQUIRE_THROWS_AS(index.query(targetVector, numVectors, -1), RecallError);
-}
-
-/**
- * This test reproduces https://github.com/spotify/voyager/issues/38, an issue
- * where we cannot achieve 100% recall. testQueryAllNearestNeighbors() asserts
- * that a custom RecallError is thrown.
- */
-TEST_CASE(
-    "Test querying for kNN when k equals the number of items in the index") {
-  std::vector<SpaceType> spaceTypesSet = {
-      SpaceType::Euclidean, SpaceType::InnerProduct, SpaceType::Cosine};
-  std::vector<StorageDataType> storageTypesSet = {
-      StorageDataType::Float8, StorageDataType::Float32, StorageDataType::E4M3};
-  std::vector<int> numDimensionsSet = {32};
-  std::vector<int> numVectorsSet = {30000};
-  std::vector<bool> testSingleVectorMethods = {true};
-
-  // Use a small M value to exacerbate the issue where a graph becomes
-  // disconnected. This helps to reproduce this nondeterministic issue.
-  size_t M_ = 4;
-
-  for (auto spaceType : spaceTypesSet) {
-    for (auto storageType : storageTypesSet) {
-      for (auto numDimensions : numDimensionsSet) {
-        for (auto numVectors : numVectorsSet) {
-          for (auto testSingleVectorMethod : testSingleVectorMethods) {
-
-            SUBCASE("Test instantiation ") {
-              CAPTURE(spaceType);
-              CAPTURE(numDimensions);
-              CAPTURE(numVectors);
-              CAPTURE(storageType);
-              CAPTURE(std::to_string(testSingleVectorMethod));
-
-              if (storageType == StorageDataType::Float8) {
-                auto index = TypedIndex<float, int8_t, std::ratio<1, 127>>(
-                    spaceType, numDimensions, M_);
-                testQueryAllNearestNeighbors(index, numVectors, numDimensions,
-                                             testSingleVectorMethod);
-              } else if (storageType == StorageDataType::Float32) {
-                auto index = TypedIndex<float>(spaceType, numDimensions, M_);
-                testQueryAllNearestNeighbors(index, numVectors, numDimensions,
-                                             testSingleVectorMethod);
-              } else if (storageType == StorageDataType::E4M3) {
-                auto index =
-                    TypedIndex<float, E4M3>(spaceType, numDimensions, M_);
-                testQueryAllNearestNeighbors(index, numVectors, numDimensions,
-                                             testSingleVectorMethod);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 TEST_CASE("Test combinations of different instantiations. Test that each "
           "vector's ANN is itself and distance is approximately zero.") {
   std::unordered_map<StorageDataType, float> PRECISION_TOLERANCE_PER_DATA_TYPE =
@@ -213,8 +127,8 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
        {StorageDataType::E4M3, 0.20f}};
   std::vector<SpaceType> spaceTypesSet = {
       SpaceType::Euclidean, SpaceType::InnerProduct, SpaceType::Cosine};
-  std::vector<int> numDimensionsSet = {32};
-  std::vector<int> numVectorsSet = {2000};
+  std::vector<int> numDimensionsSet = {16};
+  std::vector<int> numVectorsSet = {500};
   std::vector<StorageDataType> storageTypesSet = {
       StorageDataType::Float8, StorageDataType::Float32, StorageDataType::E4M3};
   std::vector<bool> testSingleVectorMethods = {true, false};

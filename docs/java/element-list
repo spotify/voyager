@@ -1,3 +1,4 @@
 com.spotify.voyager
 com.spotify.voyager.jni
+com.spotify.voyager.jni.exception
 com.spotify.voyager.jni.utils
