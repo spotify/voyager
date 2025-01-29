@@ -1,4 +1,4 @@
-include *.txt tox.ini  *.md
+include *.txt tox.ini *.md
 recursive-include tests *.py
 
 graft src
