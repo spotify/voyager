@@ -31,7 +31,7 @@ else()
   set(DEV_MODULE Development.Module)
 endif()
 
-find_package(Python 3.10 COMPONENTS Interpreter ${DEV_MODULE})
+find_package(Python 3.8 COMPONENTS Interpreter ${DEV_MODULE})
 
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
