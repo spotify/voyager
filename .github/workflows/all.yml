@@ -317,11 +317,14 @@ jobs:
         uses: docker/setup-qemu-action@v1
         with:
           platforms: all
+      - name: Copy C++ code into place
+        run: cp -r cpp python/cpp
       - name: Show directory structure for debugging
         run: ls -lR .
         if: runner.os == 'Linux'
       - name: Build wheels
-        run: cp -r cpp python/cpp && cd python && python -m cibuildwheel --output-dir ../wheelhouse
+        working-directory: java
+        run: cd python && python -m cibuildwheel --output-dir ../wheelhouse
         env:
           CIBW_TEST_REQUIRES: -r dev-requirements.txt
           CIBW_TEST_COMMAND: "pytest {project}/tests -x"
