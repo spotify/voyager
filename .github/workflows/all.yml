@@ -317,6 +317,9 @@ jobs:
         uses: docker/setup-qemu-action@v1
         with:
           platforms: all
+      - name: Show directory structure for debugging
+        run: ls -lR .
+        if: runner.os == 'Linux'
       - name: Build wheels
         run: cp -r cpp python/cpp && cd python && python -m cibuildwheel --output-dir ../wheelhouse
         env:
