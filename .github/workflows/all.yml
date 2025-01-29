@@ -323,8 +323,8 @@ jobs:
         run: ls -lR .
         if: runner.os == 'Linux'
       - name: Build wheels
-        working-directory: java
-        run: cd python && python -m cibuildwheel --output-dir ../wheelhouse
+        working-directory: python
+        run: python -m cibuildwheel --output-dir ../wheelhouse
         env:
           CIBW_TEST_REQUIRES: -r dev-requirements.txt
           CIBW_TEST_COMMAND: "pytest {project}/tests -x"
