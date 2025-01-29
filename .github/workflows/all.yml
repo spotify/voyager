@@ -318,7 +318,8 @@ jobs:
         with:
           platforms: all
       - name: Copy C++ code into place
-        run: cp -r cpp python/src
+        run: rm -rfv python/src/cpp && cp -r cpp python/src
+        if: runner.os == 'Linux'
       - name: Show directory structure for debugging
         run: ls -lR .
         if: runner.os == 'Linux'
