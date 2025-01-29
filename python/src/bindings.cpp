@@ -32,7 +32,7 @@
 
 #include "PythonInputStream.h"
 #include "PythonOutputStream.h"
-#include "cpp/TypedIndex.h"
+#include "cpp/src/TypedIndex.h"
 
 namespace nb = nanobind;
 using namespace nanobind::literals; // needed to bring in _a literal
