@@ -339,7 +339,7 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: pip install auditwheel-symbols && (auditwheel repair -w {dest_dir} {wheel} || auditwheel-symbols --manylinux 2010 {wheel})
           CIBW_TEST_SKIP: "*aarch64"
           MACOSX_DEPLOYMENT_TARGET: "10.14"
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: python-wheels
@@ -378,7 +378,7 @@ jobs:
         run: mvn --batch-mode package
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: java-${{ matrix.os }}
@@ -421,7 +421,7 @@ jobs:
           objdump -T combined-jar/linux-x64/libvoyager.so | grep GLIBCXX | sed 's/.*GLIBCXX_\([.0-9]*\).*/\1/g' | cat - <(echo 3\.4\.22) | sort -Vu | tail -n 1 | grep 3\.4\.22  || (echo "Expected linux-x64 binary to require at most glibc++ 3.4.22. Ensure the dockcross container has not been updated." && false)
 
           zip -r $(ls java-* | grep jar | tail -n 1) combined-jar/*
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: java-all-platforms
