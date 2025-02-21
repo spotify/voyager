@@ -342,7 +342,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
-          name: python-wheels
+          name: python-wheels-${{ matrix.build }}
           path: ./wheelhouse/*.whl
 
   build-java-jars:
@@ -389,7 +389,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-java-jars
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Unpack and Repack JARs
@@ -436,7 +436,7 @@ jobs:
     name: "Upload wheels to PyPI"
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: python-wheels
           path: dist
@@ -455,7 +455,7 @@ jobs:
         working-directory: java
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: java-all-platforms
           path: combined-jar
