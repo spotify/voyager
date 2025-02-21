@@ -643,7 +643,7 @@ public:
     return {labels, distances};
   }
 
-  std::tuple<std::vector<hnswlib::labeltype>, std::vector<dist_t>>
+  std::tuple<std::vector<hnswlib::labeltype>, std::vector<float>>
   query(std::vector<float> floatQueryVector, int k = 1,
         long queryEf = -1) override {
     if (queryEf > 0 && queryEf < k) {
