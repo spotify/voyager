@@ -137,11 +137,8 @@ jobs:
     strategy:
       matrix:
         python-version:
-#           - '3.7'
           - '3.8'
-#           - '3.9'
-#           - '3.10'
-#           - '3.11'
+          - '3.13'
         os: ['ubuntu-latest', windows-latest, macos-latest]
     name: Test with Python ${{ matrix.python-version }} on ${{ matrix.os }}
     steps:
@@ -165,6 +162,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel
+          pip install setuptools
           pip install -r dev-requirements.txt
       - name: Build voyager locally
         run: python -m pip install .
@@ -179,11 +177,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-#           - '3.7'
           - '3.8'
-#           - '3.9'
-#           - '3.10'
-#           - '3.11'
         os: ['ubuntu-latest']
     name: Test with Python ${{ matrix.python-version }} + Address Sanitizer
     steps:
@@ -203,6 +197,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel
+          pip install setuptools
           pip install -r dev-requirements.txt
       - name: Build voyager locally
         env:
@@ -262,27 +257,25 @@ jobs:
         - { os: macos-latest, build: cp310-macosx_x86_64 }
         - { os: macos-latest, build: cp311-macosx_x86_64 }
         - { os: macos-latest, build: cp312-macosx_x86_64 }
+        - { os: macos-latest, build: cp313-macosx_x86_64 }
         - { os: macos-latest, build: cp38-macosx_universal2 }
         - { os: macos-latest, build: cp39-macosx_universal2 }
         - { os: macos-latest, build: cp310-macosx_universal2 }
         - { os: macos-latest, build: cp311-macosx_universal2 }
         - { os: macos-latest, build: cp312-macosx_universal2 }
+        - { os: macos-latest, build: cp313-macosx_universal2 }
         - { os: macos-latest, build: cp38-macosx_arm64 }
         - { os: macos-latest, build: cp39-macosx_arm64 }
         - { os: macos-latest, build: cp310-macosx_arm64 }
         - { os: macos-latest, build: cp311-macosx_arm64 }
         - { os: macos-latest, build: cp312-macosx_arm64 }
-        # - { os: macos-latest, build: pp37-macosx_x86_64 }
-        # - { os: macos-latest, build: pp38-macosx_x86_64 }
-        # - { os: macos-latest, build: pp39-macosx_x86_64 }
+        - { os: macos-latest, build: cp313-macosx_arm64 }
         - { os: windows-latest, build: cp38-win_amd64 }
         - { os: windows-latest, build: cp39-win_amd64 }
         - { os: windows-latest, build: cp310-win_amd64 }
         - { os: windows-latest, build: cp311-win_amd64 }
         - { os: windows-latest, build: cp312-win_amd64 }
-        # - { os: windows-latest, build: pp37-win_amd64 }
-        # - { os: windows-latest, build: pp38-win_amd64 }
-        # - { os: windows-latest, build: pp39-win_amd64 }
+        - { os: windows-latest, build: cp313-win_amd64 }
         - { os: 'ubuntu-latest', build: cp38-manylinux_x86_64 }
         - { os: 'ubuntu-latest', build: cp38-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp39-manylinux_x86_64 }
@@ -293,12 +286,8 @@ jobs:
         - { os: 'ubuntu-latest', build: cp311-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp312-manylinux_x86_64 }
         - { os: 'ubuntu-latest', build: cp312-manylinux_aarch64 }
-        # - { os: 'ubuntu-latest', build: pp37-manylinux_x86_64 }
-        # - { os: 'ubuntu-latest', build: pp37-manylinux_aarch64 }
-        # - { os: 'ubuntu-latest', build: pp38-manylinux_x86_64 }
-        # - { os: 'ubuntu-latest', build: pp38-manylinux_aarch64 }
-        # - { os: 'ubuntu-latest', build: pp39-manylinux_x86_64 }
-        # - { os: 'ubuntu-latest', build: pp39-manylinux_aarch64 }
+        - { os: 'ubuntu-latest', build: cp313-manylinux_x86_64 }
+        - { os: 'ubuntu-latest', build: cp313-manylinux_aarch64 }
     name: Build wheel for ${{ matrix.build }}
     steps:
       - uses: actions/checkout@v3

@@ -58,6 +58,7 @@ You can find the latest version on [Voyager's Releases page](https://github.com/
 | Linux     | Python   | 3.10    | ✅       | ✅       |
 | Linux     | Python   | 3.11    | ✅       | ✅       |
 | Linux     | Python   | 3.12    | ✅       | ✅       |
+| Linux     | Python   | 3.13    | ✅       | ✅       |
 | Linux     | Java     | 8-16+   | ✅       | ✅      |
 | macOS     | Python   | 3.7     | ✅       | ✅       |
 | macOS     | Python   | 3.8     | ✅       | ✅       |
@@ -65,6 +66,7 @@ You can find the latest version on [Voyager's Releases page](https://github.com/
 | macOS     | Python   | 3.10    | ✅       | ✅       |
 | macOS     | Python   | 3.11    | ✅       | ✅       |
 | macOS     | Python   | 3.12    | ✅       | ✅       |
+| macOS     | Python   | 3.13    | ✅       | ✅       |
 | macOS     | Java     | 8-16+   | ✅       | ✅       |
 | Windows   | Python   | 3.7     | ✅       | ❌       |
 | Windows   | Python   | 3.8     | ✅       | ❌       |
@@ -72,6 +74,7 @@ You can find the latest version on [Voyager's Releases page](https://github.com/
 | Windows   | Python   | 3.10    | ✅       | ❌       |
 | Windows   | Python   | 3.11    | ✅       | ❌       |
 | Windows   | Python   | 3.12    | ✅       | ❌       |
+| Windows   | Python   | 3.13    | ✅       | ❌       |
 | Windows   | Java     | 8-16+   | ✅       | ❌       |
 
 
