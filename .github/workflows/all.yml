@@ -244,6 +244,53 @@ jobs:
              asv machine --yes
              asv continuous --sort name --no-only-changed refs/remotes/origin/main ${{ github.sha }} | tee >(sed '1,/All benchmarks:/d' > $GITHUB_STEP_SUMMARY)
 
+  build-python-sdist:
+    needs: [run-python-tests, run-python-tests-with-address-sanitizer]
+    continue-on-error: false
+    runs-on: 'ubuntu-latest'
+    if: true # (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
+    name: Build Python source distribution
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+      - name: Copy README into place
+        run: cp README.md python/
+      - name: Set up QEMU for aarch64 on Linux
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: all
+      - name: Copy C++ code into place
+        run: rm -rfv python/src/cpp && cp -r cpp python/src
+        if: runner.os == 'Linux'
+      - name: Show directory structure for debugging
+        run: ls -lR .
+        if: runner.os == 'Linux'
+      - name: Build source distribution
+        working-directory: python
+        run: python -m build --sdist --outdir ../dist
+        env:
+          CIBW_TEST_REQUIRES: -r dev-requirements.txt
+          CIBW_TEST_COMMAND: "pytest {project}/tests -x"
+          CIBW_BUILD: ${{ matrix.build }}
+          CIBW_ARCHS: auto64
+          CIBW_ARCHS_LINUX: auto64 aarch64
+          CIBW_ARCHS_MACOS: x86_64 universal2 arm64
+          CIBW_ARCHS_WINDOWS: AMD64
+          CIBW_ENVIRONMENT: NPY_BLAS_ORDER="" NPY_LAPACK_ORDER=""
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: pip install auditwheel-symbols && (auditwheel repair -w {dest_dir} {wheel} || auditwheel-symbols --manylinux 2010 {wheel})
+          CIBW_TEST_SKIP: "*aarch64"
+          MACOSX_DEPLOYMENT_TARGET: "10.14"
+      - uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: python-sdist
+          path: ./dist/*.tar.gz
+
   build-python-wheels:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
     runs-on: ${{ matrix.os }}
@@ -420,14 +467,18 @@ jobs:
     defaults:
       run:
         working-directory: python
-    needs: [build-python-wheels, run-python-tests-with-address-sanitizer, run-python-tests]
+    needs: [build-python-wheels, build-python-sdist, run-python-tests-with-address-sanitizer, run-python-tests]
     runs-on: 'ubuntu-latest'
-    name: "Upload wheels to PyPI"
+    name: "Upload wheels and sdist to PyPI"
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: python-wheels
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-sdist
           path: dist
       - uses: pypa/gh-action-pypi-publish@v1.4.2
         with:
