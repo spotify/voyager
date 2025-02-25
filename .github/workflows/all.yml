@@ -248,7 +248,7 @@ jobs:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
     continue-on-error: false
     runs-on: 'ubuntu-latest'
-    if: true # (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
+    if: true
     name: Build Python source distribution
     steps:
       - uses: actions/checkout@v3
@@ -285,7 +285,7 @@ jobs:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
     runs-on: ${{ matrix.os }}
     continue-on-error: false
-    if: true # (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
+    if: true
     strategy:
       matrix:
         include:
