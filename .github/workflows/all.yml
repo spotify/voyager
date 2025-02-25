@@ -273,18 +273,6 @@ jobs:
       - name: Build source distribution
         working-directory: python
         run: python -m build --sdist --outdir ../dist
-        env:
-          CIBW_TEST_REQUIRES: -r dev-requirements.txt
-          CIBW_TEST_COMMAND: "pytest {project}/tests -x"
-          CIBW_BUILD: ${{ matrix.build }}
-          CIBW_ARCHS: auto64
-          CIBW_ARCHS_LINUX: auto64 aarch64
-          CIBW_ARCHS_MACOS: x86_64 universal2 arm64
-          CIBW_ARCHS_WINDOWS: AMD64
-          CIBW_ENVIRONMENT: NPY_BLAS_ORDER="" NPY_LAPACK_ORDER=""
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: pip install auditwheel-symbols && (auditwheel repair -w {dest_dir} {wheel} || auditwheel-symbols --manylinux 2010 {wheel})
-          CIBW_TEST_SKIP: "*aarch64"
-          MACOSX_DEPLOYMENT_TARGET: "10.14"
       - uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
