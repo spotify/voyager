@@ -144,8 +144,11 @@ public:
    *
    * This constructor is only used to load a V0-type index from file.
    */
-  TypedIndex(const std::string &indexFilename, const SpaceType space,
-             const int dimensions, bool searchOnly = false)
+  [[deprecated("Use the TypedIndex constructor without metadata args "
+               "instead.")]] TypedIndex(const std::string &indexFilename,
+                                        const SpaceType space,
+                                        const int dimensions,
+                                        bool searchOnly = false)
       : TypedIndex(space, dimensions, /* M */ 12, /* efConstruction */ 200,
                    /* randomSeed */ 1, /* maxElements */ 1,
                    /* enableOrderPreservingTransform */ false) {
@@ -161,8 +164,11 @@ public:
    *
    * This constructor is only used to load a V0-type index from a stream.
    */
-  TypedIndex(std::shared_ptr<InputStream> inputStream, const SpaceType space,
-             const int dimensions, bool searchOnly = false)
+  [[deprecated(
+      "Use the TypedIndex constructor without metadata args "
+      "instead.")]] TypedIndex(std::shared_ptr<InputStream> inputStream,
+                               const SpaceType space, const int dimensions,
+                               bool searchOnly = false)
       : TypedIndex(space, dimensions, /* M */ 12, /* efConstruction */ 200,
                    /* randomSeed */ 1, /* maxElements */ 1,
                    /* enableOrderPreservingTransform */ false) {
@@ -796,6 +802,13 @@ loadTypedIndexFromMetadata(std::unique_ptr<voyager::Metadata::V1> metadata,
 
 std::unique_ptr<Index>
 loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
+  return loadTypedIndexFromMetadata(
+      voyager::Metadata::loadFromStream(inputStream), inputStream);
+}
+
+std::unique_ptr<Index>
+loadTypedIndexFromFile(const std::string &indexFilename) {
+  auto inputStream = std::make_shared<FileInputStream>(indexFilename);
   return loadTypedIndexFromMetadata(
       voyager::Metadata::loadFromStream(inputStream), inputStream);
 }
