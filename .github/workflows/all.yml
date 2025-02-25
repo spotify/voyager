@@ -137,11 +137,8 @@ jobs:
     strategy:
       matrix:
         python-version:
-#           - '3.7'
           - '3.8'
-#           - '3.9'
-#           - '3.10'
-#           - '3.11'
+          - '3.13'
         os: ['ubuntu-latest', windows-latest, macos-latest]
     name: Test with Python ${{ matrix.python-version }} on ${{ matrix.os }}
     steps:
@@ -152,6 +149,8 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - name: Copy README into place
+        run: cp ../README.md ./
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y pkg-config 
@@ -163,9 +162,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel
+          pip install setuptools
           pip install -r dev-requirements.txt
       - name: Build voyager locally
-        run: python setup.py develop
+        run: python -m pip install .
       - name: Run tox tests
         run: tox
 
@@ -177,11 +177,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-#           - '3.7'
           - '3.8'
-#           - '3.9'
-#           - '3.10'
-#           - '3.11'
         os: ['ubuntu-latest']
     name: Test with Python ${{ matrix.python-version }} + Address Sanitizer
     steps:
@@ -192,6 +188,8 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - name: Copy README into place
+        run: cp ../README.md ./
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y pkg-config 
@@ -199,6 +197,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install wheel
+          pip install setuptools
           pip install -r dev-requirements.txt
       - name: Build voyager locally
         env:
@@ -206,7 +205,7 @@ jobs:
           USE_ASAN: "1"
           CC: clang
           CXX: clang++
-        run: python setup.py develop
+        run: python -m pip install .
       - name: Run tox tests with ASan loaded
         # pytest can exit before all Python objects have been destroyed,
         # so we tell ASan to ignore leaks.
@@ -248,41 +247,35 @@ jobs:
   build-python-wheels:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
+    continue-on-error: false
     if: true # (github.event_name == 'release' && github.event.action == 'published') || contains(github.event.pull_request.labels.*.name, 'Also Test Wheels')
     strategy:
       matrix:
         include:
-        - { os: macos-latest, build: cp37-macosx_x86_64 }
         - { os: macos-latest, build: cp38-macosx_x86_64 }
         - { os: macos-latest, build: cp39-macosx_x86_64 }
         - { os: macos-latest, build: cp310-macosx_x86_64 }
         - { os: macos-latest, build: cp311-macosx_x86_64 }
         - { os: macos-latest, build: cp312-macosx_x86_64 }
+        - { os: macos-latest, build: cp313-macosx_x86_64 }
         - { os: macos-latest, build: cp38-macosx_universal2 }
         - { os: macos-latest, build: cp39-macosx_universal2 }
         - { os: macos-latest, build: cp310-macosx_universal2 }
         - { os: macos-latest, build: cp311-macosx_universal2 }
         - { os: macos-latest, build: cp312-macosx_universal2 }
+        - { os: macos-latest, build: cp313-macosx_universal2 }
         - { os: macos-latest, build: cp38-macosx_arm64 }
         - { os: macos-latest, build: cp39-macosx_arm64 }
         - { os: macos-latest, build: cp310-macosx_arm64 }
         - { os: macos-latest, build: cp311-macosx_arm64 }
         - { os: macos-latest, build: cp312-macosx_arm64 }
-        # - { os: macos-latest, build: pp37-macosx_x86_64 }
-        # - { os: macos-latest, build: pp38-macosx_x86_64 }
-        # - { os: macos-latest, build: pp39-macosx_x86_64 }
-        - { os: windows-latest, build: cp37-win_amd64 }
+        - { os: macos-latest, build: cp313-macosx_arm64 }
         - { os: windows-latest, build: cp38-win_amd64 }
         - { os: windows-latest, build: cp39-win_amd64 }
         - { os: windows-latest, build: cp310-win_amd64 }
         - { os: windows-latest, build: cp311-win_amd64 }
         - { os: windows-latest, build: cp312-win_amd64 }
-        # - { os: windows-latest, build: pp37-win_amd64 }
-        # - { os: windows-latest, build: pp38-win_amd64 }
-        # - { os: windows-latest, build: pp39-win_amd64 }
-        - { os: 'ubuntu-latest', build: cp37-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp37-manylinux_aarch64 }
+        - { os: windows-latest, build: cp313-win_amd64 }
         - { os: 'ubuntu-latest', build: cp38-manylinux_x86_64 }
         - { os: 'ubuntu-latest', build: cp38-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp39-manylinux_x86_64 }
@@ -293,12 +286,8 @@ jobs:
         - { os: 'ubuntu-latest', build: cp311-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp312-manylinux_x86_64 }
         - { os: 'ubuntu-latest', build: cp312-manylinux_aarch64 }
-        # - { os: 'ubuntu-latest', build: pp37-manylinux_x86_64 }
-        # - { os: 'ubuntu-latest', build: pp37-manylinux_aarch64 }
-        # - { os: 'ubuntu-latest', build: pp38-manylinux_x86_64 }
-        # - { os: 'ubuntu-latest', build: pp38-manylinux_aarch64 }
-        # - { os: 'ubuntu-latest', build: pp39-manylinux_x86_64 }
-        # - { os: 'ubuntu-latest', build: pp39-manylinux_aarch64 }
+        - { os: 'ubuntu-latest', build: cp313-manylinux_x86_64 }
+        - { os: 'ubuntu-latest', build: cp313-manylinux_aarch64 }
     name: Build wheel for ${{ matrix.build }}
     steps:
       - uses: actions/checkout@v3
@@ -317,8 +306,15 @@ jobs:
         uses: docker/setup-qemu-action@v1
         with:
           platforms: all
+      - name: Copy C++ code into place
+        run: rm -rfv python/src/cpp && cp -r cpp python/src
+        if: runner.os == 'Linux'
+      - name: Show directory structure for debugging
+        run: ls -lR .
+        if: runner.os == 'Linux'
       - name: Build wheels
-        run: cp -r cpp python/cpp && cd python && python -m cibuildwheel --output-dir ../wheelhouse
+        working-directory: python
+        run: python -m cibuildwheel --output-dir ../wheelhouse
         env:
           CIBW_TEST_REQUIRES: -r dev-requirements.txt
           CIBW_TEST_COMMAND: "pytest {project}/tests -x"
@@ -330,13 +326,12 @@ jobs:
           # on macOS and with Python 3.10: building NumPy from source fails without these options:
           CIBW_ENVIRONMENT: NPY_BLAS_ORDER="" NPY_LAPACK_ORDER=""
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: pip install auditwheel-symbols && (auditwheel repair -w {dest_dir} {wheel} || auditwheel-symbols --manylinux 2010 {wheel})
-          # Use the minimum macOS deployment target that has C++17 support:
           CIBW_TEST_SKIP: "*aarch64"
-          MACOSX_DEPLOYMENT_TARGET: "10.13"
-      - uses: actions/upload-artifact@v3
+          MACOSX_DEPLOYMENT_TARGET: "10.14"
+      - uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
-          name: python-wheels
+          name: python-wheels-${{ matrix.build }}
           path: ./wheelhouse/*.whl
 
   build-java-jars:
@@ -372,7 +367,7 @@ jobs:
         run: mvn --batch-mode package
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: java-${{ matrix.os }}
@@ -383,7 +378,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-java-jars
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Unpack and Repack JARs
@@ -415,7 +410,7 @@ jobs:
           objdump -T combined-jar/linux-x64/libvoyager.so | grep GLIBCXX | sed 's/.*GLIBCXX_\([.0-9]*\).*/\1/g' | cat - <(echo 3\.4\.22) | sort -Vu | tail -n 1 | grep 3\.4\.22  || (echo "Expected linux-x64 binary to require at most glibc++ 3.4.22. Ensure the dockcross container has not been updated." && false)
 
           zip -r $(ls java-* | grep jar | tail -n 1) combined-jar/*
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           if-no-files-found: error
           name: java-all-platforms
@@ -430,7 +425,7 @@ jobs:
     name: "Upload wheels to PyPI"
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: python-wheels
           path: dist
@@ -449,7 +444,7 @@ jobs:
         working-directory: java
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: java-all-platforms
           path: combined-jar

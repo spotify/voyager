@@ -19,72 +19,11 @@ Think of Voyager like [Sparkey](https://github.com/spotify/sparkey), but for vec
 [![Python Documentation](https://img.shields.io/badge/Python%20Documentation-on%20github.io-brightgreen)](https://spotify.github.io/voyager/python)
 [![Java Documentation](https://img.shields.io/badge/Java%20Documentation-on%20github.io-brightgreen)](https://spotify.github.io/voyager/java)
 
-### Installation
-
-#### Python
-
-```shell
-pip install voyager
-```
-
-#### Java
-
-Add the following artifact to your `pom.xml`:
-```xml
-<dependency>
-  <groupId>com.spotify</groupId>
-  <artifactId>voyager</artifactId>
-  <version>2.1.0</version>
-</dependency>
-```
-You can find the latest version on [Voyager's Releases page](https://github.com/spotify/voyager/releases).
-
-#### Scala
-
-Add the following artifact to your `build.sbt`:
-```sbt
-"com.spotify" % "voyager" % "2.1.0"
-```
-You can find the latest version on [Voyager's Releases page](https://github.com/spotify/voyager/releases).
-
-
-### Compatibility
-
-| OS        | Language | Version | x86_64 (Intel) | arm64 (ARM) |
-|-----------|----------|---------|---------| --------|
-| Linux     | Python   | 3.7     | ✅       | ✅       |
-| Linux     | Python   | 3.8     | ✅       | ✅       |
-| Linux     | Python   | 3.9     | ✅       | ✅       |
-| Linux     | Python   | 3.10    | ✅       | ✅       |
-| Linux     | Python   | 3.11    | ✅       | ✅       |
-| Linux     | Python   | 3.12    | ✅       | ✅       |
-| Linux     | Python   | 3.13    | ✅       | ✅       |
-| Linux     | Java     | 8-16+   | ✅       | ✅      |
-| macOS     | Python   | 3.7     | ✅       | ✅       |
-| macOS     | Python   | 3.8     | ✅       | ✅       |
-| macOS     | Python   | 3.9     | ✅       | ✅       |
-| macOS     | Python   | 3.10    | ✅       | ✅       |
-| macOS     | Python   | 3.11    | ✅       | ✅       |
-| macOS     | Python   | 3.12    | ✅       | ✅       |
-| macOS     | Python   | 3.13    | ✅       | ✅       |
-| macOS     | Java     | 8-16+   | ✅       | ✅       |
-| Windows   | Python   | 3.7     | ✅       | ❌       |
-| Windows   | Python   | 3.8     | ✅       | ❌       |
-| Windows   | Python   | 3.9     | ✅       | ❌       |
-| Windows   | Python   | 3.10    | ✅       | ❌       |
-| Windows   | Python   | 3.11    | ✅       | ❌       |
-| Windows   | Python   | 3.12    | ✅       | ❌       |
-| Windows   | Python   | 3.13    | ✅       | ❌       |
-| Windows   | Java     | 8-16+   | ✅       | ❌       |
-
-
-## Contributing
-
-Contributions to `voyager` are welcomed!
-See [CONTRIBUTING.md](https://github.com/spotify/voyager/blob/master/CONTRIBUTING.md) for details.
-
 
 ### License
-Voyager is copyright 2022-2024 Spotify AB.
+Voyager is copyright 2022-2025 Spotify AB.
 
 Voyager is licensed under the [Apache 2 License]([https://www.gnu.org/licenses/gpl-3.0.en.html](https://www.apache.org/licenses/LICENSE-2.0)).
+
+<!-- This readme should be automatically replaced with the top-level README.md from the repository at build time. -->
+<!-- This is only here to allow scikit-build-core to build locally. -->

@@ -143,7 +143,7 @@ def test_v1_indices_must_have_no_parameters_or_must_match(load_from_stream: bool
         (
             b"VOYA"  # Header
             b"\x01\x00\x00\x00"  # File version
-            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x0a\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"
             + struct.pack("f", 0)  # Storage data type and maximum norm
@@ -153,7 +153,7 @@ def test_v1_indices_must_have_no_parameters_or_must_match(load_from_stream: bool
         (
             b"VOYA"  # Header
             b"\x01\x00\x00\x00"  # File version
-            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x0a\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"  # Storage data type
             + struct.pack("f", 0)  # maximum norm
@@ -178,12 +178,12 @@ def test_v1_indices_must_have_no_parameters_or_must_match(load_from_stream: bool
         (
             b"VOYA"  # Header
             b"\x01\x00\x00\x00"  # File version
-            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x0a\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"  # Storage data type
             + struct.pack("f", 0)  # maximum norm
             + b"\x00"  # Use order-preserving transform
-            b"\x00\x00\x00\xFF\x00\x00\x00\x00"  # offsetLevel0_
+            b"\x00\x00\x00\xff\x00\x00\x00\x00"  # offsetLevel0_
             b"\x01\x00\x00\x00\x00\x00\x00\x00"  # max_elements_
             b"\x01\x00\x00\x00\x00\x00\x00\x00"  # cur_element_count
             b"\x34\x00\x00\x00\x00\x00\x00\x00"  # size_data_per_element_
@@ -203,7 +203,7 @@ def test_v1_indices_must_have_no_parameters_or_must_match(load_from_stream: bool
         (
             b"VOYA"  # Header
             b"\x01\x00\x00\x00"  # File version
-            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x0a\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"  # Storage data type
             + struct.pack("f", 0)  # maximum norm
@@ -229,7 +229,7 @@ def test_v1_indices_must_have_no_parameters_or_must_match(load_from_stream: bool
         (
             b"VOYA"  # Header
             b"\x01\x00\x00\x00"  # File version
-            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x0a\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"  # Storage data type
             + struct.pack("f", 0)  # maximum norm
@@ -284,7 +284,7 @@ def test_fuzz(seed: int, with_valid_header: bool, offset_level_0: int):
         random_data.write(
             b"VOYA"  # Header
             b"\x01\x00\x00\x00"  # File version
-            b"\x0A\x00\x00\x00"  # Number of dimensions (10)
+            b"\x0a\x00\x00\x00"  # Number of dimensions (10)
             b"\x00"  # Space type
             b"\x20"  # Storage data type
         )

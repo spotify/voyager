@@ -18,22 +18,22 @@
 #include <optional>
 #include <string>
 
-namespace py = pybind11;
+namespace nb = nanobind;
 
 namespace PythonException {
 // Check if there's a Python exception pending in the interpreter.
 inline bool isPending() {
-  py::gil_scoped_acquire acquire;
+  nb::gil_scoped_acquire acquire;
   return PyErr_Occurred() != nullptr;
 }
 
 // If an exception is pending, raise it as a C++ exception to break the current
 // control flow and result in an error being thrown in Python later.
 inline void raise() {
-  py::gil_scoped_acquire acquire;
+  nb::gil_scoped_acquire acquire;
 
   if (PyErr_Occurred()) {
-    py::error_already_set existingError;
+    nb::python_error existingError;
     throw existingError;
   }
 }
@@ -44,47 +44,47 @@ inline void raise() {
  */
 class PythonFileLike {
 public:
-  PythonFileLike(py::object fileLike) : fileLike(fileLike) {}
+  PythonFileLike(nb::object fileLike) : fileLike(fileLike) {}
 
   std::string getRepresentation() {
-    py::gil_scoped_acquire acquire;
-    return py::repr(fileLike).cast<std::string>();
+    nb::gil_scoped_acquire acquire;
+    return nb::cast<std::string>(nb::repr(fileLike));
   }
 
   std::optional<std::string> getFilename() {
     // Some Python file-like objects expose a ".name" property.
     // If this object has that property, return its value;
     // otherwise return an empty optional.
-    py::gil_scoped_acquire acquire;
+    nb::gil_scoped_acquire acquire;
 
-    if (py::hasattr(fileLike, "name")) {
-      return py::str(fileLike.attr("name")).cast<std::string>();
+    if (nb::hasattr(fileLike, "name")) {
+      return nb::cast<std::string>(nb::str(nb::handle(fileLike.attr("name"))));
     } else {
       return {};
     }
   }
 
   bool isSeekable() {
-    py::gil_scoped_acquire acquire;
-    return fileLike.attr("seekable")().cast<bool>();
+    nb::gil_scoped_acquire acquire;
+    return nb::cast<bool>(fileLike.attr("seekable")());
   }
 
   long long getPosition() {
-    py::gil_scoped_acquire acquire;
-    return fileLike.attr("tell")().cast<long long>();
+    nb::gil_scoped_acquire acquire;
+    return nb::cast<long long>(fileLike.attr("tell")());
   }
 
   bool setPosition(long long pos) {
-    py::gil_scoped_acquire acquire;
-    if (fileLike.attr("seekable")().cast<bool>()) {
+    nb::gil_scoped_acquire acquire;
+    if (nb::cast<bool>(fileLike.attr("seekable")())) {
       fileLike.attr("seek")(pos);
     }
 
-    return fileLike.attr("tell")().cast<long long>() == pos;
+    return nb::cast<long long>(fileLike.attr("tell")()) == pos;
   }
 
-  py::object getFileLikeObject() { return fileLike; }
+  nb::object getFileLikeObject() { return fileLike; }
 
 protected:
-  py::object fileLike;
+  nb::object fileLike;
 };

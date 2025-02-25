@@ -15,45 +15,53 @@
 #include <assert.h>
 #include <atomic>
 #include <bitset>
+#include <cstring>
 #include <iostream>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <mutex>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/bind_vector.h>
+#include <nanobind/stl/optional.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/unique_ptr.h>
+#include <nanobind/stl/variant.h>
+#include <nanobind/stl/vector.h>
+#include <optional>
 #include <ratio>
 #include <stdlib.h>
 #include <thread>
 
-#include "src/PythonInputStream.h"
-#include "src/PythonOutputStream.h"
-#include <TypedIndex.h>
+#include "PythonInputStream.h"
+#include "PythonOutputStream.h"
+#include "cpp/src/TypedIndex.h"
 
-namespace py = pybind11;
-using namespace pybind11::literals; // needed to bring in _a literal
+namespace nb = nanobind;
+using namespace nanobind::literals; // needed to bring in _a literal
 
 /**
  * Convert a PyArray (i.e.: numpy.ndarray) to a C++ NDArray.
  * This function copies the data from the PyArray into a new NDArray.
  */
 template <typename T, int Dims>
-NDArray<T, Dims> pyArrayToNDArray(py::array_t<T> input) {
-  py::buffer_info inputInfo = input.request();
-
-  if (inputInfo.ndim != Dims) {
+NDArray<T, Dims> pyArrayToNDArray(nb::ndarray<T> &input) {
+  if (input.ndim() != Dims) {
     throw std::domain_error("Input array was expected to have rank " +
                             std::to_string(Dims) + ", but had rank " +
-                            std::to_string(inputInfo.ndim) + ".");
+                            std::to_string(input.ndim()) + ".");
   }
 
   std::array<int, Dims> shape;
   for (int i = 0; i < Dims; i++) {
-    shape[i] = inputInfo.shape[i];
+    shape[i] = input.shape(i);
   }
 
   NDArray<T, Dims> output = NDArray<T, Dims>(shape);
 
-  T *inputPtr = static_cast<T *>(inputInfo.ptr);
+  const T *inputPtr = static_cast<const T *>(input.data());
   {
-    py::gil_scoped_release release;
+    nb::gil_scoped_release release;
     std::copy(inputPtr, inputPtr + output.data.size(), output.data.begin());
   }
 
@@ -66,47 +74,33 @@ NDArray<T, Dims> pyArrayToNDArray(py::array_t<T> input) {
  * refactored.
  */
 template <typename T, int Dims>
-py::array_t<T> ndArrayToPyArray(NDArray<T, Dims> input) {
-  py::array_t<T> output(input.shape);
-  T *outputPtr = static_cast<T *>(const_cast<T *>(output.data()));
-
-  size_t numOutputElements = 1;
-  for (size_t i = 0; i < input.shape.size(); i++) {
-    numOutputElements *= input.shape[i];
+nb::ndarray<T, nb::numpy> ndArrayToPyArray(NDArray<T, Dims> input) {
+  T *outputPtr = new T[input.data.size()];
+  std::copy(input.data.begin(), input.data.end(), outputPtr);
+  nb::capsule owner(outputPtr, [](void *p) noexcept { delete[] (float *)p; });
+  size_t shape[Dims];
+  for (int i = 0; i < Dims; i++) {
+    shape[i] = input.shape[i];
   }
-  if (input.data.size() != numOutputElements) {
-    throw std::runtime_error("Internal error: NDArray input size (" +
-                             std::to_string(input.data.size()) +
-                             " elements) does not match output shape: (" +
-                             std::to_string(numOutputElements) + " elements).");
-  }
-
-  {
-    py::gil_scoped_release release;
-    std::copy(input.data.begin(), input.data.end(), outputPtr);
-  }
-
-  return output;
+  return nb::ndarray<T, nb::numpy>(outputPtr, Dims, shape, owner);
 };
 
 /**
  * Convert a PyArray (i.e.: numpy.ndarray) to a C++ std::vector.
  * This function copies the data from the PyArray into a new vector.
  */
-template <typename T> std::vector<T> pyArrayToVector(py::array_t<T> input) {
-  py::buffer_info inputInfo = input.request();
-
-  if (inputInfo.ndim != 1) {
+template <typename T> std::vector<T> pyArrayToVector(nb::ndarray<T> &input) {
+  if (input.ndim() != 1) {
     throw std::domain_error(
         "Input array was expected to have one dimension, but had " +
-        std::to_string(inputInfo.ndim) + " dimensions.");
+        std::to_string(input.ndim()) + " dimensions.");
   }
 
-  std::vector<T> output(inputInfo.shape[0]);
+  std::vector<T> output(input.shape(0));
 
-  T *inputPtr = static_cast<T *>(inputInfo.ptr);
+  const T *inputPtr = static_cast<const T *>(input.data());
   {
-    py::gil_scoped_release release;
+    nb::gil_scoped_release release;
     std::copy(inputPtr, inputPtr + output.size(), output.begin());
   }
 
@@ -117,16 +111,12 @@ template <typename T> std::vector<T> pyArrayToVector(py::array_t<T> input) {
  * Convert a C++ std::vector into a PyArray (i.e.: numpy.ndarray).
  * This function copies the data, but may not have to.
  */
-template <typename T> py::array_t<T> vectorToPyArray(std::vector<T> input) {
-  py::array_t<T> output({(long)input.size()});
-  T *outputPtr = static_cast<T *>(const_cast<T *>(output.data()));
-
-  {
-    py::gil_scoped_release release;
-    std::copy(input.begin(), input.end(), outputPtr);
-  }
-
-  return output;
+template <typename T>
+nb::ndarray<T, nb::numpy> vectorToPyArray(std::vector<T> input) {
+  T *data = new T[input.size()];
+  std::copy(input.begin(), input.end(), data);
+  nb::capsule owner(data, [](void *p) noexcept { delete[] (float *)p; });
+  return nb::ndarray<T, nb::numpy>(data, {input.size()}, owner);
 };
 
 /**
@@ -142,8 +132,8 @@ public:
   std::unordered_map<hnswlib::labeltype, hnswlib::tableint> const &map;
 };
 
-inline void init_LabelSetView(py::module &m) {
-  py::class_<LabelSetView>(
+inline void init_LabelSetView(nb::module_ &m) {
+  nb::class_<LabelSetView>(
       m, "LabelSetView",
       "A read-only set-like object containing 64-bit integers. Use this object "
       "like a regular Python :py:class:`set` object, by either iterating "
@@ -165,55 +155,66 @@ inline void init_LabelSetView(py::module &m) {
              // every time next(iter(...)) is called.
              std::vector<hnswlib::labeltype> ids;
              {
-               py::gil_scoped_release release;
+               nb::gil_scoped_release release;
                ids.reserve(self.map.size());
                for (auto const &kv : self.map) {
                  ids.push_back(kv.first);
                }
              }
 
-             return py::cast(ids).attr("__iter__")();
+             return nb::cast(ids).attr("__iter__")();
            })
       .def(
           "__contains__",
           [](LabelSetView &self, hnswlib::labeltype element) {
             return self.map.find(element) != self.map.end();
           },
-          py::arg("id"))
+          nb::arg("id"))
       .def(
           "__contains__",
-          [](LabelSetView &, const py::object &) { return false; },
-          py::arg("id"));
+          [](LabelSetView &, const nb::object &) { return false; },
+          nb::arg("id"));
 }
 
 template <typename dist_t, typename data_t,
           typename scalefactor = std::ratio<1, 1>>
-inline void register_index_class(py::module &m, std::string className,
+inline void register_index_class(nb::module_ &m, std::string className,
                                  std::string docstring) {
-  auto klass =
-      py::class_<TypedIndex<dist_t, data_t, scalefactor>, Index,
-                 std::shared_ptr<TypedIndex<dist_t, data_t, scalefactor>>>(
-          m, className.c_str(), docstring.c_str());
-
-  klass.def(py::init<const SpaceType, const int, const size_t, const size_t,
-                     const size_t, const size_t>(),
-            py::arg("space"), py::arg("num_dimensions"), py::arg("M") = 16,
-            py::arg("ef_construction") = 200, py::arg("random_seed") = 1,
-            py::arg("max_elements") = 1, "Create a new, empty index.");
-
-  klass.def("__repr__", [className](const Index &index) {
-    return "<voyager." + className + " space=" + index.getSpaceName() +
-           " num_dimensions=" + std::to_string(index.getNumDimensions()) +
-           " storage_data_type=" + index.getStorageDataTypeName() + ">";
-  });
+  nb::class_<TypedIndex<dist_t, data_t, scalefactor>, Index>(
+      m, className.c_str(), docstring.c_str())
+      .def(
+          "__init__",
+          [](
+              // TypedIndex<dist_t, data_t, scalefactor> *self,
+              const nb::object *self, const SpaceType space,
+              const int num_dimensions, const size_t M,
+              const size_t ef_construction, const size_t random_seed,
+              const size_t max_elements,
+              const StorageDataType storageDataType) {
+            // new (self) TypedIndex<dist_t, data_t, scalefactor>(
+            //     space, num_dimensions, M, ef_construction, random_seed,
+            //     max_elements);
+          },
+          nb::arg("space"), nb::arg("num_dimensions"), nb::arg("M") = 16,
+          nb::arg("ef_construction") = 200, nb::arg("random_seed") = 1,
+          nb::arg("max_elements") = 1,
+          nb::arg("storage_data_type") = StorageDataType::Float32,
+          "Create a new, empty index.")
+      .def("__repr__", [className](const Index &index) {
+        return "<voyager." + className + " space=" + index.getSpaceName() +
+               " num_dimensions=" + std::to_string(index.getNumDimensions()) +
+               " storage_data_type=" + index.getStorageDataTypeName() + ">";
+      });
 };
 
-PYBIND11_MODULE(voyager, m) {
-  py::register_exception<RecallError>(m, "RecallError");
+NB_MODULE(voyager_ext, m) {
+  nb::exception<RecallError>(m, "RecallError");
+
+  m.attr("version") = nb::make_tuple(2, 1, 0);
 
   init_LabelSetView(m);
 
-  py::enum_<SpaceType>(
+  nb::enum_<SpaceType>(
       m, "Space", "The method used to calculate the distance between vectors.")
       .value("Euclidean", SpaceType::Euclidean,
              "Euclidean distance; also known as L2 distance. The square root "
@@ -224,7 +225,7 @@ PYBIND11_MODULE(voyager, m) {
       .value("InnerProduct", SpaceType::InnerProduct, "Inner product distance.")
       .export_values();
 
-  py::enum_<StorageDataType>(m, "StorageDataType",
+  nb::enum_<StorageDataType>(m, "StorageDataType",
                              R"(
 The data type used to store vectors in memory and on-disk.
 
@@ -248,24 +249,18 @@ memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
              "correct ordering between results.")
       .export_values();
 
-  py::class_<E4M3>(
+  nb::class_<E4M3>(
       m, "E4M3T",
       "An 8-bit floating point data type with reduced precision and range. "
       "This class wraps a C++ struct and should probably not be used directly.")
-      .def(py::init([](float input) {
-             E4M3 v(input);
-             return v;
-           }),
+      .def(nb::init<float>(),
            "Create an E4M3 number given a floating-point value. If out of "
            "range, the value will be clipped.",
-           py::arg("value"))
-      .def(py::init([](int sign, int exponent, int mantissa) {
-             E4M3 v(sign, exponent, mantissa);
-             return v;
-           }),
+           nb::arg("value"))
+      .def(nb::init<uint8_t, uint8_t, uint8_t>(),
            "Create an E4M3 number given a sign, exponent, and mantissa. If out "
            "of range, the values will be clipped.",
-           py::arg("sign"), py::arg("exponent"), py::arg("mantissa"))
+           nb::arg("sign"), nb::arg("exponent"), nb::arg("mantissa"))
       .def_static(
           "from_char",
           [](int c) {
@@ -275,7 +270,7 @@ memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
             E4M3 v(static_cast<uint8_t>(c));
             return v;
           },
-          "Create an E4M3 number given a raw 8-bit value.", py::arg("value"))
+          "Create an E4M3 number given a raw 8-bit value.", nb::arg("value"))
       .def(
           "__float__", [](E4M3 &self) { return (float)self; },
           "Cast the given E4M3 number to a float.")
@@ -293,33 +288,33 @@ memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
              ss << ">";
              return ss.str();
            })
-      .def_property_readonly(
+      .def_prop_ro(
           "sign", [](E4M3 &self) { return self.sign; },
           "The sign bit from this E4M3 number. Will be ``1`` if the number is "
           "negative, ``0`` otherwise.")
-      .def_property_readonly(
+      .def_prop_ro(
           "exponent", [](E4M3 &self) { return self.effectiveExponent(); },
           "The effective exponent of this E4M3 number, expressed as "
           "an integer.")
-      .def_property_readonly(
+      .def_prop_ro(
           "raw_exponent", [](E4M3 &self) { return self.exponent; },
           "The raw value of the exponent part of this E4M3 number, expressed "
           "as an integer.")
-      .def_property_readonly(
+      .def_prop_ro(
           "mantissa", [](E4M3 &self) { return self.effectiveMantissa(); },
           "The effective mantissa (non-exponent part) of this E4M3 number, "
           "expressed as an integer.")
-      .def_property_readonly(
+      .def_prop_ro(
           "raw_mantissa", [](E4M3 &self) { return self.mantissa; },
           "The raw value of the mantissa (non-exponent part) of this E4M3 "
           "number, expressed as a floating point value.")
-      .def_property_readonly(
+      .def_prop_ro(
           "size", [](E4M3 &self) { return sizeof(self); },
           "The number of bytes used to represent this (C++) instance in "
           "memory.");
 
-  auto index = py::class_<Index, std::shared_ptr<Index>>(m, "Index",
-                                                         R"(
+  auto index = nb::class_<Index>(m, "Index",
+                                 R"(
 A nearest-neighbor search index containing vector data (i.e. lists of 
 floating-point values, each list labeled with a single integer ID).
 
@@ -391,13 +386,20 @@ Args:
 
   index.def(
       "add_item",
-      [](Index &index, py::array_t<float> vector, std::optional<size_t> _id) {
-        auto stdArray = pyArrayToVector<float>(vector);
-
-        py::gil_scoped_release release;
+      [](Index &index,
+         std::variant<nb::ndarray<float>, std::vector<float>> vector,
+         std::optional<size_t> _id) {
+        std::vector<float> stdArray;
+        if (std::holds_alternative<nb::ndarray<float>>(vector)) {
+          stdArray =
+              pyArrayToVector<float>(std::get<nb::ndarray<float>>(vector));
+        } else {
+          stdArray = std::get<std::vector<float>>(vector);
+        }
+        nb::gil_scoped_release release;
         return index.addItem(stdArray, _id);
       },
-      py::arg("vector"), py::arg("id") = py::none(), R"(
+      nb::arg("vector"), nb::arg("id") = nb::none(), R"(
 Add a vector to this index.
 
 Args:
@@ -422,16 +424,16 @@ Returns:
 
   index.def(
       "add_items",
-      [](Index &index, py::array_t<float> vectors,
+      [](Index &index, nb::ndarray<float> vectors,
          std::optional<std::vector<size_t>> _ids, int num_threads) {
         std::vector<size_t> empty;
         auto ndArray = pyArrayToNDArray<float, 2>(vectors);
 
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
         return index.addItems(ndArray, (_ids ? *_ids : empty), num_threads);
       },
-      py::arg("vectors"), py::arg("ids") = py::none(),
-      py::arg("num_threads") = -1,
+      nb::arg("vectors"), nb::arg("ids") = nb::none(),
+      nb::arg("num_threads") = -1,
       R"(
 Add multiple vectors to this index simultaneously.
 
@@ -464,14 +466,31 @@ Returns:
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   index.def(
       "query",
-      [](Index &index, py::array_t<float> input, size_t k = 1,
-         int num_threads = -1, long queryEf = -1) {
-        int inputNDim = input.request().ndim;
+      [](Index &index,
+         std::variant<nb::ndarray<float>, std::vector<float>> &_input,
+         size_t k = 1, int num_threads = -1, long queryEf = -1) {
+        // Treat a single vector as a 1D array:
+        if (std::holds_alternative<std::vector<float>>(_input)) {
+          std::vector<float> stdArray = std::get<std::vector<float>>(_input);
+
+          auto idsAndDistances = index.query(stdArray, k, queryEf);
+          std::tuple<nb::ndarray<hnswlib::labeltype, nb::numpy>,
+                     nb::ndarray<float, nb::numpy>>
+              output = {vectorToPyArray<hnswlib::labeltype>(
+                            std::get<0>(idsAndDistances)),
+                        vectorToPyArray<float>(std::get<1>(idsAndDistances))};
+          return output;
+        }
+
+        nb::ndarray<float> input = std::get<nb::ndarray<float>>(_input);
+
+        int inputNDim = input.ndim();
         switch (inputNDim) {
         case 1: {
           auto idsAndDistances =
               index.query(pyArrayToVector<float>(input), k, queryEf);
-          std::tuple<py::array_t<hnswlib::labeltype>, py::array_t<float>>
+          std::tuple<nb::ndarray<hnswlib::labeltype, nb::numpy>,
+                     nb::ndarray<float, nb::numpy>>
               output = {vectorToPyArray<hnswlib::labeltype>(
                             std::get<0>(idsAndDistances)),
                         vectorToPyArray<float>(std::get<1>(idsAndDistances))};
@@ -480,7 +499,8 @@ Returns:
         case 2: {
           auto idsAndDistances = index.query(pyArrayToNDArray<float, 2>(input),
                                              k, num_threads, queryEf);
-          std::tuple<py::array_t<hnswlib::labeltype>, py::array_t<float>>
+          std::tuple<nb::ndarray<hnswlib::labeltype, nb::numpy>,
+                     nb::ndarray<float, nb::numpy>>
               output = {
                   ndArrayToPyArray<hnswlib::labeltype, 2>(
                       std::get<0>(idsAndDistances)),
@@ -494,8 +514,8 @@ Returns:
               std::to_string(inputNDim) + " dimensions.");
         }
       },
-      py::arg("vectors"), py::arg("k") = 1, py::arg("num_threads") = -1,
-      py::arg("query_ef") = -1, R"(
+      nb::arg("vectors"), nb::arg("k") = 1, nb::arg("num_threads") = -1,
+      nb::arg("query_ef") = -1, R"(
 Query this index to retrieve the ``k`` nearest neighbors of the provided vectors.
 
 Args:
@@ -563,27 +583,27 @@ Query with multiple vectors simultaneously::
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Property Methods
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  index.def_property_readonly("space", &Index::getSpace,
-                              "Return the :py:class:`Space` used to calculate "
-                              "distances between vectors.");
+  index.def_prop_ro("space", &Index::getSpace,
+                    "Return the :py:class:`Space` used to calculate "
+                    "distances between vectors.");
 
-  index.def_property_readonly("num_dimensions", &Index::getNumDimensions, R"(
+  index.def_prop_ro("num_dimensions", &Index::getNumDimensions, R"(
 The number of dimensions in each vector stored by this index.
 )");
 
-  index.def_property_readonly("M", &Index::getM, R"(
+  index.def_prop_ro("M", &Index::getM, R"(
 The number of connections between nodes in the tree's internal data structure.
 
 Larger values give better recall, but use more memory. This parameter cannot be changed
 after the index is instantiated.)");
 
-  index.def_property_readonly("ef_construction", &Index::getEfConstruction, R"(
+  index.def_prop_ro("ef_construction", &Index::getEfConstruction, R"(
 The number of vectors that this index searches through when inserting a new vector into
 the index. Higher values make index construction slower, but give better recall. This
 parameter cannot be changed after the index is instantiated.)");
 
-  index.def_property("max_elements", &Index::getMaxElements,
-                     &Index::resizeIndex, R"(
+  index.def_prop_rw("max_elements", &Index::getMaxElements, &Index::resizeIndex,
+                    R"(
 The maximum number of elements that can be stored in this index.
 
 If :py:attr:`max_elements` is much larger than
@@ -600,12 +620,12 @@ Note that assigning to this property is functionally identical to
 calling :py:meth:`resize`.
 )");
 
-  index.def_property_readonly("storage_data_type", &Index::getStorageDataType,
-                              R"(
+  index.def_prop_ro("storage_data_type", &Index::getStorageDataType,
+                    R"(
 The :py:class:`StorageDataType` used to store vectors in this :py:class:`Index`.
 )");
 
-  index.def_property_readonly("num_elements", &Index::getNumElements, R"(
+  index.def_prop_ro("num_elements", &Index::getNumElements, R"(
 The number of elements (vectors) currently stored in this index.
 
 Note that the number of elements will not decrease if any elements are
@@ -613,11 +633,11 @@ deleted from the index; those deleted elements simply become invisible.)");
 
   index.def(
       "get_vector",
-      [](Index &index, size_t _id) {
+      [](Index &index, size_t _id) -> nb::ndarray<float, nb::numpy> {
         return ndArrayToPyArray<float, 1>(NDArray<float, 1>(
             index.getVector(_id), {(int)index.getNumDimensions()}));
       },
-      py::arg("id"), R"(
+      nb::arg("id"), R"(
 Get the vector stored in this index at the provided integer ID.
 If no such vector exists, a :py:exc:`KeyError` will be thrown.
 
@@ -638,7 +658,7 @@ If no such vector exists, a :py:exc:`KeyError` will be thrown.
       [](Index &index, std::vector<size_t> _ids) {
         return ndArrayToPyArray<float, 2>(index.getVectors(_ids));
       },
-      py::arg("ids"), R"(
+      nb::arg("ids"), R"(
 Get one or more vectors stored in this index at the provided integer IDs.
 If one or more of the provided IDs cannot be found in the index, a
 :py:exc:`KeyError` will be thrown.
@@ -649,7 +669,7 @@ If one or more of the provided IDs cannot be found in the index, a
     originally added to this index.
 )");
 
-  index.def_property_readonly(
+  index.def_prop_ro(
       "ids",
       [](Index &index) {
         return std::make_unique<LabelSetView>(index.getIDsMap());
@@ -680,12 +700,23 @@ specific integer ID in this index::
       R"(
 Get the distance between two provided vectors. The vectors must share the dimensionality of the index.
 )",
-      py::arg("a"), py::arg("b"));
+      nb::arg("a"), nb::arg("b"));
+
+  index.def(
+      "get_distance",
+      [](Index &index, nb::ndarray<float> a, nb::ndarray<float> b) {
+        return index.getDistance(pyArrayToVector<float>(a),
+                                 pyArrayToVector<float>(b));
+      },
+      R"(
+Get the distance between two provided vectors. The vectors must share the dimensionality of the index.
+)",
+      nb::arg("a"), nb::arg("b"));
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Index Modifier Methods/Attributes
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  index.def_property("ef", &Index::getEF, &Index::setEF, R"(
+  index.def_prop_rw("ef", &Index::getEF, &Index::setEF, R"(
 The default number of vectors to search through when calling :py:meth:`query`.
 
 Higher values make queries slower, but give better recall.
@@ -700,7 +731,7 @@ Higher values make queries slower, but give better recall.
 
 )");
 
-  index.def("mark_deleted", &Index::markDeleted, py::arg("id"), R"(
+  index.def("mark_deleted", &Index::markDeleted, nb::arg("id"), R"(
 Mark an ID in this index as deleted.
 
 Deleted IDs will not show up in the results of calls to :py:meth:`query`,
@@ -734,14 +765,14 @@ but will still take up space in the index, and will slow down queries.
 
   index.attr("__delitem__") = index.attr("mark_deleted");
 
-  index.def("unmark_deleted", &Index::unmarkDeleted, py::arg("id"), R"(
+  index.def("unmark_deleted", &Index::unmarkDeleted, nb::arg("id"), R"(
 Unmark an ID in this index as deleted.
 
 Once unmarked as deleted, an existing ID will show up in the results of
 calls to :py:meth:`query` again.
 )");
 
-  index.def("resize", &Index::resizeIndex, py::arg("new_size"), R"(
+  index.def("resize", &Index::resizeIndex, nb::arg("new_size"), R"(
 Resize this index, allocating space for up to ``new_size`` elements to
 be stored. This changes the :py:attr:`max_elements` property and may
 cause this :py:class:`Index` object to use more memory. This is a fairly
@@ -774,31 +805,32 @@ one or more chunks of data (of up to 100MB each) to the provided object for writ
   index.def(
       "save",
       [](Index &index, std::string filePath) {
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
         index.saveIndex(filePath);
       },
-      py::arg("output_path"), SAVE_DOCSTRING);
+      nb::arg("output_path"), SAVE_DOCSTRING);
 
   index.def(
       "save",
-      [](Index &index, py::object filelike) {
+      [](Index &index, nb::object filelike) {
         auto outputStream = std::make_shared<PythonOutputStream>(filelike);
 
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
         index.saveIndex(outputStream);
       },
-      py::arg("file_like"), SAVE_DOCSTRING);
+      nb::arg("file_like"), SAVE_DOCSTRING);
 
   index.def(
       "as_bytes",
       [](Index &index) {
         auto outputStream = std::make_shared<MemoryOutputStream>();
         {
-          py::gil_scoped_release release;
+          nb::gil_scoped_release release;
           index.saveIndex(outputStream);
         }
 
-        return py::bytes(outputStream->getValue());
+        std::string bytes = outputStream->getValue();
+        return nb::bytes(bytes.data(), bytes.size());
       },
       R"(
 Returns the contents of this index as a :py:class:`bytes` object. The resulting object
@@ -829,7 +861,7 @@ into memory again.
         auto &map = self.getIDsMap();
         return map.find(element) != map.end();
       },
-      py::arg("id"),
+      nb::arg("id"),
       R"(
 Check to see if a provided vector's ID is present in this index.
 
@@ -871,11 +903,11 @@ Use the ``len`` operator to call this method::
 
   index.def_static(
       "__new__",
-      [](const py::object *, const SpaceType space, const int num_dimensions,
+      [](const nb::object *, const SpaceType space, const int num_dimensions,
          const size_t M, const size_t ef_construction, const size_t random_seed,
          const size_t max_elements,
          const StorageDataType storageDataType) -> std::shared_ptr<Index> {
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
         switch (storageDataType) {
         case StorageDataType::E4M3:
           return std::make_shared<TypedIndex<float, E4M3>>(
@@ -894,10 +926,10 @@ Use the ``len`` operator to call this method::
           throw std::runtime_error("Unknown storage data type received!");
         }
       },
-      py::arg("cls"), py::arg("space"), py::arg("num_dimensions"),
-      py::arg("M") = 12, py::arg("ef_construction") = 200,
-      py::arg("random_seed") = 1, py::arg("max_elements") = 1,
-      py::arg("storage_data_type") = StorageDataType::Float32,
+      nb::arg("cls"), nb::arg("space"), nb::arg("num_dimensions"),
+      nb::arg("M") = 12, nb::arg("ef_construction") = 200,
+      nb::arg("random_seed") = 1, nb::arg("max_elements") = 1,
+      nb::arg("storage_data_type") = StorageDataType::Float32,
       R"(
 Create a new Voyager nearest-neighbor search index with the provided arguments.
 
@@ -931,7 +963,7 @@ of Voyager prior to v1.3.
       [](const std::string filename, const SpaceType space,
          const int num_dimensions,
          const StorageDataType storageDataType) -> std::shared_ptr<Index> {
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
 
         auto inputStream = std::make_shared<FileInputStream>(filename);
         std::unique_ptr<voyager::Metadata::V1> metadata =
@@ -977,33 +1009,34 @@ of Voyager prior to v1.3.
           throw std::runtime_error("Unknown storage data type received!");
         }
       },
-      py::arg("filename"), py::arg("space"), py::arg("num_dimensions"),
-      py::arg("storage_data_type") = StorageDataType::Float32, LOAD_DOCSTRING);
+      nb::arg("filename"), nb::arg("space"), nb::arg("num_dimensions"),
+      nb::arg("storage_data_type") = StorageDataType::Float32, LOAD_DOCSTRING);
 
   index.def_static(
       "load",
       [](const std::string filename) -> std::shared_ptr<Index> {
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
 
         return loadTypedIndexFromStream(
             std::make_shared<FileInputStream>(filename));
       },
-      py::arg("filename"), LOAD_DOCSTRING);
+      nb::arg("filename"), LOAD_DOCSTRING);
 
   index.def_static(
       "load",
-      [](const py::object filelike, const SpaceType space,
+      [](const nb::object filelike, const SpaceType space,
          const int num_dimensions,
          const StorageDataType storageDataType) -> std::shared_ptr<Index> {
         if (!isReadableFileLike(filelike)) {
-          throw py::type_error(
-              "Expected either a filename or a file-like object (with "
-              "read, seek, seekable, and tell methods), but received: " +
-              filelike.attr("__repr__")().cast<std::string>());
+          throw nb::type_error(
+              ("Expected either a filename or a file-like object (with "
+               "read, seek, seekable, and tell methods), but received: " +
+               nb::cast<std::string>(filelike.attr("__repr__")()))
+                  .c_str());
         }
 
         auto inputStream = std::make_shared<PythonInputStream>(filelike);
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
 
         std::unique_ptr<voyager::Metadata::V1> metadata =
             voyager::Metadata::loadFromStream(inputStream);
@@ -1047,23 +1080,24 @@ of Voyager prior to v1.3.
           throw std::runtime_error("Unknown storage data type received!");
         }
       },
-      py::arg("file_like"), py::arg("space"), py::arg("num_dimensions"),
-      py::arg("storage_data_type") = StorageDataType::Float32, LOAD_DOCSTRING);
+      nb::arg("file_like"), nb::arg("space"), nb::arg("num_dimensions"),
+      nb::arg("storage_data_type") = StorageDataType::Float32, LOAD_DOCSTRING);
 
   index.def_static(
       "load",
-      [](const py::object filelike) -> std::shared_ptr<Index> {
+      [](const nb::object filelike) -> std::shared_ptr<Index> {
         if (!isReadableFileLike(filelike)) {
-          throw py::type_error(
-              "Expected either a filename or a file-like object (with "
-              "read, seek, seekable, and tell methods), but received: " +
-              filelike.attr("__repr__")().cast<std::string>());
+          throw nb::type_error(
+              ("Expected either a filename or a file-like object (with "
+               "read, seek, seekable, and tell methods), but received: " +
+               nb::cast<std::string>(filelike.attr("__repr__")()))
+                  .c_str());
         }
 
         auto inputStream = std::make_shared<PythonInputStream>(filelike);
-        py::gil_scoped_release release;
+        nb::gil_scoped_release release;
 
         return loadTypedIndexFromStream(inputStream);
       },
-      py::arg("file_like"), LOAD_DOCSTRING);
+      nb::arg("file_like"), LOAD_DOCSTRING);
 }
