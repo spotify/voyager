@@ -144,7 +144,7 @@ public:
    *
    * This constructor is only used to load a V0-type index from file.
    */
-  [[deprecated("Use the TypedIndex constructor without metadata args "
+  [[deprecated("Use the TypedIndex constructor without metadata parameters "
                "instead.")]] TypedIndex(const std::string &indexFilename,
                                         const SpaceType space,
                                         const int dimensions,
@@ -165,7 +165,7 @@ public:
    * This constructor is only used to load a V0-type index from a stream.
    */
   [[deprecated(
-      "Use the TypedIndex constructor without metadata args "
+      "Use the TypedIndex constructor without metadata parameters "
       "instead.")]] TypedIndex(std::shared_ptr<InputStream> inputStream,
                                const SpaceType space, const int dimensions,
                                bool searchOnly = false)
