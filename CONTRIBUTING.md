@@ -27,7 +27,7 @@ There are some nuances to building the Voyager python code.  Please read on for 
 For basic building, you should be able to simply run the following commands:
 ```shell
 cd python
-pip install -r python/dev-requirements.txt
+pip install -r dev-requirements.txt
 pip install .
 ```
 
