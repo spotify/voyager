@@ -117,7 +117,9 @@ public class StringIndex implements Closeable {
    * @param numDimensions Number of dimensions of each embedding stored in the underlying HNSW index
    * @param storageDataType @see com.spotify.voyager.jni.Index.StorageDataType
    * @return reference to the loaded StringIndex
+   * @deprecated Use the {@link #load(String,String)} method without metadata parameters instead.
    */
+  @Deprecated
   public static StringIndex load(
       final String indexFilename,
       final String nameListFilename,
@@ -147,7 +149,10 @@ public class StringIndex implements Closeable {
    * @param numDimensions Number of dimensions of each embedding stored in the underlying HNSW index
    * @param storageDataType @see com.spotify.voyager.jni.Index.StorageDataType
    * @return reference to the loaded StringIndex
+   * @deprecated Use the {@link #load(InputStream,InputStream)} method without metadata parameters
+   *     instead.
    */
+  @Deprecated
   public static StringIndex load(
       final InputStream indexInputStream,
       final InputStream nameListInputStream,
