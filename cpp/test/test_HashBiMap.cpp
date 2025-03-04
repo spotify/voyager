@@ -16,7 +16,7 @@ TEST_CASE("HashBiMap: put and get") {
   map.put("one", 99);
   REQUIRE(map.get("one") == 99);
 
-  // throw exception if value is already present
+  // throw exception if value is already present with a different key
   REQUIRE_THROWS(map.put("foo", 99));
 }
 
