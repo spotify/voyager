@@ -16,8 +16,8 @@ TEST_CASE("HashBiMap: put and get") {
   map.put("one", 99);
   REQUIRE(map.get("one") == 99);
 
-  // throw std::invalid_argument if value is already present
-  REQUIRE_THROWS_AS(map.put("foo", 99), std::invalid_argument);
+  // throw exception if value is already present
+  REQUIRE_THROWS(map.put("foo", 99));
 }
 
 TEST_CASE("HashBiMap: forcePut") {

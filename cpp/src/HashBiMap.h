@@ -10,8 +10,7 @@
  * @class HashBiMap
  * @brief A bidirectional hash map implementation that allows for efficient
  *        key-to-value and value-to-key lookups. This implementation is inspired
- *        by Guava's HashBiMap in Java. Includes serialization and
- * deserialization methods.
+ *        by Guava's HashBiMap in Java.
  *
  * @tparam K The type of keys maintained by this map.
  * @tparam V The type of mapped values.
