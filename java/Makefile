@@ -17,13 +17,13 @@ ifeq ($(UNAME_S),Linux)
 CXX       := g++
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/linux
 ALL_OBJS  := target/classes/linux-x64/$(LINUX_SOBJ) target/classes/linux-aarch64/$(LINUX_SOBJ)
-CXXFLAGS  := -I. -lc -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
+CXXFLAGS  := -I. -lc -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3 -fassociative-math -fno-signaling-nans -fno-trapping-math -fno-signed-zeros -freciprocal-math -fno-math-errno
 PREBUILD_COMMAND := sudo apt-get update && sudo apt-get install -y ca-certificates-java openjdk-11-jre-headless; { curl https://dlcdn.apache.org/maven/maven-3/3.9.2/binaries/apache-maven-3.9.2-bin.tar.gz | sudo tar -xvzf - -C /opt ; }; export M2_HOME=/opt/apache-maven-3.9.2 && export PATH=\"${M2_HOME}/bin:${PATH}\"
 else ifeq ($(UNAME_S),Darwin)
 CXX       := clang++
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/darwin
 ALL_OBJS  := target/classes/mac-x64/$(MAC_SOBJ) target/classes/mac-aarch64/$(MAC_SOBJ)
-CXXFLAGS  := -I. -lc++ -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3
+CXXFLAGS  := -I. -lc++ -shared -std=c++17 -I ./include $(addprefix -I,$(JAVA_INC)) -I $(CPP_SRC_DIR) -fPIC -O3 -fassociative-math -fno-signaling-nans -fno-trapping-math -fno-signed-zeros -freciprocal-math -fno-math-errno
 else ifdef OS # Windows:
 CXX       := cl.exe
 JAVA_INC  := $(JAVA_HOME)/include $(JAVA_HOME)/include/win32

@@ -31,6 +31,8 @@ else()
   set(DEV_MODULE Development.Module)
 endif()
 
+set(IS_UNIX ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+
 find_package(Python 3.8 COMPONENTS Interpreter ${DEV_MODULE})
 
 # Import nanobind through CMake's find_package mechanism
@@ -48,18 +50,31 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE nanobind_ROOT)
 find_package(nanobind CONFIG REQUIRED)
 
+# Allow for some math optimization on unix but not -ffast-math
+# See: https://simonbyrne.github.io/notes/fastmath/#flushing_subnormals_to_zero
+if (IS_UNIX)
+  add_compile_options(-fassociative-math -fno-signaling-nans -fno-trapping-math -fno-signed-zeros -freciprocal-math -fno-math-errno)
+endif()
+
+# Relase build on unix with all optimizations
+if (CMAKE_BUILD_TYPE STREQUAL "Release" AND IS_UNIX)
+  add_compile_options(-O3)
+endif()
+
+
 # Check the USE_ASAN environment variable, and if set to 1, enable AddressSanitizer
 if (DEFINED ENV{USE_ASAN} AND "$ENV{USE_ASAN}" STREQUAL "1")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=address)
 endif()
+
 
 nanobind_add_module(
   voyager_ext
   # Target the stable ABI for Python 3.12+, which reduces
   # the number of binary wheels that must be built. This
   # does nothing on older Python versions
-  NB_STATIC STABLE_ABI LTO FREE_THREADED
+  NB_STATIC STABLE_ABI LTO FREE_THREADED NOMINSIZE
   # Sources:
   src/bindings.cpp
 )
