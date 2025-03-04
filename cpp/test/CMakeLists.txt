@@ -5,7 +5,8 @@ set(TEST_FILES test_main.cpp test_HashBiMap.cpp doctest_setup.cpp)  # Add any te
 add_executable(VoyagerTests ${TEST_FILES})
 
 # Add compiler flags
-target_compile_options(VoyagerTests PRIVATE -g)
+target_compile_options(VoyagerTests PRIVATE -fsanitize=address -g)
+target_link_libraries(VoyagerTests PRIVATE -fsanitize=address)
 
 # Link the test executable with the main project and Doctest
 # target_link_libraries(MyProjectTests PRIVATE MyProject doctest::doctest)
