@@ -2,72 +2,94 @@
 #include "doctest.h"
 
 TEST_CASE("HashBiMap: put and get") {
-  HashBiMap<int, std::string> map;
-  map.put(1, "one");
-  map.put(2, "two");
+  HashBiMap<std::string, int> map;
+  map.put("one", 1);
+  map.put("two", 2);
+  // same state if the key-value pair already exists
+  map.put("one", 1);
 
-  REQUIRE(map.get(1) == "one");
-  REQUIRE(map.get(2) == "two");
+  REQUIRE(map.get("one") == 1);
+  REQUIRE(map.get("two") == 2);
+  REQUIRE(map.getSize() == 2);
+
+  // overwrite the value of key "one"
+  map.put("one", 99);
+  REQUIRE(map.get("one") == 99);
+
+  // throw std::invalid_argument if value is already present
+  REQUIRE_THROWS_AS(map.put("foo", 99), std::invalid_argument);
 }
 
 TEST_CASE("HashBiMap: forcePut") {
-  HashBiMap<int, std::string> map;
-  map.put(1, "one");
-  map.forcePut(2, "one"); // This should overwrite the value "one" with key 2
+  HashBiMap<std::string, int> map;
+  map.put("one", 1);
 
-  REQUIRE(map.get(2) == "one");
-  REQUIRE(!map.containsKey(1));
+  // This should overwrite the value 1 with key "new-one"
+  map.forcePut("new-one", 1);
+
+  REQUIRE(!map.containsKey("one"));
+  REQUIRE(map.get("new-one") == 1);
+  REQUIRE(map.getInverse(1) == "new-one");
+  REQUIRE(map.getSize() == 1);
+
+  map.put("two", 2);
+  // same state if the key-value pair already exists
+  map.forcePut("two", 2);
+
+  REQUIRE(map.get("two") == 2);
+  REQUIRE(map.getInverse(2) == "two");
+  REQUIRE(map.getSize() == 2);
 }
 
 TEST_CASE("HashBiMap: getInverse") {
-  HashBiMap<int, std::string> map;
-  map.put(1, "one");
-  map.put(2, "two");
+  HashBiMap<std::string, int> map;
+  map.put("one", 1);
+  map.put("two", 2);
 
-  REQUIRE(map.getInverse("one") == 1);
-  REQUIRE(map.getInverse("two") == 2);
+  REQUIRE(map.getInverse(1) == "one");
+  REQUIRE(map.getInverse(2) == "two");
 }
 
 TEST_CASE("HashBiMap: remove") {
-  HashBiMap<int, std::string> map;
-  map.put(1, "one");
-  map.put(2, "two");
+  HashBiMap<std::string, int> map;
+  map.put("one", 1);
+  map.put("two", 2);
 
-  map.remove(1);
-  REQUIRE(!map.containsKey(1));
-  REQUIRE(!map.containsValue("one"));
+  map.remove("one");
+  REQUIRE(!map.containsKey("one"));
+  REQUIRE(!map.containsValue(1));
   REQUIRE(map.getSize() == 1);
 }
 
 TEST_CASE("HashBiMap: removeInverse") {
-  HashBiMap<int, std::string> map;
-  map.put(1, "one");
-  map.put(2, "two");
+  HashBiMap<std::string, int> map;
+  map.put("one", 1);
+  map.put("two", 2);
 
-  map.removeInverse("one");
-  REQUIRE(!map.containsKey(1));
-  REQUIRE(!map.containsValue("one"));
+  map.removeInverse(1);
+  REQUIRE(!map.containsKey("one"));
+  REQUIRE(!map.containsValue(1));
   REQUIRE(map.getSize() == 1);
 }
 
 TEST_CASE("HashBiMap: clear") {
-  HashBiMap<int, std::string> map;
-  map.put(1, "one");
-  map.put(2, "two");
+  HashBiMap<std::string, int> map;
+  map.put("one", 1);
+  map.put("two", 2);
 
   map.clear();
   REQUIRE(map.getSize() == 0);
-  REQUIRE(!map.containsKey(1));
-  REQUIRE(!map.containsValue("one"));
+  REQUIRE(!map.containsKey("one"));
+  REQUIRE(!map.containsValue(2));
 }
 
 TEST_CASE("HashBiMap: containsKey and containsValue") {
-  HashBiMap<int, std::string> map;
-  map.put(1, "one");
-  map.put(2, "two");
+  HashBiMap<std::string, int> map;
+  map.put("one", 1);
+  map.put("two", 2);
 
-  REQUIRE(map.containsKey(1));
-  REQUIRE(map.containsValue("one"));
-  REQUIRE(map.containsKey(2));
-  REQUIRE(map.containsValue("two"));
+  REQUIRE(map.containsKey("one"));
+  REQUIRE(map.containsValue(1));
+  REQUIRE(map.containsKey("two"));
+  REQUIRE(map.containsValue(2));
 }
