@@ -1,5 +1,5 @@
 # List the test source files
-set(TEST_FILES test_main.cpp doctest_setup.cpp)  # Add any test files here
+set(TEST_FILES test_main.cpp test_HashBiMap.cpp doctest_setup.cpp)  # Add any test files here
 
 # Create an executable for the tests
 add_executable(VoyagerTests ${TEST_FILES})
