@@ -57,7 +57,7 @@ if (IS_UNIX)
   add_compile_options(-fassociative-math -fno-signaling-nans -fno-trapping-math -fno-signed-zeros -freciprocal-math -fno-math-errno)
 endif()
 
-# Relase build on unix with all optimizations
+# Relase build with all optimizations
 if (CMAKE_BUILD_TYPE STREQUAL "Release" AND IS_UNIX)
   add_compile_options(-O3)
 elseif (CMAKE_BUILD_TYPE STREQUAL "Release" AND IS_WINDOWS)
