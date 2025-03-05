@@ -11,7 +11,10 @@
           "/usr/bin/sed -i '$ a\include voyager/version.py' {build_dir}/python/MANIFEST.in",
           "in-dir={build_dir}/python python -m build",
           "/usr/bin/cp -r {build_dir}/python/dist/. {build_cache_dir}"
-     ],
+    ],
+    "install_command": [
+          "in-dir={env_dir} python -mpip install {wheel_file} numpy"
+    ],
     "benchmark_dir": "benchmarks",
     "env_dir": ".asv/env",
     "results_dir": ".asv/results",
