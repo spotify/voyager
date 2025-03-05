@@ -9,7 +9,7 @@ build: cmake
 	cmake --build ${BUILD_DIR}
 
 test: build
-	ctest --test-dir ${BUILD_DIR}
+	ctest --output-on-failure --test-dir ${BUILD_DIR}
 
 clean:
 	rm -rf ${BUILD_DIR}/*
