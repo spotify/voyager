@@ -32,6 +32,7 @@ else()
 endif()
 
 set(IS_UNIX ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+set(IS_WINDOWS ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
 find_package(Python 3.8 COMPONENTS Interpreter ${DEV_MODULE})
 
@@ -59,6 +60,8 @@ endif()
 # Relase build on unix with all optimizations
 if (CMAKE_BUILD_TYPE STREQUAL "Release" AND IS_UNIX)
   add_compile_options(-O3)
+elseif (CMAKE_BUILD_TYPE STREQUAL "Release" AND IS_WINDOWS)
+  add_compile_options(/Ox)
 endif()
 
 
