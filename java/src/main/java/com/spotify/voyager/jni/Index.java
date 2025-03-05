@@ -36,21 +36,23 @@ import java.util.Arrays;
  * <p>A brief example of how to use {@code Index}:
  *
  * <pre>
- *   // Create a new Index that compares 4-dimensional vectors via Euclidean distance:
- *   Index index = new Index(Index.SpaceType.Euclidean, 4);
+ * // Create a new Index that compares 4-dimensional vectors via Euclidean
+ * // distance:
+ * Index index = new Index(Index.SpaceType.Euclidean, 4);
  *
- *   // Add some data to the index:
- *   index.addItem(new float[]{1.0f, 2.0f, 3.0f, 4.0f});
- *   index.addItem(new float[]{2.0f, 3.0f, 4.0f, 5.0f});
+ * // Add some data to the index:
+ * index.addItem(new float[] { 1.0f, 2.0f, 3.0f, 4.0f });
+ * index.addItem(new float[] { 2.0f, 3.0f, 4.0f, 5.0f });
  *
- *   // Query the index to return the `k` nearest neighbors of a given vector:
- *   Index.QueryResults results = index.query(new float[]{3.0f, 4.0f, 5.0f, 6.0f}, 1);
+ * // Query the index to return the `k` nearest neighbors of a given vector:
+ * Index.QueryResults results = index.query(new float[] { 3.0f, 4.0f, 5.0f, 6.0f }, 1);
  *
- *   // Our query will return the 1th (second) item that was added, as it's the closest:
- *   assert(results.getLabels()[0] == 1);
+ * // Our query will return the 1th (second) item that was added, as it's the
+ * // closest:
+ * assert (results.getLabels()[0] == 1);
  *
- *   // Serialize this index to use it again later:
- *   index.saveIndex("my_tiny_index.voy");
+ * // Serialize this index to use it again later:
+ * index.saveIndex("my_tiny_index.voy");
  * </pre>
  */
 public class Index implements Closeable {
@@ -238,7 +240,9 @@ public class Index implements Closeable {
    *     file.
    * @throws RuntimeException if the index cannot be loaded from the file, or the file contains
    *     invalid data.
+   * @deprecated Use the {@link #load(String)} method without metadata parameters instead.
    */
+  @Deprecated
   public static Index load(
       String filename, SpaceType space, int numDimensions, StorageDataType storageDataType) {
     Index index = new Index();
@@ -276,7 +280,9 @@ public class Index implements Closeable {
    *     input stream.
    * @throws RuntimeException if the index cannot be loaded from the stream, or the stream contains
    *     invalid data.
+   * @deprecated Use the {@link #load(InputStream)} method without metadata parameters instead.
    */
+  @Deprecated
   public static Index load(
       InputStream inputStream,
       SpaceType space,
@@ -339,11 +345,13 @@ public class Index implements Closeable {
       long maxElements,
       StorageDataType storageDataType);
 
+  @Deprecated
   private native void nativeLoadFromFileWithParameters(
       String filename, SpaceType space, int numDimensions, StorageDataType storageDataType);
 
   private native void nativeLoadFromFile(String filename);
 
+  @Deprecated
   private native void nativeLoadFromInputStreamWithParameters(
       InputStream inputStream, SpaceType space, int numDimensions, StorageDataType storageDataType);
 
