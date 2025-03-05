@@ -69,3 +69,30 @@ TEST_CASE("HashBiMap: containsKey and containsValue") {
   REQUIRE(map.containsKey("two"));
   REQUIRE(map.containsValue(2));
 }
+
+TEST_CASE("Save HashBiMap to file and load from file") {
+  HashBiMap<std::string, int> map;
+  map.put("two", 2);
+  map.put("zero", 0);
+  map.put("one", 1);
+
+  map.saveNamesMappingToFile("test_HashBiMap.txt");
+
+  // Only one line is expected in the file
+  std::ifstream file("test_HashBiMap.txt");
+  std::string fileContents;
+  std::getline(file, fileContents);
+  file.close();
+  std::cout << fileContents << std::endl;
+
+  REQUIRE(fileContents == "['zero','one','two']");
+
+  HashBiMap<std::string, int> loadedMap =
+      HashBiMap<std::string, int>::loadNamesMappingFromFile(
+          "test_HashBiMap.txt");
+
+  REQUIRE(loadedMap.getSize() == 3);
+  REQUIRE(loadedMap.getByKey("zero") == 0);
+  REQUIRE(loadedMap.getByKey("one") == 1);
+  REQUIRE(loadedMap.getByKey("two") == 2);
+}

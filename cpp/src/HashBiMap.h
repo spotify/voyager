@@ -1,4 +1,6 @@
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -86,5 +88,84 @@ public:
   void clear() {
     forwardMap.clear();
     reverseMap.clear();
+  }
+
+  /**
+   * @brief Saves the HashBiMap to a file.
+   *
+   * The format of this file will be "['key1','key2','key3',...]" where the
+   * index position of the key is the value of the key in the map. For example
+   * if the HashBiMap is {"foo" -> 2, "baz" -> 0, "bar" -> 1}, the file will
+   * contain "['baz','bar','foo']".
+   *
+   * Therefore the assumptions are that
+   *  - the map values are contiguous integers from [0,size_of_index]
+   *
+   * @param bimap The HashBiMap to save.
+   * @param filename The name of the file to save the map to.
+   */
+  void saveNamesMappingToFile(const std::string &filename) {
+    std::vector<std::string> keys(getSize());
+    for (const auto &pair : forwardMap) {
+      keys[pair.second] = pair.first;
+    }
+
+    std::ofstream outFile(filename);
+    if (!outFile) {
+      throw std::runtime_error("Unable to open file for writing");
+    }
+
+    outFile << "[";
+    for (size_t i = 0; i < keys.size(); ++i) {
+      outFile << "'" << keys[i] << "'";
+      if (i < keys.size() - 1) {
+        outFile << ",";
+      }
+    }
+    outFile << "]";
+    outFile.close();
+  }
+
+  /**
+   * @brief Loads the HashBiMap from a file.
+   *
+   * The format of this file should be "['key1','key2','key3',...]" where the
+   * index position of the key is the value of the key in the map.
+   *
+   * @param filename The name of the file to load the map from.
+   * @return The loaded HashBiMap.
+   */
+  static HashBiMap<std::string, int>
+  loadNamesMappingFromFile(const std::string &filename) {
+    std::ifstream inFile(filename);
+    if (!inFile) {
+      throw std::runtime_error("Unable to open file for reading");
+    }
+
+    std::string content;
+    std::getline(inFile, content);
+    inFile.close();
+
+    if (content.front() != '[' || content.back() != ']') {
+      throw std::runtime_error("Invalid file format");
+    }
+
+    content =
+        content.substr(1, content.size() - 2); // Remove the square brackets
+
+    std::vector<std::string> keys;
+    std::stringstream ss(content);
+    std::string item;
+    while (std::getline(ss, item, ',')) {
+      item.erase(std::remove(item.begin(), item.end(), '\''), item.end());
+      keys.push_back(item);
+    }
+
+    HashBiMap<std::string, int> bimap;
+    for (size_t i = 0; i < keys.size(); ++i) {
+      bimap.put(keys[i], i);
+    }
+
+    return bimap;
   }
 };
