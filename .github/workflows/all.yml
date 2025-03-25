@@ -259,11 +259,6 @@ jobs:
           python-version: "3.10"
       - name: Copy README into place
         run: cp README.md python/
-      - name: Set up QEMU for aarch64 on Linux
-        if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v1
-        with:
-          platforms: all
       - name: Copy C++ code into place
         run: rm -rfv python/src/cpp && cp -r cpp python/src
         if: runner.os == 'Linux'
