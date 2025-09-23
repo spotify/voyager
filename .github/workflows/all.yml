@@ -456,8 +456,9 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: python-wheels
+          pattern: python-wheels-*
           path: dist
+          merge-multiple: true
       - uses: actions/download-artifact@v4
         with:
           name: python-sdist
