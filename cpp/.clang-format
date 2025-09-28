@@ -5,4 +5,4 @@ InsertNewlineAtEOF: true
 ---
 Language: Cpp
 # Use 120 columns since we have big screens now
-ColumnLimit: 80
+ColumnLimit: 120
