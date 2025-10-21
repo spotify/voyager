@@ -1,0 +1,59 @@
+{
+  "name": "voyager-node",
+  "version": "0.1.8",
+  "description": "Unofficial Node.js bindings for Spotify's Voyager Library",
+  "main": "dist/voyager-node.js",
+  "types": "dist/voyager-node.d.ts",
+  "type": "module",
+  "private": false,
+  "keywords": [
+    "voyager",
+    "ann",
+    "approximate-nearest-neighbors",
+    "HNSW",
+    "vector-search",
+    "similarity-search"
+  ],
+  "author": "Can Bakiskan",
+  "License": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/canbakiskan/voyager-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/canbakiskan/voyager-node/issues"
+  },
+  "homepage": "https://github.com/canbakiskan/voyager-node",
+  "files": [
+    "src",
+    "dist",
+    "prebuilds",
+    "voyager_src",
+    "binding.gyp",
+    "README.md"
+  ],
+  "dependencies": {
+    "node-addon-api": "^8.5.0",
+    "node-gyp-build": "^4.6.1"
+  },
+  "devDependencies": {
+    "@types/bindings": "^1.5.5",
+    "@types/node": "^24.7.1",
+    "node-gyp": "^11.5.0",
+    "prebuildify": "^6.0.1",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "build": "node-gyp rebuild && tsc",
+    "build-ts": "tsc",
+    "install": "node-gyp-build || node-gyp rebuild || (>&2 echo \"\\nnpm ERR! voyager-node could not be built. Please check your build environment.\" && exit 1)",
+    "test": "node --experimental-transform-types tests/run_all_tests.ts",
+    "prebuildify": "prebuildify --napi --strip",
+    "prepack": "rsync -a ../cpp/src/ ./voyager_src",
+    "prepublishOnly": "npm run prebuildify && npm run build-ts"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "gypfile": true
+}

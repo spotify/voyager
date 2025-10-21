@@ -1,0 +1,69 @@
+name: Publish voyager-node to NPM
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+            node-version: 20.x
+          - os: ubuntu-latest
+            arch: x64
+            node-version: 20.x
+          - os: windows-latest
+            arch: x64
+            node-version: 20.x
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
+        working-directory: ./nodejs
+        run: npm install
+      - name: Run prebuildify for ${{ matrix.os }} - ${{ matrix.arch }}
+        working-directory: ./nodejs
+        run: npm run prebuildify
+        env:
+          TARGET_ARCH: ${{ matrix.arch }}
+      - name: Upload prebuild artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuilds-${{ matrix.os }}-${{ matrix.arch }}
+          path: nodejs/prebuilds
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.x
+          registry-url: "https://registry.npmjs.org"
+      - name: Install dependencies
+        working-directory: ./nodejs
+        run: npm install
+      - name: Download all prebuild artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: nodejs/prebuilds-temp
+          pattern: prebuilds-*
+          merge-multiple: true
+      - name: Move prebuilds to correct location
+        run: |
+          mkdir -p nodejs/prebuilds
+          mv nodejs/prebuilds-temp/* nodejs/prebuilds/
+          rm -rf nodejs/prebuilds-temp
+      - name: Build TypeScript
+        working-directory: ./nodejs
+        run: npm run build-ts
+      - name: Publish to npm
+        working-directory: ./nodejs
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
