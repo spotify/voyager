@@ -64,6 +64,7 @@ mvn package
 
 #### Building C++
 To build the C++ library with `cmake`, use the following commands:
+
 ```shell
 cd cpp
 git submodule update --init --recursive
@@ -109,7 +110,9 @@ mvn verify
 ```
 
 ### C++ Tests
-To run the C++ tests, use the following commands:
+
+To run the C++ tests use the following commands:
+
 ```shell
 cd cpp
 git submodule update --init --recursive
@@ -130,7 +133,8 @@ tox -e format
 ```
 
 ### C++
-If you are working on any C++ code throughout the repo, ensure you have `clang-format` (version 16) installed, and then use clang-format to handle C++ formatting:
+If you are working on any C++ code throughout the repo, ensure you have `clang-format` (version 16) installed, and then use `clang-format` to handle C++ formatting:
+
 ```bash
 cd cpp
 cmake .
