@@ -32,6 +32,9 @@
 #endif
 #endif
 #endif
+#ifdef __ARM_NEON
+#define USE_NEON
+#endif
 #endif
 
 #if defined(USE_AVX) || defined(USE_SSE)
@@ -53,6 +56,10 @@
 #define PORTABLE_ALIGN32 __declspec(align(32))
 #define PORTABLE_ALIGN64 __declspec(align(64))
 #endif
+#endif
+
+#if defined(USE_NEON)
+#include <arm_neon.h>
 #endif
 
 #include "StreamUtils.h"
