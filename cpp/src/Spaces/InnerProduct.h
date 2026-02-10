@@ -219,8 +219,8 @@ static float InnerProductSIMD4Ext(const float *pVect1, const float *pVect2,
     pVect2 += 16;
   }
 
-  float32x4_t sum_prod = vaddq_f32(vaddq_f32(sum0, sum1),
-                                    vaddq_f32(sum2, sum3));
+  float32x4_t sum_prod =
+      vaddq_f32(vaddq_f32(sum0, sum1), vaddq_f32(sum2, sum3));
 
   while (pVect1 < pEnd2) {
     float32x4_t v1 = vld1q_f32(pVect1);
@@ -377,8 +377,8 @@ static float InnerProductSIMD16Ext(const float *pVect1, const float *pVect2,
     pVect2 += 16;
   }
 
-  float sum = vaddvq_f32(vaddq_f32(vaddq_f32(sum0, sum1),
-                                    vaddq_f32(sum2, sum3)));
+  float sum =
+      vaddvq_f32(vaddq_f32(vaddq_f32(sum0, sum1), vaddq_f32(sum2, sum3)));
   return 1.0f - sum;
 }
 
