@@ -34,7 +34,7 @@ endif()
 set(IS_UNIX ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
 set(IS_WINDOWS ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
-find_package(Python 3.8 COMPONENTS Interpreter ${DEV_MODULE})
+find_package(Python 3.9 COMPONENTS Interpreter ${DEV_MODULE})
 
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
