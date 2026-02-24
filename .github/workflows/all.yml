@@ -214,14 +214,11 @@ jobs:
           LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
           tox
 
-  run-benchmarks:
-    strategy:
-      matrix:
-        os: ['ubuntu-latest']
-    runs-on: ${{ matrix.os }}
+  run-python-benchmarks:
+    runs-on: ubuntu-latest
     continue-on-error: true
     if: github.event_name == 'pull_request' 
-    name: Run benchmarks on ${{ matrix.os }}
+    name: Run Python benchmarks
     steps:
       - name: Set up Python
         uses: actions/setup-python@v3
@@ -272,7 +269,7 @@ jobs:
         continue-on-error: true
       - name: Run benchmarks (base)
         working-directory: java
-        run: mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test -Dexec.args="-cp %classpath org.openjdk.jmh.Main -rf json -rff /tmp/base-results.json -f 1 -wi 2 -i 3 -w 1s -r 1s -jvmArgs -Xms2g -jvmArgs -Xmx2g"
+        run: mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test -Dexec.args="-cp %classpath org.openjdk.jmh.Main -rf json -rff /tmp/base-results.json -f 1 -wi 2 -i 3 -w 2s -r 2s -jvmArgs -Xms2g -jvmArgs -Xmx2g"
         continue-on-error: true
 
       # Benchmark the PR branch
@@ -286,7 +283,7 @@ jobs:
         run: mvn clean --batch-mode test-compile
       - name: Run benchmarks (PR)
         working-directory: java
-        run: mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test -Dexec.args="-cp %classpath org.openjdk.jmh.Main -rf json -rff /tmp/pr-results.json -f 1 -wi 2 -i 3 -w 1s -r 1s -jvmArgs -Xms2g -jvmArgs -Xmx2g"
+        run: mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test -Dexec.args="-cp %classpath org.openjdk.jmh.Main -rf json -rff /tmp/pr-results.json -f 1 -wi 2 -i 3 -w 2s -r 2s -jvmArgs -Xms2g -jvmArgs -Xmx2g"
 
       # Compare and report
       - name: Compare benchmarks
