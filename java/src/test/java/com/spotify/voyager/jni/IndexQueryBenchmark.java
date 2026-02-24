@@ -40,15 +40,21 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations = 5)
 public class IndexQueryBenchmark {
 
+  @Param({"256"})
+  public int numDimensions;
+
+  @Param({"4096"})
+  public int numElements;
+
   @Param({"Euclidean", "InnerProduct", "Cosine"})
   public String spaceType;
 
   @Param({"Float32", "Float8", "E4M3"})
   public String storageDataType;
 
-  private static final int NUM_DIMENSIONS = 256;
-  private static final int NUM_ELEMENTS = 4096;
-  private static final int EF_CONSTRUCTION = 24;
+  @Param({"24"})
+  public int efConstruction;
+
   private static final int M = 20;
   private static final long RANDOM_SEED = 4321;
 
@@ -60,9 +66,9 @@ public class IndexQueryBenchmark {
     Random rng = new Random(1234);
     boolean isFloat8 = "Float8".equals(storageDataType);
 
-    float[][] inputData = new float[NUM_ELEMENTS][NUM_DIMENSIONS];
-    for (int i = 0; i < NUM_ELEMENTS; i++) {
-      for (int j = 0; j < NUM_DIMENSIONS; j++) {
+    float[][] inputData = new float[numElements][numDimensions];
+    for (int i = 0; i < numElements; i++) {
+      for (int j = 0; j < numDimensions; j++) {
         float val = rng.nextFloat() * 2 - 1;
         if (isFloat8) {
           val = Math.round(val * 127f) / 127f;
@@ -73,8 +79,7 @@ public class IndexQueryBenchmark {
 
     Index.SpaceType space = Index.SpaceType.valueOf(spaceType);
     Index.StorageDataType storage = Index.StorageDataType.valueOf(storageDataType);
-    index =
-        new Index(space, NUM_DIMENSIONS, M, EF_CONSTRUCTION, RANDOM_SEED, NUM_ELEMENTS, storage);
+    index = new Index(space, numDimensions, M, efConstruction, RANDOM_SEED, numElements, storage);
     index.addItems(inputData, 1);
 
     queryVectors = inputData;
