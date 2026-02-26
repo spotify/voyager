@@ -57,7 +57,7 @@ public class StringIndexCreationBenchmark {
 
   private static final int M = 20;
   private static final long RANDOM_SEED = 4321;
-  private static final int NAME_LENGTH = 32;
+  private static final int NAME_LENGTH = 22;
   private static final String NAME_PREFIX = "spotify:track:";
 
   private float[][] inputData;
@@ -83,7 +83,7 @@ public class StringIndexCreationBenchmark {
     Random nameRng = new Random(5678);
     itemNames = new String[numElements];
     for (int i = 0; i < numElements; i++) {
-      itemNames[i] = NAME_PREFIX + randomAlphaString(nameRng, NAME_LENGTH);
+      itemNames[i] = NAME_PREFIX + randomBase62String(nameRng, NAME_LENGTH);
     }
   }
 
@@ -112,15 +112,13 @@ public class StringIndexCreationBenchmark {
     }
   }
 
-  private static String randomAlphaString(Random rng, int length) {
+  private static final String BASE62 =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  private static String randomBase62String(Random rng, int length) {
     char[] chars = new char[length];
     for (int i = 0; i < length; i++) {
-      int val = rng.nextInt(52);
-      if (val < 26) {
-        chars[i] = (char) ('A' + val);
-      } else {
-        chars[i] = (char) ('a' + val - 26);
-      }
+      chars[i] = BASE62.charAt(rng.nextInt(BASE62.length()));
     }
     return new String(chars);
   }
