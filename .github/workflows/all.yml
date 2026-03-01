@@ -137,7 +137,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - '3.8'
+          - '3.9'
           - '3.13'
         os: ['ubuntu-latest', windows-latest, macos-latest]
     name: Test with Python ${{ matrix.python-version }} on ${{ matrix.os }}
@@ -177,7 +177,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - '3.8'
+          - '3.9'
         os: ['ubuntu-latest']
     name: Test with Python ${{ matrix.python-version }} + Address Sanitizer
     steps:
@@ -327,32 +327,26 @@ jobs:
     strategy:
       matrix:
         include:
-        - { os: macos-latest, build: cp38-macosx_x86_64 }
         - { os: macos-latest, build: cp39-macosx_x86_64 }
         - { os: macos-latest, build: cp310-macosx_x86_64 }
         - { os: macos-latest, build: cp311-macosx_x86_64 }
         - { os: macos-latest, build: cp312-macosx_x86_64 }
         - { os: macos-latest, build: cp313-macosx_x86_64 }
-        - { os: macos-latest, build: cp38-macosx_universal2 }
         - { os: macos-latest, build: cp39-macosx_universal2 }
         - { os: macos-latest, build: cp310-macosx_universal2 }
         - { os: macos-latest, build: cp311-macosx_universal2 }
         - { os: macos-latest, build: cp312-macosx_universal2 }
         - { os: macos-latest, build: cp313-macosx_universal2 }
-        - { os: macos-latest, build: cp38-macosx_arm64 }
         - { os: macos-latest, build: cp39-macosx_arm64 }
         - { os: macos-latest, build: cp310-macosx_arm64 }
         - { os: macos-latest, build: cp311-macosx_arm64 }
         - { os: macos-latest, build: cp312-macosx_arm64 }
         - { os: macos-latest, build: cp313-macosx_arm64 }
-        - { os: windows-latest, build: cp38-win_amd64 }
         - { os: windows-latest, build: cp39-win_amd64 }
         - { os: windows-latest, build: cp310-win_amd64 }
         - { os: windows-latest, build: cp311-win_amd64 }
         - { os: windows-latest, build: cp312-win_amd64 }
         - { os: windows-latest, build: cp313-win_amd64 }
-        - { os: 'ubuntu-latest', build: cp38-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp38-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp39-manylinux_x86_64 }
         - { os: 'ubuntu-latest', build: cp39-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp310-manylinux_x86_64 }
