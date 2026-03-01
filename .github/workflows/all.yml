@@ -214,14 +214,11 @@ jobs:
           LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
           tox
 
-  run-benchmarks:
-    strategy:
-      matrix:
-        os: ['ubuntu-latest']
-    runs-on: ${{ matrix.os }}
+  run-python-benchmarks:
+    runs-on: ubuntu-latest
     continue-on-error: true
     if: github.event_name == 'pull_request' 
-    name: Run benchmarks on ${{ matrix.os }}
+    name: Run Python benchmarks
     steps:
       - name: Set up Python
         uses: actions/setup-python@v3
@@ -243,6 +240,55 @@ jobs:
         run: |
              asv machine --yes
              asv continuous --sort name --no-only-changed refs/remotes/origin/main ${{ github.sha }} | tee >(sed '1,/All benchmarks:/d' > $GITHUB_STEP_SUMMARY)
+
+  run-java-benchmarks:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    if: github.event_name == 'pull_request'
+    name: Run Java benchmarks
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+
+      # Benchmark the base branch first
+      - name: Checkout base branch
+        run: git checkout ${{ github.event.pull_request.base.sha }}
+      - name: Build native library (base)
+        working-directory: java
+        run: make
+        continue-on-error: true
+      - name: Compile benchmarks (base)
+        working-directory: java
+        run: mvn --batch-mode test-compile
+        continue-on-error: true
+      - name: Run benchmarks (base)
+        working-directory: java
+        run: mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test -Dexec.args="-cp %classpath org.openjdk.jmh.Main -rf json -rff /tmp/base-results.json -f 1 -wi 2 -i 3 -w 2s -r 2s -jvmArgs -Xms2g -jvmArgs -Xmx2g"
+        continue-on-error: true
+
+      # Benchmark the PR branch
+      - name: Checkout PR branch
+        run: git checkout ${{ github.sha }}
+      - name: Build native library (PR)
+        working-directory: java
+        run: make clean && make
+      - name: Compile benchmarks (PR)
+        working-directory: java
+        run: mvn clean --batch-mode test-compile
+      - name: Run benchmarks (PR)
+        working-directory: java
+        run: mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test -Dexec.args="-cp %classpath org.openjdk.jmh.Main -rf json -rff /tmp/pr-results.json -f 1 -wi 2 -i 3 -w 2s -r 2s -jvmArgs -Xms2g -jvmArgs -Xmx2g"
+
+      # Compare and report
+      - name: Compare benchmarks
+        run: python3 java/scripts/compare_benchmarks.py /tmp/base-results.json /tmp/pr-results.json >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
 
   build-python-sdist:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
