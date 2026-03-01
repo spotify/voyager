@@ -174,9 +174,51 @@ static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2,
   _mm_store_ps(TmpRes, sum);
   return TmpRes[0] + TmpRes[1] + TmpRes[2] + TmpRes[3];
 }
+
+#elif defined(USE_NEON)
+
+static float L2SqrSIMD16Ext(const float *pVect1, const float *pVect2,
+                            const size_t qty) {
+  size_t qty16 = qty >> 4;
+  const float *pEnd1 = pVect1 + (qty16 << 4);
+
+  float32x4_t sum0 = vdupq_n_f32(0);
+  float32x4_t sum1 = vdupq_n_f32(0);
+  float32x4_t sum2 = vdupq_n_f32(0);
+  float32x4_t sum3 = vdupq_n_f32(0);
+
+  while (pVect1 < pEnd1) {
+    float32x4_t v1_0 = vld1q_f32(pVect1);
+    float32x4_t v2_0 = vld1q_f32(pVect2);
+    float32x4_t diff0 = vsubq_f32(v1_0, v2_0);
+    sum0 = vfmaq_f32(sum0, diff0, diff0);
+
+    float32x4_t v1_1 = vld1q_f32(pVect1 + 4);
+    float32x4_t v2_1 = vld1q_f32(pVect2 + 4);
+    float32x4_t diff1 = vsubq_f32(v1_1, v2_1);
+    sum1 = vfmaq_f32(sum1, diff1, diff1);
+
+    float32x4_t v1_2 = vld1q_f32(pVect1 + 8);
+    float32x4_t v2_2 = vld1q_f32(pVect2 + 8);
+    float32x4_t diff2 = vsubq_f32(v1_2, v2_2);
+    sum2 = vfmaq_f32(sum2, diff2, diff2);
+
+    float32x4_t v1_3 = vld1q_f32(pVect1 + 12);
+    float32x4_t v2_3 = vld1q_f32(pVect2 + 12);
+    float32x4_t diff3 = vsubq_f32(v1_3, v2_3);
+    sum3 = vfmaq_f32(sum3, diff3, diff3);
+
+    pVect1 += 16;
+    pVect2 += 16;
+  }
+
+  return vaddvq_f32(vaddq_f32(vaddq_f32(sum0, sum1), vaddq_f32(sum2, sum3)));
+}
+
 #endif
 
-#if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512)
+#if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512) ||             \
+    defined(USE_NEON)
 static float L2SqrSIMD16ExtResiduals(const float *pVect1, const float *pVect2,
                                      const size_t qty) {
   size_t qty16 = qty >> 4 << 4;
@@ -189,7 +231,7 @@ static float L2SqrSIMD16ExtResiduals(const float *pVect1, const float *pVect2,
 }
 #endif
 
-#ifdef USE_SSE
+#if defined(USE_SSE)
 static float L2SqrSIMD4Ext(const float *pVect1, const float *pVect2,
                            const size_t qty) {
   float PORTABLE_ALIGN32 TmpRes[8];
@@ -212,6 +254,30 @@ static float L2SqrSIMD4Ext(const float *pVect1, const float *pVect2,
   return TmpRes[0] + TmpRes[1] + TmpRes[2] + TmpRes[3];
 }
 
+#elif defined(USE_NEON)
+
+static float L2SqrSIMD4Ext(const float *pVect1, const float *pVect2,
+                           const size_t qty) {
+  size_t qty4 = qty >> 2;
+  const float *pEnd1 = pVect1 + (qty4 << 2);
+
+  float32x4_t sum = vdupq_n_f32(0);
+
+  while (pVect1 < pEnd1) {
+    float32x4_t v1 = vld1q_f32(pVect1);
+    pVect1 += 4;
+    float32x4_t v2 = vld1q_f32(pVect2);
+    pVect2 += 4;
+    float32x4_t diff = vsubq_f32(v1, v2);
+    sum = vfmaq_f32(sum, diff, diff);
+  }
+
+  return vaddvq_f32(sum);
+}
+
+#endif
+
+#if defined(USE_SSE) || defined(USE_NEON)
 static float L2SqrSIMD4ExtResiduals(const float *pVect1, const float *pVect2,
                                     const size_t qty) {
   size_t qty4 = qty >> 2 << 2;
@@ -276,7 +342,8 @@ template <>
 EuclideanSpace<float, float>::EuclideanSpace(size_t dim)
     : data_size_(dim * sizeof(float)), dim_(dim) {
   fstdistfunc_ = L2Sqr<float, float>;
-#if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512)
+#if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512) ||             \
+    defined(USE_NEON)
   if (dim % 16 == 0)
     fstdistfunc_ = L2SqrSIMD16Ext;
   else if (dim % 4 == 0)
