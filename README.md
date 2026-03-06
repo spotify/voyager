@@ -34,7 +34,7 @@ Add the following artifact to your `pom.xml`:
 <dependency>
   <groupId>com.spotify</groupId>
   <artifactId>voyager</artifactId>
-  <version>2.1.0</version>
+  <version>2.1.1</version>
 </dependency>
 ```
 You can find the latest version on [Voyager's Releases page](https://github.com/spotify/voyager/releases).
@@ -43,7 +43,7 @@ You can find the latest version on [Voyager's Releases page](https://github.com/
 
 Add the following artifact to your `build.sbt`:
 ```sbt
-"com.spotify" % "voyager" % "2.1.0"
+"com.spotify" % "voyager" % "2.1.1"
 ```
 You can find the latest version on [Voyager's Releases page](https://github.com/spotify/voyager/releases).
 
