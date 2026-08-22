@@ -48,7 +48,8 @@ public:
 class FileInputStream : public InputStream {
 public:
   FileInputStream(const std::string &filename) : filename(filename) {
-    handle = fopen(filename.c_str(), "r");
+    // Open in binary mode so Windows does not alter bytes (CRLF translation).
+    handle = fopen(filename.c_str(), "rb");
     if (!handle) {
       throw std::runtime_error("Failed to open file for reading: " + filename);
     }
