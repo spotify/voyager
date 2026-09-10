@@ -27,6 +27,8 @@
 #include <string>
 #include <sys/stat.h>
 
+namespace voyager {
+
 /**
  * Like std::istream, but custom with fewer methods to implement.
  */
@@ -178,3 +180,13 @@ static void readBinaryPOD(std::shared_ptr<InputStream> in, T &podRef) {
                              std::to_string(bytesRead) + ".");
   }
 }
+
+} // namespace voyager
+
+namespace hnswlib {
+using voyager::FileOutputStream;
+using voyager::InputStream;
+using voyager::OutputStream;
+using voyager::readBinaryPOD;
+using voyager::writeBinaryPOD;
+} // namespace hnswlib
