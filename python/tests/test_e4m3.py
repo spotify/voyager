@@ -18,6 +18,7 @@ import math
 
 import numpy as np
 import pytest
+
 from voyager import E4M3T, Index, Space, StorageDataType
 
 RANGES_AND_EXPECTED_ERRORS = [
@@ -90,8 +91,8 @@ def test_rounding():
         + list(np.arange(-448, 448, 1.0))
         + [0.04890749]
     ):
-        closest_above = min(VALID_E4M3_VALUES, key=lambda v: (abs(v - _input) if v >= _input else 10000))
-        closest_below = min(VALID_E4M3_VALUES, key=lambda v: (abs(v - _input) if v <= _input else 10000))
+        closest_above = min(VALID_E4M3_VALUES, key=lambda v: abs(v - _input) if v >= _input else 10000)
+        closest_below = min(VALID_E4M3_VALUES, key=lambda v: abs(v - _input) if v <= _input else 10000)
         expected = min([closest_above, closest_below], key=lambda v: abs(v - _input))
         if closest_above != closest_below and abs(closest_above - _input) == abs(closest_below - _input):
             # Round to nearest, ties to even:
@@ -117,8 +118,8 @@ def test_rounding():
 
 @pytest.mark.parametrize("_input", [0.04890749])
 def test_rounding_known_edge_cases(_input: float):
-    closest_above = min(VALID_E4M3_VALUES, key=lambda v: (abs(v - _input) if v >= _input else 10000))
-    closest_below = min(VALID_E4M3_VALUES, key=lambda v: (abs(v - _input) if v <= _input else 10000))
+    closest_above = min(VALID_E4M3_VALUES, key=lambda v: abs(v - _input) if v >= _input else 10000)
+    closest_below = min(VALID_E4M3_VALUES, key=lambda v: abs(v - _input) if v <= _input else 10000)
     expected = min([closest_above, closest_below], key=lambda v: abs(v - _input))
     if closest_above != closest_below and abs(closest_above - _input) == abs(closest_below - _input):
         # Round to nearest, ties to even:
@@ -126,7 +127,7 @@ def test_rounding_known_edge_cases(_input: float):
         below_is_even = E4M3T(closest_below).mantissa % 2 == 0
         if above_is_even and below_is_even:
             raise NotImplementedError(
-                "Both numbers above and below the target are even!" f" {E4M3T(closest_above)} vs {E4M3T(closest_below)}"
+                f"Both numbers above and below the target are even! {E4M3T(closest_above)} vs {E4M3T(closest_below)}"
             )
         elif above_is_even:
             expected = closest_above

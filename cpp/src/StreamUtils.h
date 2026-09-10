@@ -182,3 +182,11 @@ static void readBinaryPOD(std::shared_ptr<InputStream> in, T &podRef) {
 }
 
 } // namespace voyager
+
+namespace hnswlib {
+using voyager::FileOutputStream;
+using voyager::InputStream;
+using voyager::OutputStream;
+using voyager::readBinaryPOD;
+using voyager::writeBinaryPOD;
+} // namespace hnswlib

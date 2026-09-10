@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import pytest
 
-import numpy as np
-
-from voyager import Index, Space, StorageDataType, E4M3T
+from voyager import E4M3T, Index, Space, StorageDataType
 
 
 def normalized(vec: np.ndarray) -> np.ndarray:
@@ -82,6 +81,6 @@ def test_distance(dimensions: int, space: Space, storage_data_type: StorageDataT
     else:
         raise NotImplementedError(f"Not sure how to calculate distance in tests for {space}!")
 
-    assert (
-        np.abs(actual - expected) < tolerance
-    ), f"Expected {space.name} distance between {a} and {b} to be {expected}, but was {actual}"
+    assert np.abs(actual - expected) < tolerance, (
+        f"Expected {space.name} distance between {a} and {b} to be {expected}, but was {actual}"
+    )

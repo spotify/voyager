@@ -339,7 +339,7 @@ public:
     while (getNumElements() + rows > getMaxElements()) {
       try {
         resizeIndex(getNumElements() + rows);
-      } catch (hnswlib::IndexCannotBeShrunkError &e) {
+      } catch (::IndexCannotBeShrunkError &e) {
         // Retry with a larger size; some other thread may have resized
         // behind our back.
       }
@@ -395,7 +395,7 @@ public:
         size_t id = ids.size() ? ids.at(row) : (currentLabel.fetch_add(1));
         try {
           algorithmImpl->addPoint(convertedArray.data() + startIndex, id);
-        } catch (hnswlib::IndexFullError &e) {
+        } catch (::IndexFullError &e) {
           // Resize the index and try again:
           while (getNumElements() + rows > getMaxElements()) {
             try {
@@ -403,7 +403,7 @@ public:
               // the number of elements we're trying to add, but may
               // allocate more space than necessary.
               resizeIndex(getNumElements() + rows);
-            } catch (hnswlib::IndexCannotBeShrunkError &e) {
+            } catch (::IndexCannotBeShrunkError &e) {
               // Retry with a larger size; some other thread may have resized
               // behind our back.
             }
@@ -432,7 +432,7 @@ public:
 
         try {
           algorithmImpl->addPoint(normalizedArray.data() + startIndex, id);
-        } catch (hnswlib::IndexFullError &e) {
+        } catch (::IndexFullError &e) {
           // Resize the index and try again:
           while (getNumElements() + rows > getMaxElements()) {
             try {
@@ -440,7 +440,7 @@ public:
               // the number of elements we're trying to add, but may
               // allocate more space than necessary.
               resizeIndex(getNumElements() + rows);
-            } catch (hnswlib::IndexCannotBeShrunkError &e) {
+            } catch (::IndexCannotBeShrunkError &e) {
               // Retry with a larger size; some other thread may have resized
               // behind our back.
             }
