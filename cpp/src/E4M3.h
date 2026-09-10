@@ -23,6 +23,8 @@
 #include <cmath>
 #include <string>
 
+namespace voyager {
+
 static constexpr float ALL_E4M3_VALUES[256] = {
     0,
     -0,
@@ -417,3 +419,5 @@ public:
 
   float operator*(float other) const { return ((float)*this) * other; }
 };
+
+} // namespace voyager
