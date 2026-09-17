@@ -122,7 +122,7 @@ public:
     }
 
     ep_added = true;
-    numThreadsDefault = std::thread::hardware_concurrency();
+    numThreadsDefault = voyager::cpu::availableCpuCount();
 
     defaultEF = 10;
 

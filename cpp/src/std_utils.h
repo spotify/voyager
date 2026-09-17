@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <thread>
 
+#include "cpu_utils.h"
+
 /*
  * replacement for the openmp '#pragma omp parallel for' directive
  * only handles a subset of functionality (no reductions etc)
@@ -42,7 +44,7 @@ template <class Function>
 inline void ParallelFor(size_t start, size_t end, size_t numThreads,
                         Function fn) {
   if (numThreads <= 0) {
-    numThreads = std::thread::hardware_concurrency();
+    numThreads = voyager::cpu::availableCpuCount();
   }
 
   if (numThreads == 1) {
