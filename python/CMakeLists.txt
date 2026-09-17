@@ -80,6 +80,7 @@ nanobind_add_module(
   NB_STATIC STABLE_ABI LTO FREE_THREADED NOMINSIZE
   # Sources:
   src/bindings.cpp
+  src/cpp/src/cpu_utils.cpp
 )
 
 # Install directive for scikit-build-core

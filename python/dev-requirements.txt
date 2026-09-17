@@ -1,6 +1,8 @@
 -r test-requirements.txt
-numpy
-ruff
+numpy==2.0.2; python_version < "3.10"
+numpy==2.2.2; python_version >= "3.10" and python_version < "3.14"
+numpy==2.4.6; python_version >= "3.14"
+ruff==0.9.3
 psutil
 mypy
 asv==0.6.3
