@@ -1,9 +1,9 @@
 #include "doctest.h"
 
-#include "cpu_utils.h"
+#include "cpu_utils_detail.h"
 #include <unordered_map>
 
-using voyager::cpu::FileReader;
+using voyager::cpu::detail::FileReader;
 
 namespace {
 
@@ -20,17 +20,17 @@ readerFor(const std::unordered_map<std::string, std::string> &files) {
 } // namespace
 
 TEST_CASE("cgroup v2 CPU quotas round fractional CPUs up") {
-  CHECK(voyager::cpu::parseCgroupV2CpuMax("100000 100000") == 1);
-  CHECK(voyager::cpu::parseCgroupV2CpuMax("150000 100000") == 2);
-  CHECK(voyager::cpu::parseCgroupV2CpuMax("250000 100000") == 3);
-  CHECK_FALSE(voyager::cpu::parseCgroupV2CpuMax("max 100000"));
+  CHECK(voyager::cpu::detail::parseCgroupV2CpuMax("100000 100000") == 1);
+  CHECK(voyager::cpu::detail::parseCgroupV2CpuMax("150000 100000") == 2);
+  CHECK(voyager::cpu::detail::parseCgroupV2CpuMax("250000 100000") == 3);
+  CHECK_FALSE(voyager::cpu::detail::parseCgroupV2CpuMax("max 100000"));
 }
 
 TEST_CASE("cgroup v1 unlimited and malformed quotas are ignored") {
-  CHECK(voyager::cpu::parseCgroupV1CpuLimit("200000", "100000") == 2);
-  CHECK_FALSE(voyager::cpu::parseCgroupV1CpuLimit("-1", "100000"));
-  CHECK_FALSE(voyager::cpu::parseCgroupV1CpuLimit("invalid", "100000"));
-  CHECK_FALSE(voyager::cpu::parseCgroupV1CpuLimit("100000", "0"));
+  CHECK(voyager::cpu::detail::parseCgroupV1CpuLimit("200000", "100000") == 2);
+  CHECK_FALSE(voyager::cpu::detail::parseCgroupV1CpuLimit("-1", "100000"));
+  CHECK_FALSE(voyager::cpu::detail::parseCgroupV1CpuLimit("invalid", "100000"));
+  CHECK_FALSE(voyager::cpu::detail::parseCgroupV1CpuLimit("100000", "0"));
 }
 
 TEST_CASE("cgroup v2 uses the tightest quota in its hierarchy") {
@@ -44,7 +44,7 @@ TEST_CASE("cgroup v2 uses the tightest quota in its hierarchy") {
       {"/sys/fs/cgroup/services/voyager/cpu.max", "400000 100000\n"},
   };
 
-  CHECK(voyager::cpu::cgroupCpuCount(readerFor(files)) == 2);
+  CHECK(voyager::cpu::detail::cgroupCpuCount(readerFor(files)) == 2);
 }
 
 TEST_CASE("cgroup v1 CPU controller mount and quota are detected") {
@@ -59,7 +59,7 @@ TEST_CASE("cgroup v1 CPU controller mount and quota are detected") {
       {"/sys/fs/cgroup/cpu/service/cpu.cfs_period_us", "100000\n"},
   };
 
-  CHECK(voyager::cpu::cgroupCpuCount(readerFor(files)) == 2);
+  CHECK(voyager::cpu::detail::cgroupCpuCount(readerFor(files)) == 2);
 }
 
 TEST_CASE("cgroup namespaces resolve relative to the mount root") {
@@ -73,7 +73,7 @@ TEST_CASE("cgroup namespaces resolve relative to the mount root") {
       {"/sys/fs/cgroup/child/cpu.max", "max 100000\n"},
   };
 
-  CHECK(voyager::cpu::cgroupCpuCount(readerFor(files)) == 3);
+  CHECK(voyager::cpu::detail::cgroupCpuCount(readerFor(files)) == 3);
 }
 
 TEST_CASE("hybrid cgroups fall back to the v1 CPU controller") {
@@ -86,7 +86,7 @@ TEST_CASE("hybrid cgroups fall back to the v1 CPU controller") {
       {"/sys/fs/cgroup/cpu/legacy/cpu.cfs_period_us", "100000\n"},
   };
 
-  CHECK(voyager::cpu::cgroupCpuCount(readerFor(files)) == 1);
+  CHECK(voyager::cpu::detail::cgroupCpuCount(readerFor(files)) == 1);
 }
 
 TEST_CASE("missing CPU cgroup membership is ignored") {
@@ -96,12 +96,14 @@ TEST_CASE("missing CPU cgroup membership is ignored") {
        "30 25 0:27 / /sys/fs/cgroup/cpu rw - cgroup cgroup rw,cpu\n"},
   };
 
-  CHECK_FALSE(voyager::cpu::cgroupCpuCount(readerFor(files)));
+  CHECK_FALSE(voyager::cpu::detail::cgroupCpuCount(readerFor(files)));
 }
 
 TEST_CASE("available CPU count combines hardware, affinity, and quota") {
-  CHECK(voyager::cpu::availableCpuCountFromLimits(16, 8, 2) == 2);
-  CHECK(voyager::cpu::availableCpuCountFromLimits(16, 4, std::nullopt) == 4);
-  CHECK(voyager::cpu::availableCpuCountFromLimits(2, 8, 6) == 2);
-  CHECK(voyager::cpu::availableCpuCount(0, std::nullopt, readerFor({})) == 1);
+  CHECK(voyager::cpu::detail::availableCpuCountFromLimits(16, 8, 2) == 2);
+  CHECK(voyager::cpu::detail::availableCpuCountFromLimits(16, 4,
+                                                          std::nullopt) == 4);
+  CHECK(voyager::cpu::detail::availableCpuCountFromLimits(2, 8, 6) == 2);
+  CHECK(voyager::cpu::detail::availableCpuCountFromLimits(0, std::nullopt,
+                                                          std::nullopt) == 1);
 }

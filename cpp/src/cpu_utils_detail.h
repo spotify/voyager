@@ -21,11 +21,27 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
+#include <optional>
+#include <string>
 
 namespace voyager {
 namespace cpu {
+namespace detail {
 
-std::size_t availableCpuCount();
+using FileReader =
+    std::function<std::optional<std::string>(const std::string &)>;
 
+std::optional<std::size_t> parseCgroupV2CpuMax(const std::string &cpuMax);
+std::optional<std::size_t>
+parseCgroupV1CpuLimit(const std::string &quotaValue,
+                      const std::string &periodValue);
+std::optional<std::size_t> cgroupCpuCount(const FileReader &reader);
+std::size_t
+availableCpuCountFromLimits(std::size_t hardwareCount,
+                            std::optional<std::size_t> affinityCount,
+                            std::optional<std::size_t> quotaCount);
+
+} // namespace detail
 } // namespace cpu
 } // namespace voyager

@@ -9,9 +9,12 @@ LINUX_SOBJ  := libvoyager.so
 WIN_SOBJ    := voyager.dll
 CPP_SRC_DIR := ../cpp/src/
 
-SOURCE    := com_spotify_voyager_jni_Index.cpp
-HEADERS   := $(SOURCE:.cpp=.h) $(wildcard ../cpp/*.h)
-JAVA_SRC  := ./src/main/java
+SOURCE         := com_spotify_voyager_jni_Index.cpp
+NATIVE_SOURCES := $(SOURCE) $(CPP_SRC_DIR)/cpu_utils.cpp
+CPP_HEADERS    := $(wildcard $(CPP_SRC_DIR)/*.h)
+JNI_HEADER     := $(SOURCE:.cpp=.h)
+HEADERS        := $(JNI_HEADER) $(CPP_HEADERS)
+JAVA_SRC       := ./src/main/java
 
 ifeq ($(UNAME_S),Linux)
 CXX       := g++
@@ -48,7 +51,7 @@ all: $(ALL_OBJS)
 classpath.txt:
 	mvn dependency:build-classpath | grep '\.jar[;:]' | tr ';' ':' > $@
 
-%.h: %.cpp classpath.txt
+$(JNI_HEADER): $(SOURCE) classpath.txt
 	# For each Java JNI .cpp file, we need a corresponding header to be generated.
 	$(eval JAVA_FILE := $(shell python3 -c 'print("$<".split(".")[0].replace("_", "/") + ".java")'))
 	javac -cp ./target/classes:$(shell cat classpath.txt) -h . -Xlint:deprecation -sourcepath $(JAVA_SRC) $(JAVA_SRC)/$(JAVA_FILE)
@@ -60,26 +63,26 @@ target/classes/linux-x64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
 	# Why use Dockcross if we're already building on x86?
 	# We need to use an older version of GLIBC and GLIBCXX to ensure wide compatibility on Linux.
-	docker run -v $(shell realpath ../):/work dockcross/linux-x64:20210625-78b96c7 bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
+	docker run -v $(shell realpath ../):/work dockcross/linux-x64:20210625-78b96c7 bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(NATIVE_SOURCES)'
 
 target/classes/linux-aarch64/$(LINUX_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/linux-aarch64/
 	mkdir -p linux-build
 	cp -r $(CPP_SRC_DIR) linux-build/include
 	cp -r $(addsuffix /*,$(JAVA_INC)) linux-build/include
-	docker run -v $(shell realpath ../):/work dockcross/linux-arm64-lts bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(SOURCE)'
+	docker run -v $(shell realpath ../):/work dockcross/linux-arm64-lts bash -x -c 'cd /work/java && $(PREBUILD_COMMAND) && $$CXX $(CXXFLAGS) -I linux-build/include -o $@ $(NATIVE_SOURCES)'
 
 target/classes/mac-x64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/mac-x64/
-	$(CXX) $(CXXFLAGS) -o $@ $(SOURCE) -arch x86_64
+	$(CXX) $(CXXFLAGS) -o $@ $(NATIVE_SOURCES) -arch x86_64
 
 target/classes/mac-aarch64/$(MAC_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/mac-aarch64/
-	$(CXX) $(CXXFLAGS) -o $@ $(SOURCE) -arch arm64
+	$(CXX) $(CXXFLAGS) -o $@ $(NATIVE_SOURCES) -arch arm64
 
 target/classes/win-x64/$(WIN_SOBJ): classpath.txt $(HEADERS)
 	mkdir -p target/classes/win-x64/
-	$(CXX) $(CXXFLAGS) $(SOURCE)
+	$(CXX) $(CXXFLAGS) $(NATIVE_SOURCES)
 	cp com_spotify_voyager_jni_Index.dll $@
 
 test: $(ALL_OBJS)

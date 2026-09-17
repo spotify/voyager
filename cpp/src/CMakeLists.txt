@@ -1,6 +1,6 @@
-add_library(VoyagerLib INTERFACE)
+add_library(VoyagerLib cpu_utils.cpp)
 target_include_directories(VoyagerLib 
-    INTERFACE 
+    PUBLIC
         .
         Spaces
 )
