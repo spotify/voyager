@@ -16,9 +16,8 @@
 
 from io import BytesIO
 
-import pytest
-
 import numpy as np
+import pytest
 
 import voyager
 
@@ -281,14 +280,13 @@ def test_load_incorrect_type(
     )
 
     index.add_items(input_data)
-    with BytesIO(index.as_bytes()) as f:
-        with pytest.raises(ValueError):
-            voyager.Index.load(
-                file_like=f,
-                space=space,
-                num_dimensions=num_dimensions,
-                storage_data_type=reloaded_data_type,
-            )
+    with BytesIO(index.as_bytes()) as f, pytest.raises(ValueError):
+        voyager.Index.load(
+            file_like=f,
+            space=space,
+            num_dimensions=num_dimensions,
+            storage_data_type=reloaded_data_type,
+        )
 
 
 @pytest.mark.parametrize("space", [voyager.Space.Euclidean, voyager.Space.Cosine])
