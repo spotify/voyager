@@ -1,5 +1,7 @@
 -r test-requirements.txt
-numpy
+# NumPy 2.0 is the last release series supporting Python 3.9.
+numpy==2.0.2; python_version < "3.10"
+numpy==2.2.6; python_version >= "3.10"
 ruff==0.16.1
 psutil
 mypy
