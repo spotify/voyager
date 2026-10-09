@@ -264,6 +264,54 @@ Java_com_spotify_voyager_jni_Index_getEfConstruction(JNIEnv *, jobject);
 JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getM(JNIEnv *,
                                                                 jobject);
 
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    enableStringIdentifiers
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_enableStringIdentifiers
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    importNames
+ * Signature: ([Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_importNames
+  (JNIEnv *, jobject, jobjectArray);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    addStringItem
+ * Signature: (Ljava/lang/String;[F)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addStringItem
+  (JNIEnv *, jobject, jstring, jfloatArray);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    addStringItems
+ * Signature: ([Ljava/lang/String;[[F)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addStringItems
+  (JNIEnv *, jobject, jobjectArray, jobjectArray);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    getStringID
+ * Signature: (Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getStringID
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    getNames
+ * Signature: ([J)[Ljava/lang/String;
+ */
+JNIEXPORT jobjectArray JNICALL Java_com_spotify_voyager_jni_Index_getNames
+  (JNIEnv *, jobject, jlongArray);
+
 #ifdef __cplusplus
 }
 #endif

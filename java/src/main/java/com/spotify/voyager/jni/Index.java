@@ -349,6 +349,18 @@ public class Index implements Closeable {
 
   private native void nativeLoadFromInputStream(InputStream inputStream);
 
+  native void enableStringIdentifiers();
+
+  native void importNames(String[] names);
+
+  native void addStringItem(String name, float[] vector);
+
+  native void addStringItems(String[] names, float[][] vectors);
+
+  native long getStringID(String name);
+
+  native String[] getNames(long[] labels);
+
   private native void nativeDestructor();
 
   /**
