@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 #
 # Copyright 2022-2023 Spotify AB
 #
