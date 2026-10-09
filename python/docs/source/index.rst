@@ -27,7 +27,7 @@ It got its name because it searches through (embedding) space(s), much like
 Python compatibility
 --------------------
 
-Voyager 2.1.2 requires Python 3.9 or newer. Python 3.8 is no longer supported.
+Voyager 2.2.0 requires Python 3.9 or newer. Python 3.8 is no longer supported.
 
 
 .. toctree::
