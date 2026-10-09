@@ -3,6 +3,7 @@ import struct
 
 import numpy as np
 import pytest
+
 from voyager import Index, Space, StorageDataType, StringIndex
 
 
