@@ -1,0 +1,384 @@
+{
+  "timestamp_utc": "2026-10-09T16:00:51.891288+00:00",
+  "commit": "2b5223e0160787ac6d7e1a301c9409c5354bbe24",
+  "bimap_sha256": "e37ba5bc3f9643fa10a3abefbf0ff02ad82245ae4bd6cd13ee5e3292bc683431",
+  "voyager_version": [
+    3,
+    0,
+    0
+  ],
+  "python": "3.14.4 (main, Apr 14 2026, 14:46:33) [Clang 22.1.3 ]",
+  "numpy": "2.5.3",
+  "platform": "macOS-26.7.1-arm64-arm-64bit-Mach-O",
+  "cpu_threads": 18,
+  "memory_bytes": 137438953472,
+  "configuration": {
+    "dimensions": 128,
+    "M": 16,
+    "ef_construction": 100,
+    "query_ef": 100,
+    "k": 10,
+    "queries": 256,
+    "storage": "Float32",
+    "space": "Euclidean",
+    "seed": 1234,
+    "graph_seed": 4321,
+    "repeat": 3
+  },
+  "cases": [
+    {
+      "num_elements": 100000,
+      "name_bytes": 32,
+      "num_threads": 1,
+      "samples": {
+        "numeric": [
+          {
+            "batch_query_us_per_vector": 107.4278984375,
+            "single_query_us_per_vector": 106.54069140624999,
+            "lookup_us_per_vector": 0.7326670000000001,
+            "save_ms": 19.886292,
+            "load_ms": 19.522917,
+            "file_bytes": 66067148,
+            "update_us_per_vector": 976.863125,
+            "insert_ms": 13430.407125
+          },
+          {
+            "batch_query_us_per_vector": 111.6591796875,
+            "single_query_us_per_vector": 111.14290234375,
+            "lookup_us_per_vector": 0.785625,
+            "save_ms": 10.142125,
+            "load_ms": 21.605041,
+            "file_bytes": 66067148,
+            "update_us_per_vector": 985.125209,
+            "insert_ms": 13603.942500000001
+          },
+          {
+            "batch_query_us_per_vector": 117.93668749999999,
+            "single_query_us_per_vector": 118.56787109375,
+            "lookup_us_per_vector": 0.7945829999999999,
+            "save_ms": 9.862166,
+            "load_ms": 19.21125,
+            "file_bytes": 66067148,
+            "update_us_per_vector": 1048.70225,
+            "insert_ms": 13459.861042
+          }
+        ],
+        "string": [
+          {
+            "batch_query_us_per_vector": 114.0690078125,
+            "single_query_us_per_vector": 117.7517890625,
+            "lookup_us_per_vector": 1.163625,
+            "save_ms": 14.598958,
+            "load_ms": 40.163042000000004,
+            "file_bytes": 70867148,
+            "update_us_per_vector": 1041.318458,
+            "insert_ms": 13803.734499999999
+          },
+          {
+            "batch_query_us_per_vector": 111.02669140625001,
+            "single_query_us_per_vector": 119.69580078125,
+            "lookup_us_per_vector": 1.2185830000000002,
+            "save_ms": 22.592416,
+            "load_ms": 41.595458,
+            "file_bytes": 70867148,
+            "update_us_per_vector": 988.623458,
+            "insert_ms": 14018.063250000001
+          },
+          {
+            "batch_query_us_per_vector": 115.81559375,
+            "single_query_us_per_vector": 169.87418749999998,
+            "lookup_us_per_vector": 1.239916,
+            "save_ms": 14.528333,
+            "load_ms": 47.564791,
+            "file_bytes": 70867148,
+            "update_us_per_vector": 1019.665125,
+            "insert_ms": 13962.825292
+          }
+        ]
+      },
+      "load_rss_samples_bytes": {
+        "numeric": [
+          84197376,
+          84148224,
+          84164608
+        ],
+        "string": [
+          99008512,
+          98926592,
+          98959360
+        ]
+      },
+      "median": {
+        "numeric": {
+          "batch_query_us_per_vector": 111.6591796875,
+          "single_query_us_per_vector": 111.14290234375,
+          "lookup_us_per_vector": 0.785625,
+          "save_ms": 10.142125,
+          "load_ms": 19.522917,
+          "file_bytes": 66067148,
+          "update_us_per_vector": 985.125209,
+          "insert_ms": 13459.861042,
+          "load_rss_bytes": 84164608
+        },
+        "string": {
+          "batch_query_us_per_vector": 114.0690078125,
+          "single_query_us_per_vector": 119.69580078125,
+          "lookup_us_per_vector": 1.2185830000000002,
+          "save_ms": 14.598958,
+          "load_ms": 41.595458,
+          "file_bytes": 70867148,
+          "update_us_per_vector": 1019.665125,
+          "insert_ms": 13962.825292,
+          "load_rss_bytes": 98959360
+        }
+      },
+      "string_over_numeric": {
+        "batch_query_us_per_vector": 1.0215819973937152,
+        "single_query_us_per_vector": 1.0769540677554654,
+        "lookup_us_per_vector": 1.5511000795544951,
+        "save_ms": 1.4394377904038846,
+        "load_ms": 2.1305964677307188,
+        "file_bytes": 1.0726533556435642,
+        "update_us_per_vector": 1.0350614477067959,
+        "insert_ms": 1.0373677148991773,
+        "load_rss_bytes": 1.1757835312439167
+      }
+    },
+    {
+      "num_elements": 10000,
+      "name_bytes": 128,
+      "num_threads": 1,
+      "samples": {
+        "numeric": [
+          {
+            "batch_query_us_per_vector": 52.1656875,
+            "single_query_us_per_vector": 53.39273828125,
+            "lookup_us_per_vector": 0.587,
+            "save_ms": 2.213125,
+            "load_ms": 2.352459,
+            "file_bytes": 6603780,
+            "update_us_per_vector": 791.5499590000001,
+            "insert_ms": 760.565583
+          },
+          {
+            "batch_query_us_per_vector": 51.508464843750005,
+            "single_query_us_per_vector": 52.843425781250005,
+            "lookup_us_per_vector": 0.559125,
+            "save_ms": 0.59875,
+            "load_ms": 2.067833,
+            "file_bytes": 6603780,
+            "update_us_per_vector": 789.380875,
+            "insert_ms": 697.993792
+          },
+          {
+            "batch_query_us_per_vector": 51.3463515625,
+            "single_query_us_per_vector": 52.031578124999996,
+            "lookup_us_per_vector": 0.46558299999999997,
+            "save_ms": 0.590917,
+            "load_ms": 2.023041,
+            "file_bytes": 6603780,
+            "update_us_per_vector": 832.5337920000001,
+            "insert_ms": 695.246625
+          }
+        ],
+        "string": [
+          {
+            "batch_query_us_per_vector": 55.85302734375,
+            "single_query_us_per_vector": 60.8251953125,
+            "lookup_us_per_vector": 0.664541,
+            "save_ms": 1.696458,
+            "load_ms": 4.397625,
+            "file_bytes": 8043780,
+            "update_us_per_vector": 807.2954579999999,
+            "insert_ms": 751.5610419999999
+          },
+          {
+            "batch_query_us_per_vector": 55.57666015625,
+            "single_query_us_per_vector": 60.29931640625,
+            "lookup_us_per_vector": 0.639417,
+            "save_ms": 0.953125,
+            "load_ms": 4.391292,
+            "file_bytes": 8043780,
+            "update_us_per_vector": 803.3687080000001,
+            "insert_ms": 733.176041
+          },
+          {
+            "batch_query_us_per_vector": 56.65120703125,
+            "single_query_us_per_vector": 65.6083984375,
+            "lookup_us_per_vector": 0.767166,
+            "save_ms": 0.902166,
+            "load_ms": 4.299959,
+            "file_bytes": 8043780,
+            "update_us_per_vector": 839.009375,
+            "insert_ms": 734.375458
+          }
+        ]
+      },
+      "load_rss_samples_bytes": {
+        "numeric": [
+          12075008,
+          12058624,
+          12075008
+        ],
+        "string": [
+          14729216,
+          14729216,
+          14778368
+        ]
+      },
+      "median": {
+        "numeric": {
+          "batch_query_us_per_vector": 51.508464843750005,
+          "single_query_us_per_vector": 52.843425781250005,
+          "lookup_us_per_vector": 0.559125,
+          "save_ms": 0.59875,
+          "load_ms": 2.067833,
+          "file_bytes": 6603780,
+          "update_us_per_vector": 791.5499590000001,
+          "insert_ms": 697.993792,
+          "load_rss_bytes": 12075008
+        },
+        "string": {
+          "batch_query_us_per_vector": 55.85302734375,
+          "single_query_us_per_vector": 60.8251953125,
+          "lookup_us_per_vector": 0.664541,
+          "save_ms": 0.953125,
+          "load_ms": 4.391292,
+          "file_bytes": 8043780,
+          "update_us_per_vector": 807.2954579999999,
+          "insert_ms": 734.375458,
+          "load_rss_bytes": 14729216
+        }
+      },
+      "string_over_numeric": {
+        "batch_query_us_per_vector": 1.0843465731929527,
+        "single_query_us_per_vector": 1.1510456487868752,
+        "lookup_us_per_vector": 1.1885374469036443,
+        "save_ms": 1.591858037578288,
+        "load_ms": 2.1236202343225976,
+        "file_bytes": 1.21805693103041,
+        "update_us_per_vector": 1.0198919838488676,
+        "insert_ms": 1.0521231942418192,
+        "load_rss_bytes": 1.2198100407055632
+      }
+    },
+    {
+      "num_elements": 10000,
+      "name_bytes": 32,
+      "num_threads": 4,
+      "samples": {
+        "numeric": [
+          {
+            "batch_query_us_per_vector": 14.94140625,
+            "single_query_us_per_vector": 53.296710937499995,
+            "lookup_us_per_vector": 0.589792,
+            "save_ms": 1.7073749999999999,
+            "load_ms": 3.112125,
+            "file_bytes": 6603780,
+            "update_us_per_vector": 213.0525,
+            "insert_ms": 205.310292
+          },
+          {
+            "batch_query_us_per_vector": 14.92496484375,
+            "single_query_us_per_vector": 54.19384765625,
+            "lookup_us_per_vector": 0.5998330000000001,
+            "save_ms": 0.6045,
+            "load_ms": 2.153458,
+            "file_bytes": 6603780,
+            "update_us_per_vector": 213.500375,
+            "insert_ms": 205.9955
+          },
+          {
+            "batch_query_us_per_vector": 14.836097656249999,
+            "single_query_us_per_vector": 52.3958359375,
+            "lookup_us_per_vector": 0.48,
+            "save_ms": 0.8121670000000001,
+            "load_ms": 2.093625,
+            "file_bytes": 6603780,
+            "update_us_per_vector": 212.43,
+            "insert_ms": 207.51820800000002
+          }
+        ],
+        "string": [
+          {
+            "batch_query_us_per_vector": 18.69580078125,
+            "single_query_us_per_vector": 60.8771171875,
+            "lookup_us_per_vector": 0.619,
+            "save_ms": 0.918041,
+            "load_ms": 4.424708,
+            "file_bytes": 7083780,
+            "update_us_per_vector": 223.678792,
+            "insert_ms": 239.67766600000002
+          },
+          {
+            "batch_query_us_per_vector": 18.5537109375,
+            "single_query_us_per_vector": 60.669597656250005,
+            "lookup_us_per_vector": 0.548292,
+            "save_ms": 0.929791,
+            "load_ms": 4.064458,
+            "file_bytes": 7083780,
+            "update_us_per_vector": 214.823709,
+            "insert_ms": 241.78725
+          },
+          {
+            "batch_query_us_per_vector": 18.71500390625,
+            "single_query_us_per_vector": 60.927898437500005,
+            "lookup_us_per_vector": 0.5625419999999999,
+            "save_ms": 0.8909159999999999,
+            "load_ms": 4.046459,
+            "file_bytes": 7083848,
+            "update_us_per_vector": 216.78166700000003,
+            "insert_ms": 243.241792
+          }
+        ]
+      },
+      "load_rss_samples_bytes": {
+        "numeric": [
+          12156928,
+          12173312,
+          12091392
+        ],
+        "string": [
+          13598720,
+          13615104,
+          13615104
+        ]
+      },
+      "median": {
+        "numeric": {
+          "batch_query_us_per_vector": 14.92496484375,
+          "single_query_us_per_vector": 53.296710937499995,
+          "lookup_us_per_vector": 0.589792,
+          "save_ms": 0.8121670000000001,
+          "load_ms": 2.153458,
+          "file_bytes": 6603780,
+          "update_us_per_vector": 213.0525,
+          "insert_ms": 205.9955,
+          "load_rss_bytes": 12156928
+        },
+        "string": {
+          "batch_query_us_per_vector": 18.69580078125,
+          "single_query_us_per_vector": 60.8771171875,
+          "lookup_us_per_vector": 0.5625419999999999,
+          "save_ms": 0.918041,
+          "load_ms": 4.064458,
+          "file_bytes": 7083780,
+          "update_us_per_vector": 216.78166700000003,
+          "insert_ms": 241.78725,
+          "load_rss_bytes": 13615104
+        }
+      },
+      "string_over_numeric": {
+        "batch_query_us_per_vector": 1.2526529192515372,
+        "single_query_us_per_vector": 1.1422302824444344,
+        "lookup_us_per_vector": 0.9537972709022841,
+        "save_ms": 1.1303598890375992,
+        "load_ms": 1.8874099239455795,
+        "file_bytes": 1.0726856436768033,
+        "update_us_per_vector": 1.0175035120451532,
+        "insert_ms": 1.17375015473639,
+        "load_rss_bytes": 1.1199460916442048
+      }
+    }
+  ]
+}

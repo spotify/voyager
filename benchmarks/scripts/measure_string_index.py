@@ -10,6 +10,7 @@ Requires numpy and psutil. Inputs/names are generated outside timed regions.
 
 import argparse
 import gc
+import hashlib
 import json
 import os
 import platform
@@ -165,6 +166,9 @@ def main():
     result = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        "bimap_sha256": hashlib.sha256(
+            (Path(__file__).resolve().parents[2] / "cpp/src/BiMap.h").read_bytes()
+        ).hexdigest(),
         "voyager_version": list(voyager.version),
         "python": sys.version,
         "numpy": np.__version__,

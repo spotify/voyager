@@ -28,6 +28,19 @@ namespace voyager {
 // A bijection: names and labels are both unique. No binding owns a second copy.
 class BiMap {
 public:
+  BiMap() = default;
+  BiMap(const BiMap &other) {
+    for (const auto &entry : other.byName)
+      insert(entry.second, entry.first);
+  }
+  BiMap &operator=(const BiMap &other) {
+    BiMap copy(other);
+    *this = std::move(copy);
+    return *this;
+  }
+  BiMap(BiMap &&) noexcept = default;
+  BiMap &operator=(BiMap &&) noexcept = default;
+
   bool containsLabel(hnswlib::labeltype label) const {
     return byLabel.count(label);
   }
@@ -43,26 +56,27 @@ public:
     if (found == byLabel.end())
       throw std::out_of_range("No string identifier for label " +
                               std::to_string(label));
-    return found->second;
+    return *found->second;
   }
   void insert(hnswlib::labeltype label, const std::string &name) {
     if (byName.count(name) || byLabel.count(label))
       throw std::domain_error(
           "Duplicate string identifier or label in Voyager mapping.");
-    byName.emplace(name, label);
+    auto owner = byName.emplace(name, label).first;
     try {
-      byLabel.emplace(label, name);
+      byLabel.emplace(label, &owner->first);
     } catch (...) {
-      byName.erase(name);
+      byName.erase(owner);
       throw;
     }
   }
   void erase(hnswlib::labeltype label) {
-    byName.erase(byLabel.at(label));
+    byName.erase(*byLabel.at(label));
     byLabel.erase(label);
   }
   size_t size() const { return byName.size(); }
-  const std::unordered_map<hnswlib::labeltype, std::string> &entries() const {
+  const std::unordered_map<hnswlib::labeltype, const std::string *> &
+  entries() const {
     return byLabel;
   }
 
@@ -106,7 +120,9 @@ public:
   }
 
 private:
+  // unordered_map preserves references to keys across rehashes. The owning
+  // map is declared first so it is destroyed after the reverse references.
   std::unordered_map<std::string, hnswlib::labeltype> byName;
-  std::unordered_map<hnswlib::labeltype, std::string> byLabel;
+  std::unordered_map<hnswlib::labeltype, const std::string *> byLabel;
 };
 } // namespace voyager
