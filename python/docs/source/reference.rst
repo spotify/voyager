@@ -30,6 +30,13 @@ A quick example on how to get started::
    :inherited-members:
    :special-members: __contains__, __len__
 
+String identifiers
+------------------
+
+.. autoclass:: voyager.StringIndex
+   :members:
+   :special-members: __contains__, __len__
+
 Enums
 -----
 .. autoclass:: voyager.Space

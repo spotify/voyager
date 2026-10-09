@@ -84,7 +84,6 @@ private:
   std::atomic<hnswlib::labeltype> currentLabel;
   std::unique_ptr<hnswlib::HierarchicalNSW<dist_t, data_t>> algorithmImpl;
   std::unique_ptr<hnswlib::Space<dist_t, data_t>> spaceImpl;
-  std::unique_ptr<voyager::Metadata::V1> metadata;
 
   mutable std::atomic<float> max_norm = 0.0;
 
@@ -96,10 +95,7 @@ public:
              const size_t efConstruction = 200, const size_t randomSeed = 1,
              const size_t maxElements = 1,
              const bool enableOrderPreservingTransform = true)
-      : space(space), dimensions(dimensions),
-        metadata(std::make_unique<voyager::Metadata::V1>(
-            dimensions, space, getStorageDataType(), 0.0,
-            space == InnerProduct)) {
+      : space(space), dimensions(dimensions) {
     switch (space) {
     case Euclidean:
       spaceImpl = std::make_unique<
@@ -183,6 +179,17 @@ public:
                    metadata->getUseOrderPreservingTransform()) {
     algorithmImpl = std::make_unique<hnswlib::HierarchicalNSW<dist_t, data_t>>(
         spaceImpl.get(), inputStream, 0, searchOnly);
+    if (auto v2 = dynamic_cast<voyager::Metadata::V2 *>(metadata.get())) {
+      names = std::move(v2->names);
+      stringIndex = v2->stringIndex;
+      if (stringIndex && names.size() != getNumElements())
+        throw std::domain_error(
+            "String identifier count does not match the graph.");
+      for (const auto &entry : names.entries())
+        if (!getIDsMap().count(entry.first))
+          throw std::domain_error(
+              "String identifier references an unknown graph label.");
+    }
     max_norm = metadata->getMaxNorm();
     currentLabel = algorithmImpl->cur_element_count;
   }
@@ -234,7 +241,6 @@ public:
    * Save this index to the provided file path on disk.
    */
   void saveIndex(const std::string &pathToIndex) {
-    algorithmImpl->saveIndex(pathToIndex);
     saveIndex(std::make_shared<FileOutputStream>(pathToIndex));
   }
 
@@ -244,9 +250,13 @@ public:
    * TypedIndex constructor to reload this index.
    */
   void saveIndex(std::shared_ptr<OutputStream> outputStream) {
-    metadata->setMaxNorm(max_norm);
-    metadata->setUseOrderPreservingTransform(useOrderPreservingTransform);
-    metadata->serializeToStream(outputStream);
+    std::shared_lock<std::shared_mutex> lock(namesMutex);
+    voyager::Metadata::V2 v2(dimensions, space, getStorageDataType(), max_norm,
+                             useOrderPreservingTransform);
+    if (stringIndex && names.size() != getNumElements())
+      throw std::domain_error("String identifiers do not cover the graph. Use "
+                              "the string API to insert items.");
+    v2.serializeWithNames(outputStream, stringIndex, names);
     algorithmImpl->saveIndex(outputStream);
   }
 
@@ -315,6 +325,16 @@ public:
           "The provided vector(s) have " + std::to_string(features) +
           " dimensions, but this index expects vectors with " +
           std::to_string(dimensions) + " dimensions.");
+    }
+
+    if (stringIndex) {
+      if (ids.size() != rows)
+        throw std::domain_error(
+            "Use string identifiers when adding to a StringIndex.");
+      for (auto id : ids)
+        if (!names.containsLabel(id))
+          throw std::domain_error(
+              "Use string identifiers when adding to a StringIndex.");
     }
 
     std::vector<hnswlib::labeltype> idsToReturn(rows);

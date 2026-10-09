@@ -982,3 +982,146 @@ void Java_com_spotify_voyager_jni_Index_nativeDestructor(JNIEnv *env,
     }
   }
 }
+
+// JNI's GetStringUTFChars uses modified UTF-8. Use standard UTF-8 so names
+// containing NUL or supplementary characters round-trip through Python/C++.
+std::string identifierFromJava(JNIEnv *env, jstring value) {
+  if (!value)
+    throw std::invalid_argument("String identifiers cannot be null.");
+  auto cls = env->FindClass("java/lang/String");
+  auto encoding = env->NewStringUTF("UTF-8");
+  auto bytes = static_cast<jbyteArray>(env->CallObjectMethod(
+      value, env->GetMethodID(cls, "getBytes", "(Ljava/lang/String;)[B"),
+      encoding));
+  if (!bytes)
+    throw std::runtime_error("Unable to encode string identifier.");
+  std::string result(env->GetArrayLength(bytes), '\0');
+  env->GetByteArrayRegion(bytes, 0, result.size(),
+                          reinterpret_cast<jbyte *>(result.data()));
+  env->DeleteLocalRef(bytes);
+  env->DeleteLocalRef(encoding);
+  env->DeleteLocalRef(cls);
+  return result;
+}
+
+jstring identifierToJava(JNIEnv *env, const std::string &value) {
+  auto bytes = env->NewByteArray(value.size());
+  if (!bytes)
+    throw std::runtime_error("Unable to allocate string identifier.");
+  env->SetByteArrayRegion(bytes, 0, value.size(),
+                          reinterpret_cast<const jbyte *>(value.data()));
+  auto cls = env->FindClass("java/lang/String");
+  auto encoding = env->NewStringUTF("UTF-8");
+  auto result = static_cast<jstring>(env->NewObject(
+      cls, env->GetMethodID(cls, "<init>", "([BLjava/lang/String;)V"), bytes,
+      encoding));
+  env->DeleteLocalRef(bytes);
+  env->DeleteLocalRef(encoding);
+  env->DeleteLocalRef(cls);
+  return result;
+}
+
+std::vector<std::string> identifiersFromJava(JNIEnv *env, jobjectArray values) {
+  if (!values)
+    throw std::invalid_argument("Names cannot be null.");
+  std::vector<std::string> result;
+  for (jsize i = 0; i < env->GetArrayLength(values); ++i) {
+    auto value = static_cast<jstring>(env->GetObjectArrayElement(values, i));
+    result.push_back(identifierFromJava(env, value));
+    env->DeleteLocalRef(value);
+  }
+  return result;
+}
+
+void stringIndexException(JNIEnv *env, const std::exception &error) {
+  if (!env->ExceptionCheck())
+    env->ThrowNew(env->FindClass("java/lang/RuntimeException"), error.what());
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_enableStringIdentifiers(JNIEnv *env,
+                                                           jobject self) {
+  try {
+    getHandle<Index>(env, self)->enableStringIdentifiers();
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+  }
+}
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_importNames(JNIEnv *env, jobject self,
+                                               jobjectArray names) {
+  try {
+    getHandle<Index>(env, self)->importNames(identifiersFromJava(env, names));
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+  }
+}
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_addStringItem(JNIEnv *env, jobject self,
+                                                 jstring name,
+                                                 jfloatArray vector) {
+  try {
+    if (!vector)
+      throw std::invalid_argument("Vectors cannot be null.");
+    getHandle<Index>(env, self)->addStringItem(identifierFromJava(env, name),
+                                               toStdVector(env, vector));
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+  }
+}
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_addStringItems(JNIEnv *env, jobject self,
+                                                  jobjectArray names,
+                                                  jobjectArray vectors) {
+  try {
+    auto values = identifiersFromJava(env, names);
+    if (!vectors ||
+        env->GetArrayLength(vectors) != static_cast<jsize>(values.size()))
+      throw std::invalid_argument(
+          "Names and vectors must have the same length.");
+    std::vector<std::vector<float>> data;
+    for (jsize i = 0; i < env->GetArrayLength(vectors); ++i) {
+      auto vector =
+          static_cast<jfloatArray>(env->GetObjectArrayElement(vectors, i));
+      if (!vector)
+        throw std::invalid_argument("Vectors cannot be null.");
+      data.push_back(toStdVector(env, vector));
+      env->DeleteLocalRef(vector);
+    }
+    getHandle<Index>(env, self)->addStringItems(values, data);
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+  }
+}
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_spotify_voyager_jni_Index_getStringID(JNIEnv *env, jobject self,
+                                               jstring name) {
+  try {
+    return getHandle<Index>(env, self)->getStringID(
+        identifierFromJava(env, name));
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+    return 0;
+  }
+}
+extern "C" JNIEXPORT jobjectArray JNICALL
+Java_com_spotify_voyager_jni_Index_getNames(JNIEnv *env, jobject self,
+                                            jlongArray labels) {
+  try {
+    auto values =
+        getHandle<Index>(env, self)->getNames(toUnsignedStdVector(env, labels));
+    auto result = env->NewObjectArray(
+        values.size(), env->FindClass("java/lang/String"), nullptr);
+    if (!result)
+      throw std::runtime_error("Unable to allocate string results.");
+    for (size_t i = 0; i < values.size(); ++i) {
+      auto value = identifierToJava(env, values[i]);
+      env->SetObjectArrayElement(result, i, value);
+      env->DeleteLocalRef(value);
+    }
+    return result;
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+    return nullptr;
+  }
+}
