@@ -1,6 +1,6 @@
 -r test-requirements.txt
 numpy
-ruff
+ruff==0.16.1
 psutil
 mypy
 asv==0.6.3
