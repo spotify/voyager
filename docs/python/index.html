@@ -6,51 +6,51 @@
 <meta property="og:title" content="Voyager Documentation" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://spotify.github.io/voyager/python/index.html" />
-<meta property="og:site_name" content="Voyager 2.1.0 Python Documentation" />
+<meta property="og:site_name" content="Voyager 2.1.2 Python Documentation" />
 <meta property="og:description" content="🛰️ Documentation for Voyager: A nearest-neighbor search library." />
 <meta property="og:image" content="https://github.com/spotify/voyager/assets/213293/190c07bf-bf43-43d3-a46b-ed71232bbcdd" />
 <meta property="og:image:alt" content="🛰️ Documentation for Voyager: A nearest-neighbor search library." />
-<meta name="description" content="The word &quot;Voyager&quot; in white on a black background. Voyager is a library for performing fast approximate nearest-neighbor searches on an in-memory collection of vectors. Voyager features bindings to..." />
+<meta name="description" content="The word &quot;Voyager&quot; in white on a black background. Voyager is a library for performing fast approximate nearest-neighbor searches on an in-memory collection of vectors. Voyager features b..." />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="The voyager Python API" href="reference.html" />
         <link rel="canonical" href="voyager/python/index.html" />
 
     <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Voyager 2.1.0 Python Documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+        <title>Voyager 2.1.2 Python Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
-    
-    
+
+
 
 
 <style>
   body {
     --color-code-background: #f8f8f8;
   --color-code-foreground: black;
-  
+
   }
   @media not print {
     body[data-theme="dark"] {
       --color-code-background: #202020;
   --color-code-foreground: #d0d0d0;
-  
+
     }
     @media (prefers-color-scheme: dark) {
       body:not([data-theme="light"]) {
         --color-code-background: #202020;
   --color-code-foreground: #d0d0d0;
-  
+
       }
     }
   }
 </style></head>
   <body>
-    
+
     <script>
       document.body.dataset.theme = localStorage.getItem("theme") || "auto";
     </script>
-    
+
 
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
@@ -133,7 +133,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">Voyager 2.1.0 Python Documentation</div></a>
+      <a href="#"><div class="brand">Voyager 2.1.2 Python Documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -144,7 +144,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -152,15 +152,15 @@
   </header>
   <aside class="sidebar-drawer">
     <div class="sidebar-container">
-      
+
       <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
-  
+
   <div class="sidebar-logo-container">
     <img class="sidebar-logo" src="_static/voyager-outline-color.png" alt="Logo"/>
   </div>
-  
-  <span class="sidebar-brand-text">Voyager 2.1.0 Python Documentation</span>
-  
+
+  <span class="sidebar-brand-text">Voyager 2.1.2 Python Documentation</span>
+
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
   <input type="hidden" name="check_keywords" value="yes">
@@ -179,7 +179,7 @@
 </div>
 
       </div>
-      
+
     </div>
   </aside>
   <div class="main">
@@ -192,7 +192,7 @@
           <span>Back to top</span>
         </a>
         <div class="content-icon-container">
-          
+
 <div class="theme-toggle-container theme-toggle-content">
             <button class="theme-toggle">
               <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
@@ -201,7 +201,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -218,6 +218,9 @@ and is queried hundreds of millions of times per day to power numerous user-faci
 or like <a class="reference external" href="https://github.com/spotify/annoy">Annoy</a>, but with <a class="reference external" href="https://ann-benchmarks.com">much higher recall</a>.
 It got its name because it searches through (embedding) space(s), much like
 <a class="reference external" href="https://en.wikipedia.org/wiki/Voyager_program">the Voyager interstellar probes</a> launched by NASA in 1977.</p>
+<section id="python-compatibility">
+<h1>Python compatibility<a class="headerlink" href="#python-compatibility" title="Link to this heading">#</a></h1>
+<p>Voyager 2.1.2 requires Python 3.9 or newer. Python 3.8 is no longer supported.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Python API Reference</a></li>
@@ -229,11 +232,12 @@ It got its name because it searches through (embedding) space(s), much like
 <li class="toctree-l1"><a class="reference external" href="http://github.com/spotify/voyager">GitHub Repo</a></li>
 </ul>
 </div>
+</section>
 
         </article>
       </div>
       <footer>
-        
+
         <div class="related-pages">
           <a class="next-page" href="reference.html">
               <div class="page-info">
@@ -244,17 +248,17 @@ It got its name because it searches through (embedding) space(s), much like
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          
+
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
             <div class="copyright">
-                Copyright &#169; 2022-2024, Spotify AB
+                Copyright &#169; 2022-2026, Spotify AB
             </div>
             Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
-            
+
             <a href="https://github.com/pradyunsg/furo">Furo</a>
-            
+
           </div>
           <div class="right-details">
             <div class="icons">
@@ -264,20 +268,38 @@ It got its name because it searches through (embedding) space(s), much like
                     <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
                 </svg>
             </a>
-              
+
             </div>
           </div>
         </div>
-        
+
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
-      
-      
-      
+    <aside class="toc-drawer">
+
+
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Python compatibility</a><ul>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+
+
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=20623aea"></script>
+</div><script src="_static/documentation_options.js?v=b3e23499"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
