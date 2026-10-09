@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <thread>
 
+namespace voyager {
+
 /*
  * replacement for the openmp '#pragma omp parallel for' directive
  * only handles a subset of functionality (no reductions etc)
@@ -140,3 +142,5 @@ void mergePriorityQueues(
   while (dest.size() > maxElements)
     dest.pop();
 }
+
+} // namespace voyager

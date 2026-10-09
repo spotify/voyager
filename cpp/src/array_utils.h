@@ -29,6 +29,8 @@
 
 #include "E4M3.h"
 
+namespace voyager {
+
 /**
  * A basic container for an N-dimensional array.
  * Data is stored in a flat std::vector<T>, and the shape of the array is
@@ -336,3 +338,5 @@ NDArray<float, 2> vectorsToNDArray(std::vector<std::vector<float>> vectors) {
 
   return NDArray<float, 2>(flatArray, shape);
 }
+
+} // namespace voyager

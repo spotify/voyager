@@ -31,7 +31,7 @@ bool isReadableFileLike(nb::object fileLike) {
  * An input stream that fetches its
  * data from a provided Python file-like object.
  */
-class PythonInputStream : public InputStream, PythonFileLike {
+class PythonInputStream : public voyager::InputStream, PythonFileLike {
 public:
   // This input stream stores a temporary buffer to copy between Python and C++;
   // if we don't set a maximum buffer size here, the C++ side could read
