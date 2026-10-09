@@ -256,3 +256,71 @@ TEST_CASE("C++ StringIndex exposes native string queries") {
   CHECK(std::get<0>(result) == std::vector<std::string>{"a"});
   CHECK(std::get<1>(result) == std::vector<float>{0});
 }
+
+TEST_CASE("BiMap references survive growth and erase only their own names") {
+  voyager::BiMap map;
+  map.insert(0, "short");
+  map.insert(1, std::string(128, 'x'));
+  const auto *shortName = &map.name(0);
+  const auto *longName = &map.name(1);
+  for (size_t i = 2; i < 10000; ++i)
+    map.insert(i, "item:" + std::to_string(i));
+  CHECK(&map.name(0) == shortName);
+  CHECK(&map.name(1) == longName);
+  CHECK(map.name(0) == "short");
+  CHECK(map.name(1) == std::string(128, 'x'));
+  for (size_t i = 2; i < 10000; ++i)
+    CHECK(map.name(i) == "item:" + std::to_string(i));
+  map.erase(0);
+  CHECK_FALSE(map.contains("short"));
+  CHECK_FALSE(map.containsLabel(0));
+  CHECK(map.name(1) == std::string(128, 'x'));
+  map.insert(0, "replacement");
+  CHECK(map.name(0) == "replacement");
+  CHECK(map.label("replacement") == 0);
+}
+
+TEST_CASE("BiMap copies own their strings independently") {
+  voyager::BiMap assigned;
+  assigned.insert(99, "old");
+  {
+    voyager::BiMap source;
+    source.insert(0, "short");
+    source.insert(1, std::string(128, 'x'));
+    voyager::BiMap copy(source);
+    CHECK(&copy.name(0) != &source.name(0));
+    CHECK(&copy.name(1) != &source.name(1));
+    assigned = copy;
+    source.erase(0);
+    source.erase(1);
+    CHECK(copy.name(0) == "short");
+    CHECK(copy.name(1) == std::string(128, 'x'));
+  }
+  CHECK(assigned.name(0) == "short");
+  CHECK(assigned.name(1) == std::string(128, 'x'));
+  CHECK_FALSE(assigned.contains("old"));
+  const auto &alias = assigned;
+  assigned = alias;
+  CHECK(assigned.name(0) == "short");
+}
+
+TEST_CASE("BiMap moves preserve references after source destruction") {
+  voyager::BiMap assigned;
+  assigned.insert(99, "old");
+  {
+    voyager::BiMap source;
+    source.insert(0, "short");
+    source.insert(1, std::string(128, 'x'));
+    const auto *shortName = &source.name(0);
+    const auto *longName = &source.name(1);
+    voyager::BiMap moved(std::move(source));
+    CHECK(&moved.name(0) == shortName);
+    CHECK(&moved.name(1) == longName);
+    assigned = std::move(moved);
+    CHECK(&assigned.name(0) == shortName);
+    CHECK(&assigned.name(1) == longName);
+  }
+  CHECK(assigned.label("short") == 0);
+  CHECK(assigned.name(1) == std::string(128, 'x'));
+  CHECK_FALSE(assigned.contains("old"));
+}
