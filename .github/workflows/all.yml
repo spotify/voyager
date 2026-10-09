@@ -347,7 +347,9 @@ jobs:
           CIBW_ARCHS_MACOS: x86_64 universal2 arm64 # Support Apple Silicon
           CIBW_ARCHS_WINDOWS: AMD64
           # on macOS and with Python 3.10: building NumPy from source fails without these options:
-          CIBW_ENVIRONMENT: NPY_BLAS_ORDER="" NPY_LAPACK_ORDER=""
+          # Prefer compatible dependency wheels over newer source releases that
+          # may require a newer compiler than the manylinux build image.
+          CIBW_ENVIRONMENT: NPY_BLAS_ORDER="" NPY_LAPACK_ORDER="" PIP_PREFER_BINARY="1"
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: pip install auditwheel-symbols && (auditwheel repair -w {dest_dir} {wheel} || auditwheel-symbols --manylinux 2010 {wheel})
           CIBW_TEST_SKIP: "*aarch64"
           MACOSX_DEPLOYMENT_TARGET: "10.14"
