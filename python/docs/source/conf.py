@@ -35,14 +35,14 @@
 # -- Project information -----------------------------------------------------
 
 import datetime
-from voyager.version import __version__
+from importlib.metadata import version as package_version
 
 project = "Voyager"
 copyright = f"2022-{datetime.date.today().year}, Spotify AB"
 author = "Peter Sobot"
 
 # The full version, including alpha/beta/rc tags
-release = __version__
+release = package_version("voyager")
 
 
 # -- General configuration ---------------------------------------------------

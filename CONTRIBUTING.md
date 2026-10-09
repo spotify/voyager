@@ -147,11 +147,14 @@ docs. Please file an [issue](https://github.com/spotify/voyager/issues/new).
 If you notice that the generated API documentation is out of date, feel free to run these commands in order to update the docs and make a PR with the changes.
 
 #### Python
-While `voyager` is mostly C++ code, it ships with `.pyi` files to allow for type hints in text editors and via MyPy. To update the Python type hint files, use the following commands:
+To regenerate the Python API documentation, install the documentation dependencies
+and the current package, then build the Sphinx documentation:
 
 ```shell
 cd python
-python3 -m scripts.generate_type_stubs_and_docs
+python3 -m pip install -r dev-requirements.txt
+python3 -m pip install .
+python3 -m sphinx -b html docs/source ../docs/python
 # Documentation will be dumped into ../docs/python/
 ```
 

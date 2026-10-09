@@ -24,6 +24,11 @@ or like `Annoy <https://github.com/spotify/annoy>`_, but with `much higher recal
 It got its name because it searches through (embedding) space(s), much like
 `the Voyager interstellar probes <https://en.wikipedia.org/wiki/Voyager_program>`_ launched by NASA in 1977.
 
+Python compatibility
+--------------------
+
+Voyager 2.2.0 requires Python 3.9 or newer. Python 3.8 is no longer supported.
+
 
 .. toctree::
    :maxdepth: 1
