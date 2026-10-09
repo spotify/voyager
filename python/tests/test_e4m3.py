@@ -18,6 +18,7 @@ import math
 
 import numpy as np
 import pytest
+
 from voyager import E4M3T, Index, Space, StorageDataType
 
 RANGES_AND_EXPECTED_ERRORS = [
