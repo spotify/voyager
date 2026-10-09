@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "voyager"
-version = "2.1.1"
+version = "2.1.2"
 description = "Easy-to-use, fast, simple multi-platform approximate nearest-neighbor search library."
 readme = "README.md"
 requires-python = ">=3.9"

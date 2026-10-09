@@ -182,28 +182,6 @@ When creating an issue please try to ahere to the following format:
 
     List all relevant steps to reproduce the observed behaviour.
 
-## Publishing Python packages
-
-The **Compile, Test, and Deploy** workflow builds Python wheels and a source
-distribution, then uploads them to PyPI when a GitHub release is published.
-The package version comes from `python/pyproject.toml`; the release tag does not
-set it automatically.
-
-To recover a failed Python publication after merging a fix:
-
-1. Confirm that `python/pyproject.toml` declares the intended release version
-   and that the selected commit contains the publishing fix.
-2. Open **Actions → Compile, Test, and Deploy → Run workflow** and select `main`
-   after the fix has merged. A manual run builds, tests, and publishes Python
-   packages using the existing `PYPI_DEPLOY_TOKEN` secret.
-3. Confirm that **Upload wheels and sdist to PyPI** succeeds and that the
-   intended version is available on PyPI.
-
-For the 2.1.1 recovery, use the corrected commit on `main`, which requires Python
-3.9 or newer. Rerunning the original `v2.1.1` release run uses the old workflow
-and does not pick up fixes merged afterward. Manual runs do not publish to
-Maven Central.
-
 ## First Contributions
 If you are a first time contributor to `voyager`,  familiarize yourself with the:
 * [Code of Conduct](CODE_OF_CONDUCT.md)
