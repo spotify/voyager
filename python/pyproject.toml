@@ -44,6 +44,10 @@ wheel.py-api = "cp312"
 [tool.ruff]
 line-length = 120
 
+[tool.ruff.lint]
+# Preserve the default rule set used before Ruff 0.16 expanded it.
+select = ["E4", "E7", "E9", "F"]
+
 # Needed for full C++17 support on macOS
 [tool.cibuildwheel.macos.environment]
 MACOSX_DEPLOYMENT_TARGET = "10.14"
