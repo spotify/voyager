@@ -269,48 +269,49 @@ JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getM(JNIEnv *,
  * Method:    enableStringIdentifiers
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_enableStringIdentifiers
-  (JNIEnv *, jobject);
+JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_enableStringIdentifiers(JNIEnv *, jobject);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    importNames
  * Signature: ([Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_importNames
-  (JNIEnv *, jobject, jobjectArray);
+JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_importNames(JNIEnv *, jobject, jobjectArray);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addStringItem
  * Signature: (Ljava/lang/String;[F)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addStringItem
-  (JNIEnv *, jobject, jstring, jfloatArray);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addStringItem(
+    JNIEnv *, jobject, jstring, jfloatArray);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    addStringItems
  * Signature: ([Ljava/lang/String;[[F)V
  */
-JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addStringItems
-  (JNIEnv *, jobject, jobjectArray, jobjectArray);
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addStringItems(
+    JNIEnv *, jobject, jobjectArray, jobjectArray);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getStringID
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getStringID
-  (JNIEnv *, jobject, jstring);
+JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getStringID(JNIEnv *,
+                                                                       jobject,
+                                                                       jstring);
 
 /*
  * Class:     com_spotify_voyager_jni_Index
  * Method:    getNames
  * Signature: ([J)[Ljava/lang/String;
  */
-JNIEXPORT jobjectArray JNICALL Java_com_spotify_voyager_jni_Index_getNames
-  (JNIEnv *, jobject, jlongArray);
+JNIEXPORT jobjectArray JNICALL
+Java_com_spotify_voyager_jni_Index_getNames(JNIEnv *, jobject, jlongArray);
 
 #ifdef __cplusplus
 }

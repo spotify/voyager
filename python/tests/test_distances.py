@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import pytest
 
-import numpy as np
-
-from voyager import Index, Space, StorageDataType, E4M3T
+from voyager import E4M3T, Index, Space, StorageDataType
 
 
 def normalized(vec: np.ndarray) -> np.ndarray:
