@@ -25,10 +25,12 @@
 #include <ratio>
 #include <stdlib.h>
 
+#include "BiMap.h"
 #include "Enums.h"
 #include "StreamUtils.h"
 #include "array_utils.h"
 #include "hnswlib.h"
+#include <shared_mutex>
 
 /**
  * A C++ wrapper class for a Voyager index, which accepts
@@ -43,7 +45,132 @@
  * but all methods will only accept and return floats.
  */
 class Index {
+protected:
+  voyager::BiMap names;
+  bool stringIndex = false;
+  mutable std::shared_mutex namesMutex;
+
+  hnswlib::labeltype assignStringID(const std::string &name) {
+    if (names.contains(name))
+      return names.label(name);
+    auto label = static_cast<hnswlib::labeltype>(names.size());
+    while (getIDsMap().count(label) || names.containsLabel(label))
+      ++label;
+    names.insert(label, name);
+    return label;
+  }
+  void discardUninsertedNames(const std::vector<hnswlib::labeltype> &labels) {
+    for (auto label : labels)
+      if (!getIDsMap().count(label))
+        names.erase(label);
+  }
+
+  void insertUniqueStrings(const std::vector<std::string> &values,
+                           const std::vector<std::vector<float>> &vectors,
+                           int numThreads) {
+    std::unique_lock<std::shared_mutex> lock(namesMutex);
+    if (!stringIndex)
+      throw std::domain_error("Index does not use string identifiers.");
+    std::vector<hnswlib::labeltype> labels;
+    labels.reserve(values.size());
+    try {
+      for (const auto &value : values)
+        labels.push_back(assignStringID(value));
+      addItems(vectors, labels, numThreads);
+    } catch (...) {
+      discardUninsertedNames(labels);
+      throw;
+    }
+  }
+
 public:
+  void enableStringIdentifiers() {
+    std::unique_lock<std::shared_mutex> lock(namesMutex);
+    if (!stringIndex && getNumElements())
+      throw std::domain_error(
+          "Index has numeric identifiers. Import its legacy names before "
+          "opening it as a StringIndex.");
+    stringIndex = true;
+  }
+  bool hasStringIdentifiers() const { return stringIndex; }
+  void importNames(const std::vector<std::string> &values) {
+    std::unique_lock<std::shared_mutex> lock(namesMutex);
+    if (values.size() != getNumElements())
+      throw std::domain_error("Legacy names count does not match the index.");
+    voyager::BiMap imported;
+    for (size_t i = 0; i < values.size(); ++i) {
+      if (!getIDsMap().count(i))
+        throw std::domain_error(
+            "Legacy names require contiguous numeric labels starting at zero.");
+      imported.insert(i, values[i]);
+    }
+    names = std::move(imported);
+    stringIndex = true;
+  }
+  hnswlib::labeltype addStringItem(const std::string &name,
+                                   std::vector<float> vector) {
+    std::unique_lock<std::shared_mutex> lock(namesMutex);
+    if (!stringIndex)
+      throw std::domain_error("Index does not use string identifiers.");
+    auto label = assignStringID(name);
+    try {
+      return addItem(std::move(vector), label);
+    } catch (...) {
+      discardUninsertedNames({label});
+      throw;
+    }
+  }
+  void addStringItems(const std::vector<std::string> &values,
+                      const std::vector<std::vector<float>> &vectors,
+                      int numThreads = -1) {
+    if (values.size() != vectors.size())
+      throw std::domain_error("Names and vectors must have the same length.");
+    if (values.empty())
+      return;
+    for (const auto &vector : vectors)
+      if (vector.size() != static_cast<size_t>(getNumDimensions()))
+        throw std::domain_error(
+            "Vector dimensionality does not match the index.");
+    // Keep only each name's last vector. Distinct labels can be indexed in
+    // parallel.
+    std::unordered_map<std::string, size_t> last;
+    for (size_t i = 0; i < values.size(); ++i)
+      last[values[i]] = i;
+    std::vector<std::string> uniqueNames;
+    std::vector<std::vector<float>> uniqueVectors;
+    for (size_t i = 0; i < values.size(); ++i) {
+      if (last.at(values[i]) != i)
+        continue;
+      uniqueNames.push_back(values[i]);
+      uniqueVectors.push_back(vectors[i]);
+    }
+    insertUniqueStrings(uniqueNames, uniqueVectors, numThreads);
+  }
+  hnswlib::labeltype getStringID(const std::string &name) const {
+    std::shared_lock<std::shared_mutex> lock(namesMutex);
+    return names.label(name);
+  }
+  std::vector<std::string>
+  getNames(const std::vector<hnswlib::labeltype> &labels) const {
+    std::shared_lock<std::shared_mutex> lock(namesMutex);
+    std::vector<std::string> result;
+    result.reserve(labels.size());
+    for (auto label : labels)
+      result.push_back(names.name(label));
+    return result;
+  }
+  std::vector<std::string> getNames() const {
+    std::shared_lock<std::shared_mutex> lock(namesMutex);
+    std::vector<hnswlib::labeltype> labels;
+    for (const auto &entry : names.entries())
+      labels.push_back(entry.first);
+    std::sort(labels.begin(), labels.end());
+    std::vector<std::string> result;
+    for (auto label : labels)
+      result.push_back(names.name(label));
+    return result;
+  }
+
   virtual ~Index(){};
 
   virtual void setEF(size_t ef) = 0;

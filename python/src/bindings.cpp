@@ -35,6 +35,7 @@
 
 #include "PythonInputStream.h"
 #include "PythonOutputStream.h"
+#include "cpp/src/StringIndex.h"
 #include "cpp/src/TypedIndex.h"
 
 namespace nb = nanobind;
@@ -210,7 +211,7 @@ inline void register_index_class(nb::module_ &m, std::string className,
 NB_MODULE(voyager_ext, m) {
   nb::exception<RecallError>(m, "RecallError");
 
-  m.attr("version") = nb::make_tuple(2, 1, 0);
+  m.attr("version") = nb::make_tuple(3, 0, 0);
 
   init_LabelSetView(m);
 
@@ -1100,4 +1101,163 @@ of Voyager prior to v1.3.
         return loadTypedIndexFromStream(inputStream);
       },
       nb::arg("file_like"), LOAD_DOCSTRING);
+
+  nb::class_<StringIndex>(m, "StringIndex",
+                          "An index with native string identifiers. Repeated "
+                          "names update existing vectors.")
+      .def(nb::init<SpaceType, int, size_t, size_t, size_t, size_t,
+                    StorageDataType>(),
+           "space"_a, "num_dimensions"_a, "M"_a = 12, "ef_construction"_a = 200,
+           "random_seed"_a = 1, "max_elements"_a = 1,
+           "storage_data_type"_a = StorageDataType::Float32)
+      .def(
+          "add_item",
+          [](StringIndex &self, const std::string &name,
+             std::variant<nb::ndarray<float>, std::vector<float>> vector) {
+            auto data =
+                std::holds_alternative<std::vector<float>>(vector)
+                    ? std::get<std::vector<float>>(vector)
+                    : pyArrayToVector(std::get<nb::ndarray<float>>(vector));
+            nb::gil_scoped_release release;
+            self.addItem(name, std::move(data));
+          },
+          "name"_a, "vector"_a)
+      .def(
+          "add_items",
+          [](StringIndex &self, const std::vector<std::string> &names,
+             const std::vector<std::vector<float>> &vectors, int numThreads) {
+            nb::gil_scoped_release release;
+            self.addItems(names, vectors, numThreads);
+          },
+          "names"_a, "vectors"_a, "num_threads"_a = -1)
+      .def(
+          "get_vector",
+          [](StringIndex &self, const std::string &name) {
+            return vectorToPyArray(self.getVector(name));
+          },
+          "name"_a)
+      .def(
+          "get_vectors",
+          [](StringIndex &self, const std::vector<std::string> &names) {
+            std::vector<hnswlib::labeltype> labels;
+            for (const auto &name : names)
+              labels.push_back(self.index->getStringID(name));
+            return ndArrayToPyArray(self.index->getVectors(labels));
+          },
+          "names"_a)
+      .def(
+          "query",
+          [](StringIndex &self, const std::vector<float> &vector, int k,
+             long queryEf) {
+            std::tuple<std::vector<std::string>, std::vector<float>> result;
+            {
+              nb::gil_scoped_release release;
+              result = self.query(vector, k, queryEf);
+            }
+            return nb::make_tuple(std::get<0>(result),
+                                  vectorToPyArray(std::get<1>(result)));
+          },
+          "vectors"_a, "k"_a = 1, "query_ef"_a = -1)
+      .def(
+          "query",
+          [](StringIndex &self, const std::vector<std::vector<float>> &vectors,
+             int k, int numThreads, long queryEf) {
+            auto result = [&] {
+              nb::gil_scoped_release release;
+              return self.query(vectors, k, numThreads, queryEf);
+            }();
+            return nb::make_tuple(std::get<0>(result),
+                                  ndArrayToPyArray(std::get<1>(result)));
+          },
+          "vectors"_a, "k"_a = 1, "num_threads"_a = -1, "query_ef"_a = -1)
+      .def("mark_deleted", &StringIndex::markDeleted, "name"_a)
+      .def("unmark_deleted", &StringIndex::unmarkDeleted, "name"_a)
+      .def_prop_ro("names",
+                   [](StringIndex &self) { return self.index->getNames(); })
+      .def_prop_ro(
+          "num_elements",
+          [](StringIndex &self) { return self.index->getNumElements(); })
+      .def("__len__",
+           [](StringIndex &self) { return self.index->getNumElements(); })
+      .def("__contains__",
+           [](StringIndex &self, const std::string &name) {
+             try {
+               self.index->getStringID(name);
+               return true;
+             } catch (const std::out_of_range &) {
+               return false;
+             }
+           })
+      .def_prop_ro(
+          "num_dimensions",
+          [](StringIndex &self) { return self.index->getNumDimensions(); })
+      .def_prop_ro("space",
+                   [](StringIndex &self) { return self.index->getSpace(); })
+      .def_prop_ro(
+          "storage_data_type",
+          [](StringIndex &self) { return self.index->getStorageDataType(); })
+      .def_prop_ro(
+          "max_elements",
+          [](StringIndex &self) { return self.index->getMaxElements(); })
+      .def_prop_ro("M", [](StringIndex &self) { return self.index->getM(); })
+      .def_prop_ro(
+          "ef_construction",
+          [](StringIndex &self) { return self.index->getEfConstruction(); })
+      .def_prop_rw(
+          "ef", [](StringIndex &self) { return self.index->getEF(); },
+          [](StringIndex &self, size_t ef) { self.index->setEF(ef); })
+      .def(
+          "resize",
+          [](StringIndex &self, size_t size) { self.index->resizeIndex(size); },
+          "new_size"_a)
+      .def(
+          "save",
+          [](StringIndex &self, const std::string &filename) {
+            nb::gil_scoped_release release;
+            self.saveIndex(filename);
+          },
+          "filename"_a)
+      .def(
+          "save",
+          [](StringIndex &self, const nb::object &filelike) {
+            auto stream = std::make_shared<PythonOutputStream>(filelike);
+            nb::gil_scoped_release release;
+            self.saveIndex(stream);
+          },
+          "file_like"_a)
+      .def("as_bytes",
+           [](StringIndex &self) {
+             auto stream = std::make_shared<MemoryOutputStream>();
+             {
+               nb::gil_scoped_release release;
+               self.saveIndex(stream);
+             }
+             auto data = stream->getValue();
+             return nb::bytes(data.data(), data.size());
+           })
+      .def_static(
+          "from_index",
+          [](std::shared_ptr<Index> index,
+             const std::vector<std::string> &names) {
+            index->importNames(names);
+            return StringIndex(std::move(index));
+          },
+          "index"_a, "names"_a,
+          "Import a legacy numeric index and its ordered JSON names list. "
+          "Duplicate names are rejected.")
+      .def_static(
+          "load",
+          [](const std::string &filename) {
+            nb::gil_scoped_release release;
+            return StringIndex::load(filename);
+          },
+          "filename"_a)
+      .def_static(
+          "load",
+          [](const nb::object &filelike) {
+            auto stream = std::make_shared<PythonInputStream>(filelike);
+            nb::gil_scoped_release release;
+            return StringIndex::load(stream);
+          },
+          "file_like"_a);
 }

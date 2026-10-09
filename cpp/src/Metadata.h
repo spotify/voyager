@@ -22,6 +22,7 @@
  * -/-/-
  */
 
+#include "BiMap.h"
 #include "Enums.h"
 #include "StreamUtils.h"
 
@@ -42,7 +43,7 @@ public:
   V1() {}
   virtual ~V1() {}
 
-  int version() const { return 1; }
+  virtual int version() const { return 1; }
 
   int getNumDimensions() { return numDimensions; }
 
@@ -98,6 +99,39 @@ private:
   bool useOrderPreservingTransform;
 };
 
+// File format 2 is emitted by Voyager 3. Voyager 2 only understands format 1
+// and rejects this header before attempting to read the graph.
+class V2 : public V1 {
+public:
+  using V1::V1;
+  V2() = default;
+  int version() const override { return 2; }
+  bool stringIndex = false;
+  voyager::BiMap names;
+  void serializeToStream(std::shared_ptr<OutputStream> stream) override {
+    serializeWithNames(stream, stringIndex, names);
+  }
+  void serializeWithNames(std::shared_ptr<OutputStream> stream,
+                          bool isStringIndex,
+                          const voyager::BiMap &identifiers) {
+    V1::serializeToStream(stream);
+    writeBinaryPOD(stream, uint8_t(isStringIndex));
+    identifiers.save(stream);
+  }
+  void loadFromStream(std::shared_ptr<InputStream> stream) override {
+    V1::loadFromStream(stream);
+    uint8_t kind;
+    readBinaryPOD(stream, kind);
+    if (kind > 1)
+      throw std::domain_error("Invalid Voyager identifier type.");
+    stringIndex = kind == 1;
+    names = voyager::BiMap::load(stream);
+    if (!stringIndex && names.size())
+      throw std::domain_error(
+          "Numeric Voyager index contains string identifiers.");
+  }
+};
+
 static std::unique_ptr<Metadata::V1>
 loadFromStream(std::shared_ptr<InputStream> inputStream) {
   uint32_t header = inputStream->peek();
@@ -112,6 +146,11 @@ loadFromStream(std::shared_ptr<InputStream> inputStream) {
   readBinaryPOD(inputStream, version);
 
   switch (version) {
+  case 2: {
+    auto metadata = std::make_unique<Metadata::V2>();
+    metadata->loadFromStream(inputStream);
+    return metadata;
+  }
   case 1: {
     std::unique_ptr<Metadata::V1> metadata = std::make_unique<Metadata::V1>();
     metadata->loadFromStream(inputStream);

@@ -1,6 +1,6 @@
 #include "doctest.h"
 
-#include "TypedIndex.h"
+#include "StringIndex.h"
 #include "test_utils.cpp"
 #include <tuple>
 #include <type_traits>
@@ -215,4 +215,44 @@ TEST_CASE(
   std::vector<std::vector<float>> vectors2 = {
       {1.0f}, {5.0f, 6.0f, 7.0f}, {9.0f, 10.0f, 11.0f}};
   REQUIRE_THROWS_AS(vectorsToNDArray(vectors2), std::invalid_argument);
+}
+
+TEST_CASE(
+    "Native string identifiers update existing nodes and survive saving") {
+  TypedIndex<float> index(SpaceType::Euclidean, 2);
+  index.enableStringIdentifiers();
+  CHECK(index.addStringItem("a", {0, 0}) == 0);
+  CHECK(index.addStringItem("a", {1, 1}) == 0);
+  CHECK(index.getNumElements() == 1);
+  CHECK(index.getVector(index.getStringID("a")) == std::vector<float>{1, 1});
+  CHECK_THROWS(index.addStringItem("bad", {0}));
+  CHECK_THROWS(index.getStringID("bad"));
+  CHECK(index.addStringItem("b", {0, 0}) == 1);
+  auto output = std::make_shared<MemoryOutputStream>();
+  index.saveIndex(output);
+  const auto bytes = output->getValue();
+  CHECK(bytes.substr(0, 4) == "VOYA");
+  int version;
+  std::memcpy(&version, bytes.data() + 4, sizeof(version));
+  CHECK(version == 2);
+}
+
+TEST_CASE("BiMap rejects duplicate names and duplicate labels") {
+  voyager::BiMap map;
+  map.insert(42, "name");
+  CHECK(map.label("name") == 42);
+  CHECK(map.name(42) == "name");
+  CHECK_THROWS(map.insert(43, "name"));
+  CHECK_THROWS(map.insert(42, "other"));
+  CHECK(map.size() == 1);
+}
+
+TEST_CASE("C++ StringIndex exposes native string queries") {
+  StringIndex index(SpaceType::Euclidean, 2);
+  index.addItem("a", {0, 0});
+  index.addItems({"a", "b"}, {{1, 1}, {0, 0}});
+  CHECK(index.getNumElements() == 2);
+  auto result = index.query(std::vector<float>{1, 1});
+  CHECK(std::get<0>(result) == std::vector<std::string>{"a"});
+  CHECK(std::get<1>(result) == std::vector<float>{0});
 }

@@ -741,8 +741,8 @@ public:
     readBinaryPOD(inputStream, cur_element_count);
 
     size_t max_elements = max_elements_i;
-    if (max_elements < cur_element_count)
-      max_elements = max_elements_;
+    if (max_elements == 0 || max_elements < cur_element_count)
+      max_elements = std::max<size_t>(1, max_elements_);
     max_elements_ = max_elements;
     readBinaryPOD(inputStream, size_data_per_element_);
     readBinaryPOD(inputStream, label_offset_);
@@ -750,7 +750,7 @@ public:
     readBinaryPOD(inputStream, maxlevel_);
     readBinaryPOD(inputStream, enterpoint_node_);
 
-    if (enterpoint_node_ >= cur_element_count) {
+    if (cur_element_count != 0 && enterpoint_node_ >= cur_element_count) {
       throw std::runtime_error(
           "Index seems to be corrupted or unsupported. "
           "Entry point into HNSW data structure was at element index " +

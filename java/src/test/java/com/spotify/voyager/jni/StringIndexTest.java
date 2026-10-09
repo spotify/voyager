@@ -284,4 +284,63 @@ public class StringIndexTest {
     for (float f : input) floats.add(f);
     return floats;
   }
+
+  @Test
+  public void itUpdatesNamesAndSavesOneFile() throws Exception {
+    String name = "東京🛰️\0café";
+    java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      index.addItem(name, new float[] {0, 0});
+      index.addItem(name, new float[] {1, 1});
+      index.addItem("", new float[] {0, 0});
+      assertThat(index.getNumElements()).isEqualTo(2);
+      assertThat(index.getVector(name)).containsExactly(1, 1);
+      assertThat(index.query(new float[] {1, 1}, 1, 10).getNames()).containsExactly(name);
+      index.saveIndex(output);
+    }
+    try (StringIndex loaded =
+        StringIndex.load(new java.io.ByteArrayInputStream(output.toByteArray()))) {
+      assertThat(loaded.getVector(name)).containsExactly(1, 1);
+      loaded.addItem(name, new float[] {0.5f, 0.5f});
+      loaded.addItem("new", new float[] {1, 0});
+      assertThat(loaded.getNumElements()).isEqualTo(3);
+      assertThat(loaded.query(new float[] {0.5f, 0.5f}, 1, 10).getNames()).containsExactly(name);
+      loaded.markDeleted(name);
+      assertThat(loaded.query(new float[] {0.5f, 0.5f}, 2, 10).getNames()).doesNotContain(name);
+      loaded.unmarkDeleted(name);
+      assertThat(loaded.query(new float[] {0.5f, 0.5f}, 1, 10).getNames()).containsExactly(name);
+    }
+  }
+
+  @Test
+  public void itUpdatesNamesInBatch() throws Exception {
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      index.addItem("a", new float[] {0, 0});
+      java.util.Map<String, List<Float>> vectors = new java.util.LinkedHashMap<>();
+      vectors.put("a", java.util.Arrays.asList(1f, 1f));
+      vectors.put("b", java.util.Arrays.asList(0f, 0f));
+      index.addItems(vectors);
+      assertThat(index.getNumElements()).isEqualTo(2);
+      assertThat(index.getVector("a")).containsExactly(1, 1);
+    }
+  }
+
+  @Test
+  public void itMigratesV2NamesIntoTheBinary() throws Exception {
+    java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+    try (StringIndex legacy =
+        StringIndex.load(
+            Resources.getResource(EXPECTED_INDEX_V2_FILE_NAME).openStream(),
+            Resources.getResource(EXPECTED_NAME_V2_FILE_NAME).openStream())) {
+      legacy.saveIndex(output);
+    }
+    try (StringIndex loaded =
+        StringIndex.load(new java.io.ByteArrayInputStream(output.toByteArray()))) {
+      assertThat(loaded.query(TestUtils.TEST_VECTOR, 2, 100).getNames())
+          .containsExactly("my-vector-78", "my-vector-1");
+      long count = loaded.getNumElements();
+      loaded.addItem("my-vector-78", TestUtils.TEST_VECTOR);
+      assertThat(loaded.getNumElements()).isEqualTo(count);
+    }
+  }
 }
