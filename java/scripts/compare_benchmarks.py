@@ -14,6 +14,16 @@ import json
 import os
 import sys
 
+TIME_UNITS_TO_MS = {
+    "ns/op": 0.000001,
+    "us/op": 0.001,
+    "ms/op": 1,
+    "s/op": 1000,
+    "min/op": 60000,
+    "hr/op": 3600000,
+    "day/op": 86400000,
+}
+
 
 def load_results(path):
     """Load JMH JSON results and return a dict keyed by benchmark name + params."""
@@ -23,21 +33,31 @@ def load_results(path):
     results = {}
     for entry in data:
         benchmark = entry["benchmark"]
-        # Extract short method name from fully qualified name
-        short_name = benchmark.rsplit(".", 1)[-1]
-
         params = entry.get("params", {})
-        param_key = ", ".join(f"{k}={v}" for k, v in sorted(params.items()))
-
-        key = f"{short_name}({param_key})" if param_key else short_name
+        key = (benchmark, tuple(sorted(params.items())))
 
         score = entry["primaryMetric"]["score"]
         error = entry["primaryMetric"]["scoreError"]
         unit = entry["primaryMetric"]["scoreUnit"]
 
+        # Normalize time scores and their uncertainty before comparing results.
+        if unit in TIME_UNITS_TO_MS:
+            factor = TIME_UNITS_TO_MS[unit]
+            score *= factor
+            error *= factor
+            unit = "ms/op"
+
         results[key] = {"score": score, "error": error, "unit": unit}
 
     return results
+
+
+def format_name(key):
+    """Keep class and method names in labels while retaining full identity in keys."""
+    benchmark, params = key
+    name = ".".join(benchmark.split(".")[-2:])
+    param_label = ", ".join(f"{k}={v}" for k, v in params)
+    return f"{name}({param_label})" if params else name
 
 
 def format_score(score, error):
@@ -65,8 +85,9 @@ def main():
         print("_No base branch results available for comparison._\n")
         print("| Benchmark | Score | Unit |")
         print("|-----------|-------|------|")
-        for name in sorted(pr_results.keys()):
-            r = pr_results[name]
+        for key in sorted(pr_results.keys()):
+            name = format_name(key)
+            r = pr_results[key]
             print(f"| {name} | {format_score(r['score'], r['error'])} | {r['unit']} |")
         return
 
@@ -78,25 +99,29 @@ def main():
 
     all_keys = sorted(set(list(base_results.keys()) + list(pr_results.keys())))
 
-    for name in all_keys:
-        if name not in base_results:
-            r = pr_results[name]
-            print(
-                f"| {name} | _new_ | {format_score(r['score'], r['error'])} {r['unit']}"
-                f" | - | \U0001f195 |"
-            )
+    for key in all_keys:
+        name = format_name(key)
+        if key not in base_results:
+            r = pr_results[key]
+            print(f"| {name} | _new_ | {format_score(r['score'], r['error'])} {r['unit']} | - | \U0001f195 |")
             continue
 
-        if name not in pr_results:
-            r = base_results[name]
-            print(
-                f"| {name} | {format_score(r['score'], r['error'])} {r['unit']}"
-                f" | _removed_ | - | - |"
-            )
+        if key not in pr_results:
+            r = base_results[key]
+            print(f"| {name} | {format_score(r['score'], r['error'])} {r['unit']} | _removed_ | - | - |")
             continue
 
-        base = base_results[name]
-        pr = pr_results[name]
+        base = base_results[key]
+        pr = pr_results[key]
+
+        if base["unit"] != "ms/op" or pr["unit"] != "ms/op":
+            print(
+                f"| {name}"
+                f" | {format_score(base['score'], base['error'])} {base['unit']}"
+                f" | {format_score(pr['score'], pr['error'])} {pr['unit']}"
+                f" | - | not comparable |"
+            )
+            continue
 
         if base["score"] == 0:
             delta_pct = 0.0
@@ -118,8 +143,8 @@ def main():
 
         print(
             f"| {name}"
-            f" | {format_score(base['score'], base['error'])}"
-            f" | {format_score(pr['score'], pr['error'])}"
+            f" | {format_score(base['score'], base['error'])} {base['unit']}"
+            f" | {format_score(pr['score'], pr['error'])} {pr['unit']}"
             f" | {delta_pct:+.1f}%"
             f" | {status} |"
         )
