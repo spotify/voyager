@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 #
 # Copyright 2022-2023 Spotify AB
 #
@@ -18,6 +17,7 @@ import math
 
 import numpy as np
 import pytest
+
 from voyager import E4M3T, Index, Space, StorageDataType
 
 RANGES_AND_EXPECTED_ERRORS = [
@@ -28,7 +28,7 @@ RANGES_AND_EXPECTED_ERRORS = [
     ((-0.01, 0.01, 1e-4), 0.009),
 ]
 
-VALID_E4M3_VALUES = set([float(E4M3T.from_char(x)) for x in range(256)])
+VALID_E4M3_VALUES = {float(E4M3T.from_char(x)) for x in range(256)}
 
 
 def test_range():

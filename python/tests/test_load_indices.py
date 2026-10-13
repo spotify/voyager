@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 #
 # Copyright 2022-2023 Spotify AB
 #
@@ -14,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
 import os
 import struct
-from io import BytesIO
-import numpy as np
 from glob import glob
+from io import BytesIO
+
+import numpy as np
+import pytest
 
 from voyager import Index, Space, StorageDataType
 
@@ -260,7 +259,7 @@ def test_loading_invalid_data_cannot_crash(data: bytes, should_pass: bool):
         assert len(index) == 1
         np.testing.assert_allclose(index[0], np.zeros(index.num_dimensions))
     else:
-        with pytest.raises(Exception):
+        with pytest.raises((ValueError, RuntimeError, BufferError)):
             index = Index.load(BytesIO(data))
             # We shoulnd't get here, but if we do: do we segfault?
             for id in index.ids:
@@ -291,5 +290,5 @@ def test_fuzz(seed: int, with_valid_header: bool, offset_level_0: int):
     if offset_level_0:
         random_data.write(struct.pack("=Q", offset_level_0))
     random_data.seek(0)
-    with pytest.raises(Exception):
+    with pytest.raises((ValueError, RuntimeError, BufferError)):
         Index.load(random_data)
