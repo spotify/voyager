@@ -183,6 +183,56 @@ static float InnerProductSIMD4Ext(const float *pVect1, const float *pVect2,
   return 1.0f - sum;
 }
 
+#elif defined(USE_NEON)
+
+static float InnerProductSIMD4Ext(const float *pVect1, const float *pVect2,
+                                  const size_t qty) {
+  size_t qty16 = qty / 16;
+  size_t qty4 = qty / 4;
+
+  const float *pEnd1 = pVect1 + 16 * qty16;
+  const float *pEnd2 = pVect1 + 4 * qty4;
+
+  float32x4_t sum0 = vdupq_n_f32(0);
+  float32x4_t sum1 = vdupq_n_f32(0);
+  float32x4_t sum2 = vdupq_n_f32(0);
+  float32x4_t sum3 = vdupq_n_f32(0);
+
+  while (pVect1 < pEnd1) {
+    float32x4_t v1_0 = vld1q_f32(pVect1);
+    float32x4_t v2_0 = vld1q_f32(pVect2);
+    sum0 = vfmaq_f32(sum0, v1_0, v2_0);
+
+    float32x4_t v1_1 = vld1q_f32(pVect1 + 4);
+    float32x4_t v2_1 = vld1q_f32(pVect2 + 4);
+    sum1 = vfmaq_f32(sum1, v1_1, v2_1);
+
+    float32x4_t v1_2 = vld1q_f32(pVect1 + 8);
+    float32x4_t v2_2 = vld1q_f32(pVect2 + 8);
+    sum2 = vfmaq_f32(sum2, v1_2, v2_2);
+
+    float32x4_t v1_3 = vld1q_f32(pVect1 + 12);
+    float32x4_t v2_3 = vld1q_f32(pVect2 + 12);
+    sum3 = vfmaq_f32(sum3, v1_3, v2_3);
+
+    pVect1 += 16;
+    pVect2 += 16;
+  }
+
+  float32x4_t sum_prod =
+      vaddq_f32(vaddq_f32(sum0, sum1), vaddq_f32(sum2, sum3));
+
+  while (pVect1 < pEnd2) {
+    float32x4_t v1 = vld1q_f32(pVect1);
+    pVect1 += 4;
+    float32x4_t v2 = vld1q_f32(pVect2);
+    pVect2 += 4;
+    sum_prod = vfmaq_f32(sum_prod, v1, v2);
+  }
+
+  return 1.0f - vaddvq_f32(sum_prod);
+}
+
 #endif
 
 #if defined(USE_AVX512)
@@ -294,9 +344,48 @@ static float InnerProductSIMD16Ext(const float *pVect1, const float *pVect2,
   return 1.0f - sum;
 }
 
+#elif defined(USE_NEON)
+
+static float InnerProductSIMD16Ext(const float *pVect1, const float *pVect2,
+                                   const size_t qty) {
+  size_t qty16 = qty / 16;
+  const float *pEnd1 = pVect1 + 16 * qty16;
+
+  float32x4_t sum0 = vdupq_n_f32(0);
+  float32x4_t sum1 = vdupq_n_f32(0);
+  float32x4_t sum2 = vdupq_n_f32(0);
+  float32x4_t sum3 = vdupq_n_f32(0);
+
+  while (pVect1 < pEnd1) {
+    float32x4_t v1_0 = vld1q_f32(pVect1);
+    float32x4_t v2_0 = vld1q_f32(pVect2);
+    sum0 = vfmaq_f32(sum0, v1_0, v2_0);
+
+    float32x4_t v1_1 = vld1q_f32(pVect1 + 4);
+    float32x4_t v2_1 = vld1q_f32(pVect2 + 4);
+    sum1 = vfmaq_f32(sum1, v1_1, v2_1);
+
+    float32x4_t v1_2 = vld1q_f32(pVect1 + 8);
+    float32x4_t v2_2 = vld1q_f32(pVect2 + 8);
+    sum2 = vfmaq_f32(sum2, v1_2, v2_2);
+
+    float32x4_t v1_3 = vld1q_f32(pVect1 + 12);
+    float32x4_t v2_3 = vld1q_f32(pVect2 + 12);
+    sum3 = vfmaq_f32(sum3, v1_3, v2_3);
+
+    pVect1 += 16;
+    pVect2 += 16;
+  }
+
+  float sum =
+      vaddvq_f32(vaddq_f32(vaddq_f32(sum0, sum1), vaddq_f32(sum2, sum3)));
+  return 1.0f - sum;
+}
+
 #endif
 
-#if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512)
+#if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512) ||             \
+    defined(USE_NEON)
 static float InnerProductSIMD16ExtResiduals(const float *pVect1,
                                             const float *pVect2,
                                             const size_t qty) {
@@ -374,7 +463,8 @@ template <>
 InnerProductSpace<float, float>::InnerProductSpace(size_t dim)
     : data_size_(dim * sizeof(float)), dim_(dim) {
   fstdistfunc_ = InnerProduct<float, float>;
-#if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512)
+#if defined(USE_SSE) || defined(USE_AVX) || defined(USE_AVX512) ||             \
+    defined(USE_NEON)
   if (dim % 16 == 0)
     fstdistfunc_ = InnerProductSIMD16Ext;
   else if (dim % 4 == 0)
