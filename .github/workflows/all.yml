@@ -245,7 +245,18 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     if: github.event_name == 'pull_request'
-    name: Run Java benchmarks
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [Index, StringIndex]
+    name: Run Java benchmarks (${{ matrix.family }})
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      PR_SHA: ${{ github.sha }}
+      BENCHMARK_FAMILY: ${{ matrix.family }}
+      BENCHMARK_FILTER: '^com[.]spotify[.]voyager[.]jni[.]${{ matrix.family }}(Creation|Query)Benchmark[.].*$'
+      # JMH needs at least three measurements to compute the comparison's error margins.
+      JMH_ARGS: "-f 1 -wi 2 -i 3 -w 1s -r 1s -foe true -jvmArgs '-Xms2g -Xmx2g'"
     steps:
       - uses: actions/checkout@v3
         with:
@@ -256,39 +267,53 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
 
-      # Benchmark the base branch first
-      - name: Checkout base branch
-        run: git checkout ${{ github.event.pull_request.base.sha }}
-      - name: Build native library (base)
-        working-directory: java
-        run: make
-        continue-on-error: true
-      - name: Compile benchmarks (base)
-        working-directory: java
-        run: mvn --batch-mode test-compile
-        continue-on-error: true
-      - name: Run benchmarks (base)
-        working-directory: java
-        run: mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test -Dexec.args="-cp %classpath org.openjdk.jmh.Main -rf json -rff /tmp/base-results.json -f 1 -wi 2 -i 3 -w 2s -r 2s -jvmArgs -Xms2g -jvmArgs -Xmx2g"
-        continue-on-error: true
+      - name: Check base benchmarks
+        id: baseline
+        run: |
+          if git ls-tree -r --name-only "$BASE_SHA" java/src/test/java | grep -Eq "/${BENCHMARK_FAMILY}(Creation|Query)Benchmark[.]java$"; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      # Benchmark the PR branch
+      # Measure both revisions on the same runner, with identical JMH settings.
+      - name: Checkout base branch
+        if: steps.baseline.outputs.available == 'true'
+        run: git checkout "$BASE_SHA"
+      - name: Build benchmarks (base)
+        if: steps.baseline.outputs.available == 'true'
+        working-directory: java
+        # Compile Java once, then build only the native library used by this runner.
+        run: |
+          make clean
+          mvn --batch-mode test-compile -Dexec.skip=true
+          make target/classes/linux-x64/libvoyager.so
+      - name: Run benchmarks (base)
+        if: steps.baseline.outputs.available == 'true'
+        working-directory: java
+        run: >-
+          mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test
+          -Dexec.args="-cp %classpath org.openjdk.jmh.Main $BENCHMARK_FILTER $JMH_ARGS -rf json -rff $RUNNER_TEMP/base-results.json"
+
       - name: Checkout PR branch
-        run: git checkout ${{ github.sha }}
-      - name: Build native library (PR)
+        run: git checkout "$PR_SHA"
+      - name: Build benchmarks (PR)
         working-directory: java
-        run: make clean && make
-      - name: Compile benchmarks (PR)
-        working-directory: java
-        run: mvn clean --batch-mode test-compile
+        run: |
+          make clean
+          mvn --batch-mode test-compile -Dexec.skip=true
+          make target/classes/linux-x64/libvoyager.so
       - name: Run benchmarks (PR)
         working-directory: java
-        run: mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test -Dexec.args="-cp %classpath org.openjdk.jmh.Main -rf json -rff /tmp/pr-results.json -f 1 -wi 2 -i 3 -w 2s -r 2s -jvmArgs -Xms2g -jvmArgs -Xmx2g"
+        run: >-
+          mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test
+          -Dexec.args="-cp %classpath org.openjdk.jmh.Main $BENCHMARK_FILTER $JMH_ARGS -rf json -rff $RUNNER_TEMP/pr-results.json"
 
       # Compare and report
       - name: Compare benchmarks
-        run: python3 java/scripts/compare_benchmarks.py /tmp/base-results.json /tmp/pr-results.json >> $GITHUB_STEP_SUMMARY
-        continue-on-error: true
+        run: >-
+          python3 java/scripts/compare_benchmarks.py
+          "$RUNNER_TEMP/base-results.json" "$RUNNER_TEMP/pr-results.json" >> "$GITHUB_STEP_SUMMARY"
 
   build-python-sdist:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
