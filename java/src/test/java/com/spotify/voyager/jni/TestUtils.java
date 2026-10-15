@@ -101,6 +101,7 @@ public class TestUtils {
     return randomQuantizedVectors(random, numElements, numDimensions);
   }
 
+  /** Use a caller-owned generator so tests can keep their random sequences independent. */
   public static float[][] randomQuantizedVectors(
       Random random, int numElements, int numDimensions) {
     float[][] vectors = new float[numElements][numDimensions];

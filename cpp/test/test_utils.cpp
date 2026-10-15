@@ -9,6 +9,7 @@ std::vector<std::vector<float>> randomQuantizedVectors(int numVectors,
   std::vector<std::vector<float>> vectors(numVectors,
                                           std::vector<float>(dimensions));
 
+  // A local fixed seed keeps inputs repeatable regardless of test order.
   std::mt19937 gen(1234);
   std::uniform_real_distribution<> dis(0, 1.0);
 
@@ -26,6 +27,7 @@ std::vector<std::vector<float>> randomVectors(int numVectors, int dimensions) {
   std::vector<std::vector<float>> vectors(numVectors,
                                           std::vector<float>(dimensions));
 
+  // A local fixed seed keeps inputs repeatable regardless of test order.
   std::mt19937 gen(1234);
   std::uniform_real_distribution<> dis(0, 1.0);
 

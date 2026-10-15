@@ -117,6 +117,7 @@ public class IndexTest {
     try (Index index = new Index(spaceType, 32, 20, 2000, 1, 1, storageDataType)) {
       assertEquals(1, index.getMaxElements());
 
+      // Keep inputs repeatable without consuming another test's random state.
       float[][] inputData = TestUtils.randomQuantizedVectors(new Random(1234), numElements, 32);
 
       long[] ids = new long[inputData.length];
@@ -234,6 +235,7 @@ public class IndexTest {
     }
   }
 
+  /** Check returned distances separately from the aggregate exact-ID recall budget. */
   private void checkQueryResults(
       Index index,
       StorageDataType storageDataType,
@@ -241,6 +243,7 @@ public class IndexTest {
       Index.QueryResults[] results) {
     assertEquals(inputData.length, results.length);
     int matches = 0;
+    // Preserve existing exclusions where quantization or inner product can change the best ID.
     boolean checkRecall =
         storageDataType != StorageDataType.E4M3 && index.getSpace() != InnerProduct;
     for (int i = 0; i < inputData.length; i++) {
@@ -260,6 +263,7 @@ public class IndexTest {
             PRECISION_PER_DATA_TYPE.get(storageDataType));
       }
     }
+    // Individual misses are allowed only while at least 99% of IDs still match.
     if (checkRecall) {
       double recall = (double) matches / inputData.length;
       assertTrue(
@@ -268,6 +272,7 @@ public class IndexTest {
     }
   }
 
+  /** Compute squared Euclidean or cosine distance to the actual returned vector. */
   private float expectedDistance(
       float[] left, float[] right, Index index, StorageDataType storageDataType) {
     float[] a = queryRepresentation(left, index, storageDataType);
@@ -284,6 +289,7 @@ public class IndexTest {
     return (float) (index.getSpace() == Euclidean ? result : 1 - result);
   }
 
+  /** Apply cosine normalization and Float8 quantization before comparing distances. */
   private float[] queryRepresentation(
       float[] vector, Index index, StorageDataType storageDataType) {
     float norm = 0;
@@ -301,6 +307,7 @@ public class IndexTest {
     return result;
   }
 
+  /** Require every self-match and every stored ID on a small connected graph. */
   @Test
   public void testQueryConnectedIndex() throws Exception {
     float[][] vectors = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};

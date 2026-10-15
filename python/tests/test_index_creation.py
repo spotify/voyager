@@ -55,6 +55,7 @@ def test_create_and_query(
     recall_tolerance: float,
     tmp_path,
 ):
+    # Keep inputs repeatable without consuming another test's random state.
     rng = np.random.default_rng(1234)
     input_data = rng.random((num_elements, num_dimensions)).astype(np.float32) * 2 - 1
     if storage_data_type == voyager.StorageDataType.Float8:
@@ -82,6 +83,7 @@ def test_create_and_query(
     assert len(index) == index.num_elements
 
     def check_results(labels, distances):
+        """Check distance accuracy for every result and exact-ID recall separately."""
         assert np.all((labels >= 0) & (labels < num_elements))
         assert np.all(np.isfinite(distances))
         # Graph search may miss the query itself. Its returned distance must still
@@ -94,6 +96,7 @@ def test_create_and_query(
             expected_distances,
             atol=(distance_tolerance * num_dimensions),
         )
+        # A miss counts against the storage type's recall budget, even if its distance is correct.
         recall = np.mean(labels == np.arange(num_elements))
         assert recall >= recall_tolerance, f"Self-query recall {recall:.4f} < {recall_tolerance}"
 
@@ -127,6 +130,7 @@ def test_create_and_query(
     [voyager.StorageDataType.Float32, voyager.StorageDataType.Float8],
 )
 def test_query_connected_index(space, storage_data_type):
+    """Require every self-match and every stored ID on a small connected graph."""
     # Four exactly representable vectors fit within every node's neighbor limit.
     # Keep strict self-query and exhaustive-query assertions on this small graph.
     input_data = np.eye(4, dtype=np.float32)

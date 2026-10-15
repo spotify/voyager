@@ -17,8 +17,8 @@ void testIndexProperties(TypedIndex<dist_t, data_t, scalefactor> &index,
 
 /**
  * Test the query method of the index. The index is populated with random
- * vectors, and then queried with the same vectors. The expected result is that
- * self-query recall stays high and each distance describes the returned vector.
+ * vectors, and then queried with the same vectors. For Float32/Float8 Euclidean
+ * and cosine queries, require 99% matching IDs and correct returned distances.
  * Rare search misses are accepted; numerical tolerances remain unchanged.
  */
 template <typename dist_t, typename data_t = dist_t,
@@ -55,8 +55,11 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
 
   // Allow up to 1% misses from approximate search, including unreachable nodes.
   constexpr double minimumRecall = 0.99;
+  // Preserve existing exclusions where quantization or inner product can change
+  // which vector is the nearest neighbor to the original query.
   const bool checkRecall = storageType != StorageDataType::E4M3 &&
                            spaceType != SpaceType::InnerProduct;
+  // A missed self-match must still report the distance to its returned vector.
   auto checkResult = [&](int queryId, hnswlib::labeltype label,
                          float distance) {
     REQUIRE(label < inputData.size());
@@ -87,6 +90,7 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
       REQUIRE(distances.size() == k);
 
       checkResult(i, labels[0], distances[0]);
+      // Count exact ID matches, then enforce the budget across all queries.
       matches += labels[0] == static_cast<hnswlib::labeltype>(i);
     }
     if (checkRecall) {
@@ -114,6 +118,7 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
       checkResult(i, label, distance);
       matches += label == static_cast<hnswlib::labeltype>(i);
     }
+    // Enforce the same recall budget independently for bulk queries.
     if (checkRecall) {
       CAPTURE(matches);
       REQUIRE(static_cast<double>(matches) / numVectors >= minimumRecall);
@@ -182,6 +187,7 @@ TEST_CASE(
 
 template <typename data_t, typename scalefactor = std::ratio<1, 1>>
 void testConnectedIndex(SpaceType space) {
+  // This small graph must return every self-match and every stored ID.
   TypedIndex<float, data_t, scalefactor> index(space, 4, 20);
   const std::vector<std::vector<float>> vectors = {
       {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
