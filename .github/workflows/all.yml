@@ -260,11 +260,11 @@ jobs:
       # JMH needs at least three measurements to compute the comparison's error margins.
       JMH_ARGS: "-f 1 -wi 2 -i 3 -w 1s -r 1s -foe true -jvmArgs '-Xms2g -Xmx2g'"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v6
         with:
           java-version: '17'
           distribution: 'corretto'
