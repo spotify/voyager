@@ -98,6 +98,11 @@ public class TestUtils {
    *     the second.
    */
   public static float[][] randomQuantizedVectors(int numElements, int numDimensions) {
+    return randomQuantizedVectors(random, numElements, numDimensions);
+  }
+
+  public static float[][] randomQuantizedVectors(
+      Random random, int numElements, int numDimensions) {
     float[][] vectors = new float[numElements][numDimensions];
 
     for (int i = 0; i < numElements; i++) {

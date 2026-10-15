@@ -35,9 +35,13 @@ import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import org.junit.Test;
 
 public class IndexTest {
+  // Allow up to 1% misses from approximate graph search, including unreachable nodes.
+  private static final double MIN_SELF_QUERY_RECALL = 0.99;
+
   static final Map<Index.StorageDataType, Float> PRECISION_PER_DATA_TYPE = new HashMap<>();
 
   static {
@@ -113,7 +117,7 @@ public class IndexTest {
     try (Index index = new Index(spaceType, 32, 20, 2000, 1, 1, storageDataType)) {
       assertEquals(1, index.getMaxElements());
 
-      float[][] inputData = TestUtils.randomQuantizedVectors(numElements, 32);
+      float[][] inputData = TestUtils.randomQuantizedVectors(new Random(1234), numElements, 32);
 
       long[] ids = new long[inputData.length];
       for (int i = 0; i < inputData.length; i++) {
@@ -175,67 +179,22 @@ public class IndexTest {
 
       index.setEf(numElements);
 
-      final float expectedPrecision = PRECISION_PER_DATA_TYPE.get(storageDataType);
-
-      // Use the bulk-query interface:
-      Index.QueryResults[] results = new Index.QueryResults[0];
+      // Use the bulk-query interface with an explicit queryEf:
       for (long queryEf = 100; queryEf < numElements; queryEf *= 10) {
-        results = index.query(inputData, /* k= */ 1, /* numThreads= */ -1, /* queryEf= */ queryEf);
-
-        for (int i = 0; i < numElements; i++) {
-          Index.QueryResults neighbor = results[i];
-
-          assertEquals(1, neighbor.labels.length);
-          assertEquals(1, neighbor.distances.length);
-
-          // E4M3 is too low precision for us to confidently assume that querying with the
-          // unquantized (fp32) vector will return the quantized vector as its NN
-          // InnerProduct will have negative distance to the closest item, not zero
-          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
-            long label = neighbor.labels[0];
-            float distance = neighbor.distances[0];
-
-            assertEquals(i, label);
-            assertEquals(0.0f, distance, expectedPrecision);
-          }
-        }
+        checkQueryResults(
+            index, storageDataType, inputData, index.query(inputData, 1, -1, queryEf));
       }
-
       // Use the single-query interface:
       for (long queryEf = 100; queryEf < numElements; queryEf *= 10) {
+        Index.QueryResults[] singleResults = new Index.QueryResults[numElements];
         for (int i = 0; i < numElements; i++) {
-          final Index.QueryResults neighbor = index.query(inputData[i], 1, queryEf);
-
-          assertEquals(1, neighbor.labels.length);
-          assertEquals(1, neighbor.distances.length);
-
-          // E4M3 is too low precision for us to confidently assume that querying with the
-          // unquantized (fp32) vector will return the quantized vector as its NN
-          // InnerProduct will have negative distance to the closest item, not zero
-          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
-            assertEquals(i, neighbor.labels[0]);
-            assertEquals(0.0f, neighbor.distances[0], expectedPrecision);
-          }
+          singleResults[i] = index.query(inputData[i], 1, queryEf);
         }
+        checkQueryResults(index, storageDataType, inputData, singleResults);
       }
-
-      // Then use the batch-query interface:
+      // Use the batch-query interface with the index's default ef:
       for (long queryEf = 100; queryEf < numElements; queryEf *= 10) {
-        final Index.QueryResults[] batchResults = index.query(inputData, 1, -1);
-        for (int i = 0; i < numElements; i++) {
-          final Index.QueryResults neighbor = batchResults[i];
-
-          assertEquals(1, neighbor.labels.length);
-          assertEquals(1, neighbor.distances.length);
-
-          // E4M3 is too low precision for us to confidently assume that querying with the
-          // unquantized (fp32) vector will return the quantized vector as its NN
-          // InnerProduct will have negative distance to the closest item, not zero
-          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
-            assertEquals(i, neighbor.labels[0]);
-            assertEquals(0.0f, neighbor.distances[0], expectedPrecision);
-          }
-        }
+        checkQueryResults(index, storageDataType, inputData, index.query(inputData, 1, -1));
       }
 
       // Try to save the index to a byte string:
@@ -253,28 +212,8 @@ public class IndexTest {
         // assertEquals(index.getEf(), reloadedIndex.getEf());
 
         reloadedIndex.setEf(index.getEf());
-        final Index.QueryResults[] reloadedResults = reloadedIndex.query(inputData, 1, -1);
-        for (int i = 0; i < numElements; i++) {
-          Index.QueryResults neighbor = reloadedResults[i];
-
-          assertEquals(1, neighbor.labels.length);
-          assertEquals(1, neighbor.distances.length);
-
-          // E4M3 is too low precision for us to confidently assume that querying with the
-          // unquantized (fp32) vector will return the quantized vector as its NN
-          // InnerProduct will have negative distance to the closest item, not zero
-          if (storageDataType != Index.StorageDataType.E4M3 && spaceType != InnerProduct) {
-            assertEquals(
-                String.format(
-                    "Expected element %d to be the nearest neighbor to itself when "
-                        + "reloading the index, but nearest neighbor was %d "
-                        + "(%2.2f distance away).",
-                    i, neighbor.labels[0], neighbor.distances[0]),
-                i,
-                neighbor.labels[0]);
-            assertEquals(0.0f, neighbor.distances[0], expectedPrecision);
-          }
-        }
+        checkQueryResults(
+            reloadedIndex, storageDataType, inputData, reloadedIndex.query(inputData, 1, -1));
       }
       // Test markDeleted and unmarkDeleted
       index.markDeleted(0);
@@ -292,6 +231,102 @@ public class IndexTest {
       long currentSize = index.getMaxElements();
       index.resizeIndex(currentSize + 1);
       assertEquals(currentSize + 1, index.getMaxElements());
+    }
+  }
+
+  private void checkQueryResults(
+      Index index,
+      StorageDataType storageDataType,
+      float[][] inputData,
+      Index.QueryResults[] results) {
+    assertEquals(inputData.length, results.length);
+    int matches = 0;
+    boolean checkRecall =
+        storageDataType != StorageDataType.E4M3 && index.getSpace() != InnerProduct;
+    for (int i = 0; i < inputData.length; i++) {
+      assertEquals(1, results[i].labels.length);
+      assertEquals(1, results[i].distances.length);
+      long label = results[i].labels[0];
+      assertTrue("Returned label must belong to the index", label >= 0 && label < inputData.length);
+      assertTrue("Returned distance must be finite", Float.isFinite(results[i].distances[0]));
+      if (checkRecall) {
+        if (label == i) {
+          matches++;
+        }
+        // A search miss is allowed, but its distance must describe the returned vector.
+        assertEquals(
+            expectedDistance(inputData[i], inputData[(int) label], index, storageDataType),
+            results[i].distances[0],
+            PRECISION_PER_DATA_TYPE.get(storageDataType));
+      }
+    }
+    if (checkRecall) {
+      double recall = (double) matches / inputData.length;
+      assertTrue(
+          "Self-query recall " + recall + " < " + MIN_SELF_QUERY_RECALL,
+          recall >= MIN_SELF_QUERY_RECALL);
+    }
+  }
+
+  private float expectedDistance(
+      float[] left, float[] right, Index index, StorageDataType storageDataType) {
+    float[] a = queryRepresentation(left, index, storageDataType);
+    float[] b = queryRepresentation(right, index, storageDataType);
+    double result = 0;
+    for (int i = 0; i < a.length; i++) {
+      if (index.getSpace() == Euclidean) {
+        double difference = a[i] - b[i];
+        result += difference * difference;
+      } else {
+        result += (double) a[i] * b[i];
+      }
+    }
+    return (float) (index.getSpace() == Euclidean ? result : 1 - result);
+  }
+
+  private float[] queryRepresentation(
+      float[] vector, Index index, StorageDataType storageDataType) {
+    float norm = 0;
+    if (index.getSpace() == Cosine) {
+      for (float value : vector) {
+        norm += value * value;
+      }
+    }
+    float scale = index.getSpace() == Cosine ? 1 / ((float) Math.sqrt(norm) + 1e-30f) : 1;
+    float[] result = new float[vector.length];
+    for (int i = 0; i < vector.length; i++) {
+      float value = vector[i] * scale;
+      result[i] = storageDataType == StorageDataType.Float8 ? (int) (value * 127) / 127.0f : value;
+    }
+    return result;
+  }
+
+  @Test
+  public void testQueryConnectedIndex() throws Exception {
+    float[][] vectors = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+    long[] ids = {10, 20, 30, 40};
+    for (Index.SpaceType space : Index.SpaceType.values()) {
+      for (StorageDataType storage :
+          new StorageDataType[] {StorageDataType.Float32, StorageDataType.Float8}) {
+        // Four exactly representable vectors fit within every node's neighbor limit.
+        try (Index index = new Index(space, 4, 20, 100, 1, 4, storage)) {
+          index.addItems(vectors, ids, 1);
+          Index.QueryResults[] results = index.query(vectors, 1, -1);
+          for (int i = 0; i < vectors.length; i++) {
+            assertArrayEquals(new long[] {ids[i]}, results[i].labels);
+            assertArrayEquals(new float[] {0}, results[i].distances, 0);
+            Index.QueryResults single = index.query(vectors[i], 1);
+            assertArrayEquals(new long[] {ids[i]}, single.labels);
+            assertArrayEquals(new float[] {0}, single.distances, 0);
+            Index.QueryResults all = index.query(vectors[i], ids.length);
+            assertEquals(ids[i], all.labels[0]);
+            Arrays.sort(all.labels);
+            assertArrayEquals(ids, all.labels);
+            float distance = space == Euclidean ? 2 : 1;
+            assertArrayEquals(new float[] {0, distance, distance, distance}, all.distances, 0);
+          }
+        }
+      }
     }
   }
 }
