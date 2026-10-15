@@ -125,6 +125,51 @@ class CompareBenchmarksTest(unittest.TestCase):
         self.assertIn("| IndexQueryBenchmark.queryK1 | 1.000 ± 0.010 ms/op | _removed_", report)
         self.assertIn("| StringIndexQueryBenchmark.queryK1 | _new_ | 1.000 ± 0.010 ms/op", report)
 
+    def test_summary_lists_regressions_before_improvements_below_table(self):
+        benchmarks = (
+            "IndexQueryBenchmark.queryK1",
+            "IndexQueryBenchmark.queryK20",
+            "IndexCreationBenchmark.addItems",
+            "StringIndexCreationBenchmark.addItems",
+        )
+        base = [result(name, 10) for name in benchmarks]
+        scores = (12, 20, 5, 10)
+        pr = [result(name, scores[i]) for i, name in enumerate(benchmarks)]
+        report = self.report(base, pr)
+        summary = report.split("\n\n**Summary:**", 1)[1]
+        self.assertGreater(report.index("**Summary:**"), report.rindex("|"))
+        self.assertIn("Regressions: **2**; improvements: **1**; unchanged: **1**.", summary)
+        largest = "- **Regression:** `IndexQueryBenchmark.queryK20` (+100.0%)."
+        smaller = "- **Regression:** `IndexQueryBenchmark.queryK1` (+20.0%)."
+        improvement = "- **Improvement:** `IndexCreationBenchmark.addItems` (-50.0%)."
+        self.assertLess(summary.index(largest), summary.index(smaller))
+        self.assertLess(summary.index(smaller), summary.index(improvement))
+
+    def test_summary_uses_measured_uncertainty_for_unchanged_results(self):
+        report = self.report(
+            [result("IndexQueryBenchmark.queryK1", 1)],
+            [result("IndexQueryBenchmark.queryK1", 1.01)],
+        )
+        summary = report.split("\n\n**Summary:**", 1)[1]
+        self.assertIn("All comparable benchmarks are unchanged within measured uncertainty (1 compared).", summary)
+        self.assertNotIn("**Regression:**", summary)
+        self.assertNotIn("**Improvement:**", summary)
+
+    def test_summary_separates_non_comparable_and_missing_results(self):
+        report = self.report(
+            [result("IndexQueryBenchmark.queryK1", 1), result("IndexQueryBenchmark.queryK20", 1)],
+            [result("IndexQueryBenchmark.queryK1", 1, unit="ops/s"), result("IndexCreationBenchmark.addItems", 1)],
+        )
+        summary = report.split("\n\n**Summary:**", 1)[1]
+        self.assertIn("No comparable benchmarks.", summary)
+        self.assertIn("New: 1; removed: 1; not comparable: 1.", summary)
+        self.assertNotIn("unchanged", summary)
+
+    def test_missing_baseline_summary_is_below_table(self):
+        report = self.report(None, [result("IndexQueryBenchmark.queryK1", 1)])
+        self.assertGreater(report.index("**Summary:**"), report.rindex("|"))
+        self.assertIn("Baseline unavailable; benchmark results reported: **1**. No before/after comparison.", report)
+
 
 if __name__ == "__main__":
     unittest.main()

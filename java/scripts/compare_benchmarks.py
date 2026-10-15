@@ -82,13 +82,15 @@ def main():
     if not os.path.exists(base_path):
         # Base results don't exist yet (first PR adding benchmarks)
         print("## Java Benchmark Results\n")
-        print("_No base branch results available for comparison._\n")
         print("| Benchmark | Score | Unit |")
         print("|-----------|-------|------|")
         for key in sorted(pr_results.keys()):
             name = format_name(key)
             r = pr_results[key]
             print(f"| {name} | {format_score(r['score'], r['error'])} | {r['unit']} |")
+        print(
+            f"\n**Summary:** Baseline unavailable; benchmark results reported: **{len(pr_results)}**. No before/after comparison."
+        )
         return
 
     base_results = load_results(base_path)
@@ -98,15 +100,20 @@ def main():
     print("|-----------|------|-----|-------|--------|")
 
     all_keys = sorted(set(list(base_results.keys()) + list(pr_results.keys())))
+    regressions = []
+    improvements = []
+    unchanged = new = removed = not_comparable = 0
 
     for key in all_keys:
         name = format_name(key)
         if key not in base_results:
+            new += 1
             r = pr_results[key]
             print(f"| {name} | _new_ | {format_score(r['score'], r['error'])} {r['unit']} | - | \U0001f195 |")
             continue
 
         if key not in pr_results:
+            removed += 1
             r = base_results[key]
             print(f"| {name} | {format_score(r['score'], r['error'])} {r['unit']} | _removed_ | - | - |")
             continue
@@ -115,6 +122,7 @@ def main():
         pr = pr_results[key]
 
         if base["unit"] != "ms/op" or pr["unit"] != "ms/op":
+            not_comparable += 1
             print(
                 f"| {name}"
                 f" | {format_score(base['score'], base['error'])} {base['unit']}"
@@ -136,10 +144,13 @@ def main():
             # For time-based benchmarks, lower is better
             if pr["score"] < base["score"]:
                 status = "\u2705 faster"
+                improvements.append((delta_pct, name))
             else:
                 status = "\u26a0\ufe0f slower"
+                regressions.append((delta_pct, name))
         else:
             status = "\u2194\ufe0f unchanged"
+            unchanged += 1
 
         print(
             f"| {name}"
@@ -148,6 +159,30 @@ def main():
             f" | {delta_pct:+.1f}%"
             f" | {status} |"
         )
+
+    print()
+    if regressions or improvements:
+        print(
+            f"**Summary:** Regressions: **{len(regressions)}**; "
+            f"improvements: **{len(improvements)}**; unchanged: **{unchanged}**."
+        )
+    elif unchanged:
+        print(
+            f"**Summary:** All comparable benchmarks are unchanged within measured uncertainty ({unchanged} compared)."
+        )
+    else:
+        print("**Summary:** No comparable benchmarks.")
+
+    if new or removed or not_comparable:
+        print(f"\nNew: {new}; removed: {removed}; not comparable: {not_comparable}.")
+
+    changes = [("Regression", delta, name) for delta, name in sorted(regressions, reverse=True)] + [
+        ("Improvement", delta, name) for delta, name in sorted(improvements)
+    ]
+    if changes:
+        print()
+        for label, delta, name in changes:
+            print(f"- **{label}:** `{name}` ({delta:+.1f}%).")
 
 
 if __name__ == "__main__":
