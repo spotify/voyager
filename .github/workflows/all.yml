@@ -216,14 +216,11 @@ jobs:
           LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) \
           tox
 
-  run-benchmarks:
-    strategy:
-      matrix:
-        os: ['ubuntu-latest']
-    runs-on: ${{ matrix.os }}
+  run-python-benchmarks:
+    runs-on: ubuntu-latest
     continue-on-error: true
     if: github.event_name == 'pull_request' 
-    name: Run benchmarks on ${{ matrix.os }}
+    name: Run Python benchmarks
     steps:
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -245,6 +242,80 @@ jobs:
         run: |
              asv machine --yes
              asv continuous --sort name --no-only-changed refs/remotes/origin/main ${{ github.sha }} | tee >(sed '1,/All benchmarks:/d' > $GITHUB_STEP_SUMMARY)
+
+  run-java-benchmarks:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    if: github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [Index, StringIndex]
+    name: Run Java benchmarks (${{ matrix.family }})
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      PR_SHA: ${{ github.sha }}
+      BENCHMARK_FAMILY: ${{ matrix.family }}
+      BENCHMARK_FILTER: '^com[.]spotify[.]voyager[.]jni[.]${{ matrix.family }}(Creation|Query)Benchmark[.].*$'
+      # JMH needs at least three measurements to compute the comparison's error margins.
+      JMH_ARGS: "-f 1 -wi 2 -i 3 -w 1s -r 1s -foe true -jvmArgs '-Xms2g -Xmx2g'"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+
+      - name: Check base benchmarks
+        id: baseline
+        run: |
+          if git ls-tree -r --name-only "$BASE_SHA" java/src/test/java | grep -Eq "/${BENCHMARK_FAMILY}(Creation|Query)Benchmark[.]java$"; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Measure both revisions on the same runner, with identical JMH settings.
+      - name: Checkout base branch
+        if: steps.baseline.outputs.available == 'true'
+        run: git checkout "$BASE_SHA"
+      - name: Build benchmarks (base)
+        if: steps.baseline.outputs.available == 'true'
+        working-directory: java
+        # Compile Java once, then build only the native library used by this runner.
+        run: |
+          make clean
+          mvn --batch-mode test-compile -Dexec.skip=true
+          make target/classes/linux-x64/libvoyager.so
+      - name: Run benchmarks (base)
+        if: steps.baseline.outputs.available == 'true'
+        working-directory: java
+        run: >-
+          mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test
+          -Dexec.args="-cp %classpath org.openjdk.jmh.Main $BENCHMARK_FILTER $JMH_ARGS -rf json -rff $RUNNER_TEMP/base-results.json"
+
+      - name: Checkout PR branch
+        run: git checkout "$PR_SHA"
+      - name: Build benchmarks (PR)
+        working-directory: java
+        run: |
+          make clean
+          mvn --batch-mode test-compile -Dexec.skip=true
+          make target/classes/linux-x64/libvoyager.so
+      - name: Run benchmarks (PR)
+        working-directory: java
+        run: >-
+          mvn --batch-mode exec:exec -Dexec.executable=java -Dexec.classpathScope=test
+          -Dexec.args="-cp %classpath org.openjdk.jmh.Main $BENCHMARK_FILTER $JMH_ARGS -rf json -rff $RUNNER_TEMP/pr-results.json"
+
+      # Compare and report
+      - name: Compare benchmarks
+        run: >-
+          python3 java/scripts/compare_benchmarks.py
+          "$RUNNER_TEMP/base-results.json" "$RUNNER_TEMP/pr-results.json" >> "$GITHUB_STEP_SUMMARY"
 
   build-python-sdist:
     needs: [run-python-tests, run-python-tests-with-address-sanitizer]
