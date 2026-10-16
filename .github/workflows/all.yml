@@ -298,7 +298,8 @@ jobs:
           -Dexec.args="-cp %classpath org.openjdk.jmh.Main $BENCHMARK_FILTER $JMH_ARGS -rf json -rff $RUNNER_TEMP/base-results.json"
 
       - name: Checkout PR branch
-        run: git checkout "$PR_SHA"
+        # The base build regenerates tracked JNI headers; discard them in this CI checkout.
+        run: git checkout --force "$PR_SHA"
       - name: Build benchmarks (PR)
         working-directory: java
         run: |
