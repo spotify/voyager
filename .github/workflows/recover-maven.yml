@@ -1,0 +1,159 @@
+name: Recover Maven Central release
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Run containing the java-all-platforms artifact
+        required: true
+        type: string
+        default: '38957851781'
+      version:
+        description: Expected Voyager version
+        required: true
+        type: string
+        default: '2.2.0'
+      publish:
+        description: Publish to Central after verifying signatures (otherwise only test signing)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: maven-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    name: Recover Maven ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve original build
+        id: source
+        uses: actions/github-script@v8
+        env:
+          SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+        with:
+          script: |
+            const runId = process.env.SOURCE_RUN_ID;
+            if (!/^\d+$/.test(runId)) throw new Error('Source run ID must be numeric');
+            const {data: run} = await github.rest.actions.getWorkflowRun({
+              ...context.repo, run_id: runId,
+            });
+            if (run.path !== '.github/workflows/all.yml' ||
+                !(run.event === 'release' || (run.event === 'push' && run.head_branch === 'main'))) {
+              throw new Error('Source must be a release or main build from all.yml');
+            }
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              ...context.repo, run_id: runId, per_page: 100,
+            });
+            if (!jobs.some(job => job.name === 'Combine JARs' && job.conclusion === 'success')) {
+              throw new Error('Source run must have a successful Combine JARs job');
+            }
+            core.setOutput('sha', run.head_sha);
+            await core.summary.addRaw(`Source run: ${run.html_url}\n\nCommit: ${run.head_sha}\n`).write();
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.source.outputs.sha }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v6
+        with:
+          java-version: '11'
+          distribution: corretto
+          server-id: central
+          server-username-env-var: MAVEN_USERNAME
+          server-password-env-var: MAVEN_USER_TOKEN
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: java-all-platforms
+          run-id: ${{ inputs.source_run_id }}
+          github-token: ${{ github.token }}
+          path: combined-jar
+
+      - name: Validate version and restore native libraries
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          from zipfile import ZipFile
+
+          version = os.environ['EXPECTED_VERSION']
+          ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
+          pom = ET.parse('source/java/pom.xml')
+          assert pom.findtext('m:version', namespaces=ns) == version, 'Source version mismatch'
+          jars = list(Path('combined-jar').glob('*.jar'))
+          assert len(jars) == 1 and jars[0].name == f'voyager-{version}.jar', 'Artifact version mismatch'
+          native_libraries = [
+              'linux-x64/libvoyager.so',
+              'linux-aarch64/libvoyager.so',
+              'mac-x64/libvoyager.dylib',
+              'mac-aarch64/libvoyager.dylib',
+              'win-x64/voyager.dll',
+          ]
+          with ZipFile(jars[0]) as jar:
+              assert jar.testzip() is None, 'Corrupt combined JAR'
+              embedded = ET.fromstring(jar.read('combined-jar/META-INF/maven/com.spotify/voyager/pom.xml'))
+              assert embedded.findtext('m:version', namespaces=ns) == version, 'Embedded version mismatch'
+              for name in native_libraries:
+                  target = Path('source/java/target/classes') / name
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(jar.read(f'combined-jar/{name}'))
+          print(f'Restored {len(native_libraries)} native libraries for Voyager {version}')
+          PY
+
+      - name: Package and sign
+        working-directory: source/java
+        run: >-
+          mvn --batch-mode verify -Pcentral-publish
+          -Dmaven.test.skip=true -Dexec.skip=true -Dgpg.signer=bc
+        env:
+          MAVEN_GPG_KEY: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
+
+      - name: Verify detached signatures
+        working-directory: source/java
+        env:
+          MAVEN_GPG_KEY: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
+        run: |
+          signing_home=$(mktemp -d)
+          trap 'gpgconf --homedir "$signing_home" --kill all; rm -rf "$signing_home"' EXIT
+          printf '%s' "$MAVEN_GPG_KEY" | gpg --homedir "$signing_home" --batch --quiet --import
+          shopt -s nullglob
+          signatures=(target/*.asc)
+          test "${#signatures[@]}" -eq 4
+          for signature in "${signatures[@]}"; do
+            gpg --homedir "$signing_home" --batch --verify "$signature" "${signature%.asc}"
+          done
+
+      - name: Publish verified artifacts to Central
+        if: inputs.publish
+        working-directory: source/java
+        # Keep packaging and deployment in one Maven session so sources, Javadoc,
+        # and signatures remain attached. Native compilation is disabled.
+        run: >-
+          mvn --batch-mode deploy -Pcentral-publish
+          -Dmaven.test.skip=true -Dexec.skip=true -Dgpg.signer=bc
+        env:
+          MAVEN_GPG_KEY: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
+          MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          MAVEN_USER_TOKEN: ${{ secrets.SONATYPE_USER_TOKEN }}
+
+      - name: Summarize result
+        env:
+          VERSION: ${{ inputs.version }}
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          echo "Voyager $VERSION: all four Maven artifact signatures verified." >> "$GITHUB_STEP_SUMMARY"
+          echo "Publish requested: $PUBLISH. PyPI was not invoked." >> "$GITHUB_STEP_SUMMARY"
