@@ -357,23 +357,21 @@ jobs:
         - { os: macos-latest, build: cp39-macosx_x86_64 }
         - { os: macos-latest, build: cp310-macosx_x86_64 }
         - { os: macos-latest, build: cp311-macosx_x86_64 }
+        # cp312 builds ABI3 wheels that also support Python 3.13+. Building cp313
+        # separately produces duplicate filenames that race during artifact download.
         - { os: macos-latest, build: cp312-macosx_x86_64 }
-        - { os: macos-latest, build: cp313-macosx_x86_64 }
         - { os: macos-latest, build: cp39-macosx_universal2 }
         - { os: macos-latest, build: cp310-macosx_universal2 }
         - { os: macos-latest, build: cp311-macosx_universal2 }
         - { os: macos-latest, build: cp312-macosx_universal2 }
-        - { os: macos-latest, build: cp313-macosx_universal2 }
         - { os: macos-latest, build: cp39-macosx_arm64 }
         - { os: macos-latest, build: cp310-macosx_arm64 }
         - { os: macos-latest, build: cp311-macosx_arm64 }
         - { os: macos-latest, build: cp312-macosx_arm64 }
-        - { os: macos-latest, build: cp313-macosx_arm64 }
         - { os: windows-latest, build: cp39-win_amd64 }
         - { os: windows-latest, build: cp310-win_amd64 }
         - { os: windows-latest, build: cp311-win_amd64 }
         - { os: windows-latest, build: cp312-win_amd64 }
-        - { os: windows-latest, build: cp313-win_amd64 }
         - { os: 'ubuntu-latest', build: cp39-manylinux_x86_64 }
         - { os: 'ubuntu-latest', build: cp39-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp310-manylinux_x86_64 }
@@ -382,8 +380,6 @@ jobs:
         - { os: 'ubuntu-latest', build: cp311-manylinux_aarch64 }
         - { os: 'ubuntu-latest', build: cp312-manylinux_x86_64 }
         - { os: 'ubuntu-latest', build: cp312-manylinux_aarch64 }
-        - { os: 'ubuntu-latest', build: cp313-manylinux_x86_64 }
-        - { os: 'ubuntu-latest', build: cp313-manylinux_aarch64 }
     name: Build wheel for ${{ matrix.build }}
     steps:
       - uses: actions/checkout@v7
@@ -532,7 +528,7 @@ jobs:
         with:
           name: python-sdist
           path: dist
-      - uses: pypa/gh-action-pypi-publish@v1.4.2
+      - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_DEPLOY_TOKEN }}
@@ -556,13 +552,13 @@ jobs:
         with:
           java-version: 11
           distribution: 'corretto'
-          server-id: ossrh
+          server-id: central
           server-username-env-var: MAVEN_USERNAME
           server-password-env-var: MAVEN_USER_TOKEN
           gpg-private-key: ${{ secrets.SONATYPE_GPG_PRIVATE_KEY }}
           gpg-passphrase-env-var: MAVEN_GPG_PASSPHRASE
       - name: Deploy
-        # Note: this will re-run the build even though we already have the JAR file ready to deploy
+        # Repackage with all downloaded native libraries; skip rebuilding them on this runner.
         run: |
           # Copy the native artifacts built for each platform into the appropriate place:
           unzip ../combined-jar/*.jar -d ../
@@ -570,9 +566,9 @@ jobs:
           cp -r ../combined-jar/linux* target/classes/
           cp -r ../combined-jar/mac* target/classes/
           cp -r ../combined-jar/win* target/classes/
-          mvn --batch-mode deploy -Dmaven.test.skip=true
+          mvn --batch-mode deploy -Pcentral-publish -Dmaven.test.skip=true -Dexec.skip=true
         env:
+          # Central Portal user-token username and password (not legacy OSSRH credentials).
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SONATYPE_PASSPHRASE }}
           MAVEN_USER_TOKEN: ${{ secrets.SONATYPE_USER_TOKEN }}
