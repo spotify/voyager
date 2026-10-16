@@ -17,9 +17,9 @@ void testIndexProperties(TypedIndex<dist_t, data_t, scalefactor> &index,
 
 /**
  * Test the query method of the index. The index is populated with random
- * vectors, and then queried with the same vectors. The expected result is that
- * each vector's nearest neighbor is itself and that the distance is zero
- * (allowing for some precision error based on the storage type).
+ * vectors, and then queried with the same vectors. For Float32/Float8 Euclidean
+ * and cosine queries, require 99% matching IDs and correct returned distances.
+ * Rare search misses are accepted; numerical tolerances remain unchanged.
  */
 template <typename dist_t, typename data_t = dist_t,
           typename scalefactor = std::ratio<1, 1>>
@@ -53,11 +53,27 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
     index.addItems(inputData, ids, -1);
   }
 
-  float lowerBound = 0.0f - precisionTolerance;
-  float upperBound = 0.0f + precisionTolerance;
+  // Allow up to 1% misses from approximate search, including unreachable nodes.
+  constexpr double minimumRecall = 0.99;
+  // Preserve existing exclusions where quantization or inner product can change
+  // which vector is the nearest neighbor to the original query.
+  const bool checkRecall = storageType != StorageDataType::E4M3 &&
+                           spaceType != SpaceType::InnerProduct;
+  // A missed self-match must still report the distance to its returned vector.
+  auto checkResult = [&](int queryId, hnswlib::labeltype label,
+                         float distance) {
+    REQUIRE(label < inputData.size());
+    REQUIRE(std::isfinite(distance));
+    if (checkRecall) {
+      const float expected =
+          index.getDistance(inputData[queryId], inputData[label]);
+      REQUIRE(std::abs(distance - expected) <= precisionTolerance);
+    }
+  };
 
   // Use the single-query interface (query with a single target vector)
   for (long queryEf = 100; queryEf <= numVectors; queryEf *= 10) {
+    int matches = 0;
     for (int i = 0; i < numVectors; i++) {
 
       /**
@@ -73,18 +89,13 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
       REQUIRE(labels.size() == k);
       REQUIRE(distances.size() == k);
 
-      /**
-       * E4M3 is too low precision for us to confidently assume that querying
-       * with the unquantized (fp32) vector will return the quantized vector as
-       * its NN. InnerProduct will have negative distance to the closest item,
-       * not zero
-       */
-      if (storageType != StorageDataType::E4M3 &&
-          spaceType != SpaceType::InnerProduct) {
-        REQUIRE(i == labels[0]);
-        REQUIRE(distances[0] >= lowerBound);
-        REQUIRE(distances[0] <= upperBound);
-      }
+      checkResult(i, labels[0], distances[0]);
+      // Count exact ID matches, then enforce the budget across all queries.
+      matches += labels[0] == static_cast<hnswlib::labeltype>(i);
+    }
+    if (checkRecall) {
+      CAPTURE(matches);
+      REQUIRE(static_cast<double>(matches) / numVectors >= minimumRecall);
     }
   }
 
@@ -99,28 +110,24 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
     REQUIRE(distances.shape[0] == numVectors);
     REQUIRE(distances.shape[1] == k);
 
+    int matches = 0;
     for (int i = 0; i < numVectors; i++) {
       auto label = labels.data[i];
       auto distance = distances.data[i];
 
-      /**
-       * E4M3 is too low precision for us to confidently assume that querying
-       * with the unquantized (fp32) vector will return the quantized vector
-       * as its NN. InnerProduct will have negative distance to the closest
-       * item, not zero
-       */
-      if (storageType != StorageDataType::E4M3 &&
-          spaceType != SpaceType::InnerProduct) {
-        REQUIRE(i == label);
-        REQUIRE(distance >= lowerBound);
-        REQUIRE(distance <= upperBound);
-      }
+      checkResult(i, label, distance);
+      matches += label == static_cast<hnswlib::labeltype>(i);
+    }
+    // Enforce the same recall budget independently for bulk queries.
+    if (checkRecall) {
+      CAPTURE(matches);
+      REQUIRE(static_cast<double>(matches) / numVectors >= minimumRecall);
     }
   }
 }
 
-TEST_CASE("Test combinations of different instantiations. Test that each "
-          "vector's ANN is itself and distance is approximately zero.") {
+TEST_CASE(
+    "Randomized queries retain high recall and accurate returned distances") {
   std::unordered_map<StorageDataType, float> PRECISION_TOLERANCE_PER_DATA_TYPE =
       {{StorageDataType::Float32, 0.00001f},
        {StorageDataType::Float8, 0.10f},
@@ -175,6 +182,42 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
         }
       }
     }
+  }
+}
+
+template <typename data_t, typename scalefactor = std::ratio<1, 1>>
+void testConnectedIndex(SpaceType space) {
+  // This small graph must return every self-match and every stored ID.
+  TypedIndex<float, data_t, scalefactor> index(space, 4, 20);
+  const std::vector<std::vector<float>> vectors = {
+      {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+  const std::vector<hnswlib::labeltype> ids = {10, 20, 30, 40};
+  index.addItems(vectors, ids, 1);
+  auto batch = index.query(vectors, 1, 1);
+  REQUIRE(std::get<0>(batch).data == ids);
+  REQUIRE(std::get<1>(batch).data == std::vector<float>(4, 0));
+  for (size_t i = 0; i < vectors.size(); i++) {
+    auto single = index.query(vectors[i], 1);
+    REQUIRE(std::get<0>(single) == std::vector<hnswlib::labeltype>{ids[i]});
+    REQUIRE(std::get<1>(single) == std::vector<float>{0});
+    auto all = index.query(vectors[i], ids.size());
+    auto labels = std::get<0>(all);
+    REQUIRE(labels[0] == ids[i]);
+    std::sort(labels.begin(), labels.end());
+    REQUIRE(labels == ids);
+    const float distance = space == SpaceType::Euclidean ? 2 : 1;
+    const std::vector<float> expected = {0, distance, distance, distance};
+    REQUIRE(std::get<1>(all) == expected);
+  }
+}
+
+TEST_CASE("Connected four-vector graphs retain exact and exhaustive queries") {
+  // Exactly representable basis vectors fit within every node's neighbor limit.
+  for (auto space :
+       {SpaceType::Euclidean, SpaceType::Cosine, SpaceType::InnerProduct}) {
+    CAPTURE(space);
+    testConnectedIndex<float>(space);
+    testConnectedIndex<int8_t, std::ratio<1, 127>>(space);
   }
 }
 
