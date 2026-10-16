@@ -319,7 +319,6 @@ jobs:
           "$RUNNER_TEMP/base-results.json" "$RUNNER_TEMP/pr-results.json" >> "$GITHUB_STEP_SUMMARY"
 
   build-python-sdist:
-    needs: [run-python-tests, run-python-tests-with-address-sanitizer]
     continue-on-error: false
     runs-on: 'ubuntu-latest'
     if: true
@@ -348,7 +347,6 @@ jobs:
           path: ./dist/*.tar.gz
 
   build-python-wheels:
-    needs: [run-python-tests, run-python-tests-with-address-sanitizer]
     runs-on: ${{ matrix.os }}
     continue-on-error: false
     if: true
