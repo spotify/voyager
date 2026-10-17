@@ -1,6 +1,6 @@
 #include "doctest.h"
 
-#include "TypedIndex.h"
+#include "StringIndex.h"
 #include "test_utils.cpp"
 #include <tuple>
 #include <type_traits>
@@ -215,4 +215,112 @@ TEST_CASE(
   std::vector<std::vector<float>> vectors2 = {
       {1.0f}, {5.0f, 6.0f, 7.0f}, {9.0f, 10.0f, 11.0f}};
   REQUIRE_THROWS_AS(vectorsToNDArray(vectors2), std::invalid_argument);
+}
+
+TEST_CASE(
+    "Native string identifiers update existing nodes and survive saving") {
+  TypedIndex<float> index(SpaceType::Euclidean, 2);
+  index.enableStringIdentifiers();
+  CHECK(index.addStringItem("a", {0, 0}) == 0);
+  CHECK(index.addStringItem("a", {1, 1}) == 0);
+  CHECK(index.getNumElements() == 1);
+  CHECK(index.getVector(index.getStringID("a")) == std::vector<float>{1, 1});
+  CHECK_THROWS(index.addStringItem("bad", {0}));
+  CHECK_THROWS(index.getStringID("bad"));
+  CHECK(index.addStringItem("b", {0, 0}) == 1);
+  auto output = std::make_shared<MemoryOutputStream>();
+  index.saveIndex(output);
+  const auto bytes = output->getValue();
+  CHECK(bytes.substr(0, 4) == "VOYA");
+  int version;
+  std::memcpy(&version, bytes.data() + 4, sizeof(version));
+  CHECK(version == 2);
+}
+
+TEST_CASE("BiMap rejects duplicate names and duplicate labels") {
+  voyager::BiMap map;
+  map.insert(42, "name");
+  CHECK(map.label("name") == 42);
+  CHECK(map.name(42) == "name");
+  CHECK_THROWS(map.insert(43, "name"));
+  CHECK_THROWS(map.insert(42, "other"));
+  CHECK(map.size() == 1);
+}
+
+TEST_CASE("C++ StringIndex exposes native string queries") {
+  StringIndex index(SpaceType::Euclidean, 2);
+  index.addItem("a", {0, 0});
+  index.addItems({"a", "b"}, {{1, 1}, {0, 0}});
+  CHECK(index.getNumElements() == 2);
+  auto result = index.query(std::vector<float>{1, 1});
+  CHECK(std::get<0>(result) == std::vector<std::string>{"a"});
+  CHECK(std::get<1>(result) == std::vector<float>{0});
+}
+
+TEST_CASE("BiMap references survive growth and erase only their own names") {
+  voyager::BiMap map;
+  map.insert(0, "short");
+  map.insert(1, std::string(128, 'x'));
+  const auto *shortName = &map.name(0);
+  const auto *longName = &map.name(1);
+  for (size_t i = 2; i < 10000; ++i)
+    map.insert(i, "item:" + std::to_string(i));
+  CHECK(&map.name(0) == shortName);
+  CHECK(&map.name(1) == longName);
+  CHECK(map.name(0) == "short");
+  CHECK(map.name(1) == std::string(128, 'x'));
+  for (size_t i = 2; i < 10000; ++i)
+    CHECK(map.name(i) == "item:" + std::to_string(i));
+  map.erase(0);
+  CHECK_FALSE(map.contains("short"));
+  CHECK_FALSE(map.containsLabel(0));
+  CHECK(map.name(1) == std::string(128, 'x'));
+  map.insert(0, "replacement");
+  CHECK(map.name(0) == "replacement");
+  CHECK(map.label("replacement") == 0);
+}
+
+TEST_CASE("BiMap copies own their strings independently") {
+  voyager::BiMap assigned;
+  assigned.insert(99, "old");
+  {
+    voyager::BiMap source;
+    source.insert(0, "short");
+    source.insert(1, std::string(128, 'x'));
+    voyager::BiMap copy(source);
+    CHECK(&copy.name(0) != &source.name(0));
+    CHECK(&copy.name(1) != &source.name(1));
+    assigned = copy;
+    source.erase(0);
+    source.erase(1);
+    CHECK(copy.name(0) == "short");
+    CHECK(copy.name(1) == std::string(128, 'x'));
+  }
+  CHECK(assigned.name(0) == "short");
+  CHECK(assigned.name(1) == std::string(128, 'x'));
+  CHECK_FALSE(assigned.contains("old"));
+  const auto &alias = assigned;
+  assigned = alias;
+  CHECK(assigned.name(0) == "short");
+}
+
+TEST_CASE("BiMap moves preserve references after source destruction") {
+  voyager::BiMap assigned;
+  assigned.insert(99, "old");
+  {
+    voyager::BiMap source;
+    source.insert(0, "short");
+    source.insert(1, std::string(128, 'x'));
+    const auto *shortName = &source.name(0);
+    const auto *longName = &source.name(1);
+    voyager::BiMap moved(std::move(source));
+    CHECK(&moved.name(0) == shortName);
+    CHECK(&moved.name(1) == longName);
+    assigned = std::move(moved);
+    CHECK(&assigned.name(0) == shortName);
+    CHECK(&assigned.name(1) == longName);
+  }
+  CHECK(assigned.label("short") == 0);
+  CHECK(assigned.name(1) == std::string(128, 'x'));
+  CHECK_FALSE(assigned.contains("old"));
 }

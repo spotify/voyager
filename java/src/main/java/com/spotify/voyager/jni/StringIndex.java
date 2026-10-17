@@ -43,8 +43,8 @@ import java.util.Map.Entry;
  * Wrapper around com.spotify.voyager.jni.Index with a simplified interface which maps the index ID
  * to a provided String.
  *
- * <p>StringIndex can only accommodate up to 2^31 - 1 (2.1B) items, despite typical Voyager indices
- * allowing up to 2^63 - 1 (9e18) items.
+ * <p>Identifiers are stored in a native bidirectional map and persisted with the index. Adding an
+ * existing name updates its vector.
  */
 public class StringIndex implements Closeable {
   private static final String INDEX_FILE_NAME = "index.hnsw";
@@ -52,7 +52,6 @@ public class StringIndex implements Closeable {
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024 * 100;
 
   private final Index index;
-  private final List<String> names;
 
   /**
    * Instantiate a new empty index with the specified space type and dimensionality
@@ -63,7 +62,7 @@ public class StringIndex implements Closeable {
    */
   public StringIndex(SpaceType spaceType, int numDimensions) {
     this.index = new Index(spaceType, numDimensions);
-    this.names = new ArrayList<>();
+    this.index.enableStringIdentifiers();
   }
 
   /**
@@ -98,12 +97,69 @@ public class StringIndex implements Closeable {
             randomSeed,
             maxElements,
             storageDataType);
-    this.names = new ArrayList<>();
+    this.index.enableStringIdentifiers();
   }
 
   private StringIndex(Index index, List<String> names) {
     this.index = index;
-    this.names = names;
+    try {
+      this.index.importNames(names.toArray(new String[0]));
+    } catch (RuntimeException e) {
+      try {
+        index.close();
+      } catch (IOException closeError) {
+        e.addSuppressed(closeError);
+      }
+      throw e;
+    }
+  }
+
+  private StringIndex(Index index) {
+    this.index = index;
+    try {
+      index.enableStringIdentifiers();
+    } catch (RuntimeException e) {
+      try {
+        index.close();
+      } catch (IOException closeError) {
+        e.addSuppressed(closeError);
+      }
+      throw e;
+    }
+  }
+
+  /** Load a Voyager 3 index, including its embedded string identifiers. */
+  public static StringIndex load(String filename) {
+    return new StringIndex(Index.load(filename));
+  }
+
+  /** Load a Voyager 3 index from a stream. */
+  public static StringIndex load(InputStream inputStream) {
+    return new StringIndex(Index.load(inputStream));
+  }
+
+  /** Save the graph and identifiers to a single file. */
+  public void save(String filename) {
+    index.saveIndex(filename);
+  }
+
+  /** Save the graph and identifiers to a single stream. The caller owns the stream. */
+  public void saveIndex(OutputStream outputStream) {
+    index.saveIndex(outputStream);
+  }
+
+  public void markDeleted(String name) {
+    index.markDeleted(index.getStringID(name));
+  }
+
+  public void unmarkDeleted(String name) {
+    index.unmarkDeleted(index.getStringID(name));
+  }
+
+  private List<String> exportNames() {
+    long[] labels = index.getIDs();
+    Arrays.sort(labels);
+    return Arrays.asList(index.getNames(labels));
   }
 
   /**
@@ -221,7 +277,7 @@ public class StringIndex implements Closeable {
       this.index.saveIndex(indexPath.toString());
 
       final OutputStream outputStream = Files.newOutputStream(namesPath);
-      TinyJson.writeStringList(this.names, outputStream);
+      TinyJson.writeStringList(exportNames(), outputStream);
 
       outputStream.flush();
       outputStream.close();
@@ -244,7 +300,7 @@ public class StringIndex implements Closeable {
     BufferedOutputStream outputStream =
         new BufferedOutputStream(indexOutputStream, 1024 * 1024 * 100);
     this.index.saveIndex(outputStream);
-    TinyJson.writeStringList(this.names, namesListOutputStream);
+    TinyJson.writeStringList(exportNames(), namesListOutputStream);
 
     outputStream.flush();
     outputStream.close();
@@ -253,9 +309,7 @@ public class StringIndex implements Closeable {
   }
 
   public void addItem(String name, float[] vector) {
-    int nextIndex = names.size();
-    index.addItem(vector, nextIndex);
-    names.add(name);
+    index.addStringItem(name, vector);
   }
 
   public void addItem(String name, List<Float> vector) {
@@ -267,18 +321,15 @@ public class StringIndex implements Closeable {
 
     List<String> newNames = new ArrayList<>(numVectors);
     float[][] primitiveVectors = new float[numVectors][index.getNumDimensions()];
-    long[] labels = new long[numVectors];
 
     Iterator<Entry<String, List<Float>>> iterator = vectors.entrySet().iterator();
     for (int i = 0; i < numVectors; i++) {
       Entry<String, List<Float>> nextVector = iterator.next();
       newNames.add(nextVector.getKey());
       assignPrimitive(nextVector.getValue(), primitiveVectors[i]);
-      labels[i] = names.size() + i;
     }
 
-    names.addAll(newNames);
-    index.addItems(primitiveVectors, labels, -1);
+    index.addStringItems(newNames.toArray(new String[0]), primitiveVectors);
   }
 
   public long getNumElements() {
@@ -286,7 +337,7 @@ public class StringIndex implements Closeable {
   }
 
   public float[] getVector(String name) {
-    return index.getVector(names.indexOf(name));
+    return index.getVector(index.getStringID(name));
   }
 
   private float[] toPrimitive(List<Float> vector) {
@@ -296,6 +347,9 @@ public class StringIndex implements Closeable {
   }
 
   private void assignPrimitive(List<Float> vector, float[] target) {
+    if (vector.size() != target.length) {
+      throw new IllegalArgumentException("Vector dimensionality does not match the index.");
+    }
     for (int i = 0; i < target.length; i++) {
       target[i] = vector.get(i);
     }
@@ -339,26 +393,7 @@ public class StringIndex implements Closeable {
   }
 
   private QueryResults convertResult(Index.QueryResults idxResults) {
-    int numResults = idxResults.distances.length;
-    String[] resultNames = new String[numResults];
-    float[] distances = new float[numResults];
-
-    for (int i = 0; i < idxResults.getLabels().length; i++) {
-      long indexId = idxResults.getLabels()[i];
-      float dist = idxResults.getDistances()[i];
-      if (indexId > Integer.MAX_VALUE || indexId < Integer.MIN_VALUE) {
-        throw new ArrayIndexOutOfBoundsException(
-            "Voyager index returned a label ("
-                + indexId
-                + ") which is out of range for StringIndex. "
-                + "This index may not be compatible with Voyager's Java bindings, or the index file may be corrupt.");
-      }
-      String name = names.get((int) indexId);
-      resultNames[i] = name;
-      distances[i] = dist;
-    }
-
-    return new QueryResults(resultNames, distances);
+    return new QueryResults(index.getNames(idxResults.getLabels()), idxResults.getDistances());
   }
 
   @Override
