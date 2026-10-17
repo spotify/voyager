@@ -45,7 +45,7 @@ using namespace nanobind::literals; // needed to bring in _a literal
  * This function copies the data from the PyArray into a new NDArray.
  */
 template <typename T, int Dims>
-NDArray<T, Dims> pyArrayToNDArray(nb::ndarray<T> &input) {
+voyager::NDArray<T, Dims> pyArrayToNDArray(nb::ndarray<T> &input) {
   if (input.ndim() != Dims) {
     throw std::domain_error("Input array was expected to have rank " +
                             std::to_string(Dims) + ", but had rank " +
@@ -57,7 +57,7 @@ NDArray<T, Dims> pyArrayToNDArray(nb::ndarray<T> &input) {
     shape[i] = input.shape(i);
   }
 
-  NDArray<T, Dims> output = NDArray<T, Dims>(shape);
+  voyager::NDArray<T, Dims> output = voyager::NDArray<T, Dims>(shape);
 
   const T *inputPtr = static_cast<const T *>(input.data());
   {
@@ -74,7 +74,7 @@ NDArray<T, Dims> pyArrayToNDArray(nb::ndarray<T> &input) {
  * refactored.
  */
 template <typename T, int Dims>
-nb::ndarray<T, nb::numpy> ndArrayToPyArray(NDArray<T, Dims> input) {
+nb::ndarray<T, nb::numpy> ndArrayToPyArray(voyager::NDArray<T, Dims> input) {
   T *outputPtr = new T[input.data.size()];
   std::copy(input.data.begin(), input.data.end(), outputPtr);
   nb::capsule owner(outputPtr, [](void *p) noexcept { delete[] (float *)p; });
@@ -180,27 +180,27 @@ template <typename dist_t, typename data_t,
           typename scalefactor = std::ratio<1, 1>>
 inline void register_index_class(nb::module_ &m, std::string className,
                                  std::string docstring) {
-  nb::class_<TypedIndex<dist_t, data_t, scalefactor>, Index>(
+  nb::class_<voyager::TypedIndex<dist_t, data_t, scalefactor>, voyager::Index>(
       m, className.c_str(), docstring.c_str())
       .def(
           "__init__",
           [](
-              // TypedIndex<dist_t, data_t, scalefactor> *self,
-              const nb::object *self, const SpaceType space,
+              // voyager::TypedIndex<dist_t, data_t, scalefactor> *self,
+              const nb::object *self, const voyager::SpaceType space,
               const int num_dimensions, const size_t M,
               const size_t ef_construction, const size_t random_seed,
               const size_t max_elements,
-              const StorageDataType storageDataType) {
-            // new (self) TypedIndex<dist_t, data_t, scalefactor>(
+              const voyager::StorageDataType storageDataType) {
+            // new (self) voyager::TypedIndex<dist_t, data_t, scalefactor>(
             //     space, num_dimensions, M, ef_construction, random_seed,
             //     max_elements);
           },
           nb::arg("space"), nb::arg("num_dimensions"), nb::arg("M") = 16,
           nb::arg("ef_construction") = 200, nb::arg("random_seed") = 1,
           nb::arg("max_elements") = 1,
-          nb::arg("storage_data_type") = StorageDataType::Float32,
+          nb::arg("storage_data_type") = voyager::StorageDataType::Float32,
           "Create a new, empty index.")
-      .def("__repr__", [className](const Index &index) {
+      .def("__repr__", [className](const voyager::Index &index) {
         return "<voyager." + className + " space=" + index.getSpaceName() +
                " num_dimensions=" + std::to_string(index.getNumDimensions()) +
                " storage_data_type=" + index.getStorageDataTypeName() + ">";
@@ -208,25 +208,26 @@ inline void register_index_class(nb::module_ &m, std::string className,
 };
 
 NB_MODULE(voyager_ext, m) {
-  nb::exception<RecallError>(m, "RecallError");
+  nb::exception<voyager::RecallError>(m, "RecallError");
 
   m.attr("version") = nb::make_tuple(2, 1, 0);
 
   init_LabelSetView(m);
 
-  nb::enum_<SpaceType>(
+  nb::enum_<voyager::SpaceType>(
       m, "Space", "The method used to calculate the distance between vectors.")
-      .value("Euclidean", SpaceType::Euclidean,
+      .value("Euclidean", voyager::SpaceType::Euclidean,
              "Euclidean distance; also known as L2 distance. The square root "
              "of the sum of the squared differences between each element of "
              "each vector.")
-      .value("Cosine", SpaceType::Cosine,
+      .value("Cosine", voyager::SpaceType::Cosine,
              "Cosine distance; also known as normalized inner product.")
-      .value("InnerProduct", SpaceType::InnerProduct, "Inner product distance.")
+      .value("InnerProduct", voyager::SpaceType::InnerProduct,
+             "Inner product distance.")
       .export_values();
 
-  nb::enum_<StorageDataType>(m, "StorageDataType",
-                             R"(
+  nb::enum_<voyager::StorageDataType>(m, "StorageDataType",
+                                      R"(
 The data type used to store vectors in memory and on-disk.
 
 The :py:class:`StorageDataType` used for an :py:class:`Index` directly determines
@@ -234,31 +235,33 @@ its memory usage, disk space usage, and recall. Both :py:class:`Float8` and
 :py:class:`E4M3` data types use 8 bits (1 byte) per dimension per vector, reducing
 memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
 )")
-      .value("Float8", StorageDataType::Float8,
+      .value("Float8", voyager::StorageDataType::Float8,
              "8-bit fixed-point decimal values. All values must be within [-1, "
              "1.00787402].")
-      .value("Float32", StorageDataType::Float32,
+      .value("Float32", voyager::StorageDataType::Float32,
              "32-bit floating point (default).")
-      .value("E4M3", StorageDataType::E4M3,
+      .value("E4M3", voyager::StorageDataType::E4M3,
              "8-bit floating point with a range of [-448, 448], from "
              "the paper \"FP8 Formats for Deep Learning\" by Micikevicius et "
-             "al.\n\n.. warning::\n    Using E4M3 with the Cosine "
+             "al.\n\n.. warning::\n    Using voyager::E4M3 with the Cosine "
              ":py:class:`Space` may cause some queries to return "
              "negative distances due to the reduced floating-point precision. "
              "While confusing, these negative distances still result in a "
              "correct ordering between results.")
       .export_values();
 
-  nb::class_<E4M3>(
+  nb::class_<voyager::E4M3>(
       m, "E4M3T",
       "An 8-bit floating point data type with reduced precision and range. "
       "This class wraps a C++ struct and should probably not be used directly.")
       .def(nb::init<float>(),
-           "Create an E4M3 number given a floating-point value. If out of "
+           "Create an voyager::E4M3 number given a floating-point value. If "
+           "out of "
            "range, the value will be clipped.",
            nb::arg("value"))
       .def(nb::init<uint8_t, uint8_t, uint8_t>(),
-           "Create an E4M3 number given a sign, exponent, and mantissa. If out "
+           "Create an voyager::E4M3 number given a sign, exponent, and "
+           "mantissa. If out "
            "of range, the values will be clipped.",
            nb::arg("sign"), nb::arg("exponent"), nb::arg("mantissa"))
       .def_static(
@@ -267,15 +270,16 @@ memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
             if (c > 255 || c < 0)
               throw std::range_error(
                   "Expected input to from_char to be on [0, 255]!");
-            E4M3 v(static_cast<uint8_t>(c));
+            voyager::E4M3 v(static_cast<uint8_t>(c));
             return v;
           },
-          "Create an E4M3 number given a raw 8-bit value.", nb::arg("value"))
+          "Create an voyager::E4M3 number given a raw 8-bit value.",
+          nb::arg("value"))
       .def(
-          "__float__", [](E4M3 &self) { return (float)self; },
-          "Cast the given E4M3 number to a float.")
+          "__float__", [](voyager::E4M3 &self) { return (float)self; },
+          "Cast the given voyager::E4M3 number to a float.")
       .def("__repr__",
-           [](E4M3 &self) {
+           [](voyager::E4M3 &self) {
              std::ostringstream ss;
              ss << "<voyager.E4M3";
              ss << " sign=" << (int)self.sign;
@@ -289,32 +293,38 @@ memory usage and index size by a factor of 4 compared to :py:class:`Float32`.
              return ss.str();
            })
       .def_prop_ro(
-          "sign", [](E4M3 &self) { return self.sign; },
-          "The sign bit from this E4M3 number. Will be ``1`` if the number is "
+          "sign", [](voyager::E4M3 &self) { return self.sign; },
+          "The sign bit from this voyager::E4M3 number. Will be ``1`` if the "
+          "number is "
           "negative, ``0`` otherwise.")
       .def_prop_ro(
-          "exponent", [](E4M3 &self) { return self.effectiveExponent(); },
-          "The effective exponent of this E4M3 number, expressed as "
+          "exponent",
+          [](voyager::E4M3 &self) { return self.effectiveExponent(); },
+          "The effective exponent of this voyager::E4M3 number, expressed as "
           "an integer.")
       .def_prop_ro(
-          "raw_exponent", [](E4M3 &self) { return self.exponent; },
-          "The raw value of the exponent part of this E4M3 number, expressed "
+          "raw_exponent", [](voyager::E4M3 &self) { return self.exponent; },
+          "The raw value of the exponent part of this voyager::E4M3 number, "
+          "expressed "
           "as an integer.")
       .def_prop_ro(
-          "mantissa", [](E4M3 &self) { return self.effectiveMantissa(); },
-          "The effective mantissa (non-exponent part) of this E4M3 number, "
+          "mantissa",
+          [](voyager::E4M3 &self) { return self.effectiveMantissa(); },
+          "The effective mantissa (non-exponent part) of this voyager::E4M3 "
+          "number, "
           "expressed as an integer.")
       .def_prop_ro(
-          "raw_mantissa", [](E4M3 &self) { return self.mantissa; },
-          "The raw value of the mantissa (non-exponent part) of this E4M3 "
+          "raw_mantissa", [](voyager::E4M3 &self) { return self.mantissa; },
+          "The raw value of the mantissa (non-exponent part) of this "
+          "voyager::E4M3 "
           "number, expressed as a floating point value.")
       .def_prop_ro(
-          "size", [](E4M3 &self) { return sizeof(self); },
+          "size", [](voyager::E4M3 &self) { return sizeof(self); },
           "The number of bytes used to represent this (C++) instance in "
           "memory.");
 
-  auto index = nb::class_<Index>(m, "Index",
-                                 R"(
+  auto index = nb::class_<voyager::Index>(m, "Index",
+                                          R"(
 A nearest-neighbor search index containing vector data (i.e. lists of 
 floating-point values, each list labeled with a single integer ID).
 
@@ -386,7 +396,7 @@ Args:
 
   index.def(
       "add_item",
-      [](Index &index,
+      [](voyager::Index &index,
          std::variant<nb::ndarray<float>, std::vector<float>> vector,
          std::optional<size_t> _id) {
         std::vector<float> stdArray;
@@ -424,7 +434,7 @@ Returns:
 
   index.def(
       "add_items",
-      [](Index &index, nb::ndarray<float> vectors,
+      [](voyager::Index &index, nb::ndarray<float> vectors,
          std::optional<std::vector<size_t>> _ids, int num_threads) {
         std::vector<size_t> empty;
         auto ndArray = pyArrayToNDArray<float, 2>(vectors);
@@ -466,7 +476,7 @@ Returns:
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   index.def(
       "query",
-      [](Index &index,
+      [](voyager::Index &index,
          std::variant<nb::ndarray<float>, std::vector<float>> &_input,
          size_t k = 1, int num_threads = -1, long queryEf = -1) {
         // Treat a single vector as a 1D array:
@@ -497,8 +507,9 @@ Returns:
           return output;
         }
         case 2: {
-          auto idsAndDistances = index.query(pyArrayToNDArray<float, 2>(input),
-                                             k, num_threads, queryEf);
+          auto idsAndDistances =
+              index.query(pyArrayToNDArray<float, 2>(input), k,
+                          num_threads, queryEf);
           std::tuple<nb::ndarray<hnswlib::labeltype, nb::numpy>,
                      nb::ndarray<float, nb::numpy>>
               output = {
@@ -573,7 +584,7 @@ Query with multiple vectors simultaneously::
 
 .. warning::
 
-    If using E4M3 storage with the Cosine :py:class:`Space`, some queries may return
+    If using voyager::E4M3 storage with the Cosine :py:class:`Space`, some queries may return
     negative distances due to the reduced floating-point precision of the storage
     data type. While confusing, these negative distances still result in a correct
     ordering between results.
@@ -583,26 +594,27 @@ Query with multiple vectors simultaneously::
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Property Methods
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  index.def_prop_ro("space", &Index::getSpace,
+  index.def_prop_ro("space", &voyager::Index::getSpace,
                     "Return the :py:class:`Space` used to calculate "
                     "distances between vectors.");
 
-  index.def_prop_ro("num_dimensions", &Index::getNumDimensions, R"(
+  index.def_prop_ro("num_dimensions", &voyager::Index::getNumDimensions, R"(
 The number of dimensions in each vector stored by this index.
 )");
 
-  index.def_prop_ro("M", &Index::getM, R"(
+  index.def_prop_ro("M", &voyager::Index::getM, R"(
 The number of connections between nodes in the tree's internal data structure.
 
 Larger values give better recall, but use more memory. This parameter cannot be changed
 after the index is instantiated.)");
 
-  index.def_prop_ro("ef_construction", &Index::getEfConstruction, R"(
+  index.def_prop_ro("ef_construction", &voyager::Index::getEfConstruction, R"(
 The number of vectors that this index searches through when inserting a new vector into
 the index. Higher values make index construction slower, but give better recall. This
 parameter cannot be changed after the index is instantiated.)");
 
-  index.def_prop_rw("max_elements", &Index::getMaxElements, &Index::resizeIndex,
+  index.def_prop_rw("max_elements", &voyager::Index::getMaxElements,
+                    &voyager::Index::resizeIndex,
                     R"(
 The maximum number of elements that can be stored in this index.
 
@@ -620,12 +632,12 @@ Note that assigning to this property is functionally identical to
 calling :py:meth:`resize`.
 )");
 
-  index.def_prop_ro("storage_data_type", &Index::getStorageDataType,
+  index.def_prop_ro("storage_data_type", &voyager::Index::getStorageDataType,
                     R"(
 The :py:class:`StorageDataType` used to store vectors in this :py:class:`Index`.
 )");
 
-  index.def_prop_ro("num_elements", &Index::getNumElements, R"(
+  index.def_prop_ro("num_elements", &voyager::Index::getNumElements, R"(
 The number of elements (vectors) currently stored in this index.
 
 Note that the number of elements will not decrease if any elements are
@@ -633,8 +645,8 @@ deleted from the index; those deleted elements simply become invisible.)");
 
   index.def(
       "get_vector",
-      [](Index &index, size_t _id) -> nb::ndarray<float, nb::numpy> {
-        return ndArrayToPyArray<float, 1>(NDArray<float, 1>(
+      [](voyager::Index &index, size_t _id) -> nb::ndarray<float, nb::numpy> {
+        return ndArrayToPyArray<float, 1>(voyager::NDArray<float, 1>(
             index.getVector(_id), {(int)index.getNumDimensions()}));
       },
       nb::arg("id"), R"(
@@ -655,7 +667,7 @@ If no such vector exists, a :py:exc:`KeyError` will be thrown.
 
   index.def(
       "get_vectors",
-      [](Index &index, std::vector<size_t> _ids) {
+      [](voyager::Index &index, std::vector<size_t> _ids) {
         return ndArrayToPyArray<float, 2>(index.getVectors(_ids));
       },
       nb::arg("ids"), R"(
@@ -671,7 +683,7 @@ If one or more of the provided IDs cannot be found in the index, a
 
   index.def_prop_ro(
       "ids",
-      [](Index &index) {
+      [](voyager::Index &index) {
         return std::make_unique<LabelSetView>(index.getIDsMap());
       },
       R"(
@@ -694,7 +706,7 @@ specific integer ID in this index::
 
   index.def(
       "get_distance",
-      [](Index &index, std::vector<float> a, std::vector<float> b) {
+      [](voyager::Index &index, std::vector<float> a, std::vector<float> b) {
         return index.getDistance(a, b);
       },
       R"(
@@ -704,7 +716,7 @@ Get the distance between two provided vectors. The vectors must share the dimens
 
   index.def(
       "get_distance",
-      [](Index &index, nb::ndarray<float> a, nb::ndarray<float> b) {
+      [](voyager::Index &index, nb::ndarray<float> a, nb::ndarray<float> b) {
         return index.getDistance(pyArrayToVector<float>(a),
                                  pyArrayToVector<float>(b));
       },
@@ -716,7 +728,7 @@ Get the distance between two provided vectors. The vectors must share the dimens
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Index Modifier Methods/Attributes
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  index.def_prop_rw("ef", &Index::getEF, &Index::setEF, R"(
+  index.def_prop_rw("ef", &voyager::Index::getEF, &voyager::Index::setEF, R"(
 The default number of vectors to search through when calling :py:meth:`query`.
 
 Higher values make queries slower, but give better recall.
@@ -731,7 +743,7 @@ Higher values make queries slower, but give better recall.
 
 )");
 
-  index.def("mark_deleted", &Index::markDeleted, nb::arg("id"), R"(
+  index.def("mark_deleted", &voyager::Index::markDeleted, nb::arg("id"), R"(
 Mark an ID in this index as deleted.
 
 Deleted IDs will not show up in the results of calls to :py:meth:`query`,
@@ -765,14 +777,14 @@ but will still take up space in the index, and will slow down queries.
 
   index.attr("__delitem__") = index.attr("mark_deleted");
 
-  index.def("unmark_deleted", &Index::unmarkDeleted, nb::arg("id"), R"(
+  index.def("unmark_deleted", &voyager::Index::unmarkDeleted, nb::arg("id"), R"(
 Unmark an ID in this index as deleted.
 
 Once unmarked as deleted, an existing ID will show up in the results of
 calls to :py:meth:`query` again.
 )");
 
-  index.def("resize", &Index::resizeIndex, nb::arg("new_size"), R"(
+  index.def("resize", &voyager::Index::resizeIndex, nb::arg("new_size"), R"(
 Resize this index, allocating space for up to ``new_size`` elements to
 be stored. This changes the :py:attr:`max_elements` property and may
 cause this :py:class:`Index` object to use more memory. This is a fairly
@@ -804,7 +816,7 @@ one or more chunks of data (of up to 100MB each) to the provided object for writ
   )";
   index.def(
       "save",
-      [](Index &index, std::string filePath) {
+      [](voyager::Index &index, std::string filePath) {
         nb::gil_scoped_release release;
         index.saveIndex(filePath);
       },
@@ -812,7 +824,7 @@ one or more chunks of data (of up to 100MB each) to the provided object for writ
 
   index.def(
       "save",
-      [](Index &index, nb::object filelike) {
+      [](voyager::Index &index, nb::object filelike) {
         auto outputStream = std::make_shared<PythonOutputStream>(filelike);
 
         nb::gil_scoped_release release;
@@ -822,8 +834,8 @@ one or more chunks of data (of up to 100MB each) to the provided object for writ
 
   index.def(
       "as_bytes",
-      [](Index &index) {
-        auto outputStream = std::make_shared<MemoryOutputStream>();
+      [](voyager::Index &index) {
+        auto outputStream = std::make_shared<voyager::MemoryOutputStream>();
         {
           nb::gil_scoped_release release;
           index.saveIndex(outputStream);
@@ -857,7 +869,7 @@ into memory again.
 
   index.def(
       "__contains__",
-      [](Index &self, hnswlib::labeltype element) {
+      [](voyager::Index &self, hnswlib::labeltype element) {
         auto &map = self.getIDsMap();
         return map.find(element) != map.end();
       },
@@ -872,7 +884,8 @@ Use the ``in`` operator to call this method::
 )");
 
   index.def(
-      "__len__", [](Index &self) { return self.getIDsMap().size(); }, R"(
+      "__len__", [](voyager::Index &self) { return self.getIDsMap().size(); },
+      R"(
 Returns the number of non-deleted vectors in this index.
 
 Use the ``len`` operator to call this method::
@@ -897,31 +910,32 @@ Use the ``len`` operator to call this method::
   // An 8-bit floating-point index class that has even more reduced
   // precision over Float8, but allows values on the range [-448, 448].
   // Inspired by: https://arxiv.org/pdf/2209.05433.pdf
-  register_index_class<float, E4M3>(
+  register_index_class<float, voyager::E4M3>(
       m, "E4M3Index",
       "An :py:class:`Index` that uses floating-point 8-bit storage.");
 
   index.def_static(
       "__new__",
-      [](const nb::object *, const SpaceType space, const int num_dimensions,
-         const size_t M, const size_t ef_construction, const size_t random_seed,
-         const size_t max_elements,
-         const StorageDataType storageDataType) -> std::shared_ptr<Index> {
+      [](const nb::object *, const voyager::SpaceType space,
+         const int num_dimensions, const size_t M, const size_t ef_construction,
+         const size_t random_seed, const size_t max_elements,
+         const voyager::StorageDataType storageDataType)
+          -> std::shared_ptr<voyager::Index> {
         nb::gil_scoped_release release;
         switch (storageDataType) {
-        case StorageDataType::E4M3:
-          return std::make_shared<TypedIndex<float, E4M3>>(
+        case voyager::StorageDataType::E4M3:
+          return std::make_shared<voyager::TypedIndex<float, voyager::E4M3>>(
               space, num_dimensions, M, ef_construction, random_seed,
               max_elements);
-        case StorageDataType::Float8:
+        case voyager::StorageDataType::Float8:
           return std::make_shared<
-              TypedIndex<float, int8_t, std::ratio<1, 127>>>(
+              voyager::TypedIndex<float, int8_t, std::ratio<1, 127>>>(
               space, num_dimensions, M, ef_construction, random_seed,
               max_elements);
-        case StorageDataType::Float32:
-          return std::make_shared<TypedIndex<float>>(space, num_dimensions, M,
-                                                     ef_construction,
-                                                     random_seed, max_elements);
+        case voyager::StorageDataType::Float32:
+          return std::make_shared<voyager::TypedIndex<float>>(
+              space, num_dimensions, M, ef_construction, random_seed,
+              max_elements);
         default:
           throw std::runtime_error("Unknown storage data type received!");
         }
@@ -929,7 +943,7 @@ Use the ``len`` operator to call this method::
       nb::arg("cls"), nb::arg("space"), nb::arg("num_dimensions"),
       nb::arg("M") = 12, nb::arg("ef_construction") = 200,
       nb::arg("random_seed") = 1, nb::arg("max_elements") = 1,
-      nb::arg("storage_data_type") = StorageDataType::Float32,
+      nb::arg("storage_data_type") = voyager::StorageDataType::Float32,
       R"(
 Create a new Voyager nearest-neighbor search index with the provided arguments.
 
@@ -960,27 +974,29 @@ of Voyager prior to v1.3.
 
   index.def_static(
       "load",
-      [](const std::string filename, const SpaceType space,
+      [](const std::string filename, const voyager::SpaceType space,
          const int num_dimensions,
-         const StorageDataType storageDataType) -> std::shared_ptr<Index> {
+         const voyager::StorageDataType storageDataType)
+          -> std::shared_ptr<voyager::Index> {
         nb::gil_scoped_release release;
 
-        auto inputStream = std::make_shared<FileInputStream>(filename);
+        auto inputStream = std::make_shared<voyager::FileInputStream>(filename);
         std::unique_ptr<voyager::Metadata::V1> metadata =
             voyager::Metadata::loadFromStream(inputStream);
 
         if (metadata) {
           if (metadata->getStorageDataType() != storageDataType) {
             throw std::domain_error(
-                "Provided storage data type (" + toString(storageDataType) +
+                "Provided storage data type (" +
+                voyager::toString(storageDataType) +
                 ") does not match the data type used in this file (" +
-                toString(metadata->getStorageDataType()) + ").");
+                voyager::toString(metadata->getStorageDataType()) + ").");
           }
           if (metadata->getSpaceType() != space) {
             throw std::domain_error(
-                "Provided space type (" + toString(space) +
+                "Provided space type (" + voyager::toString(space) +
                 ") does not match the space type used in this file (" +
-                toString(metadata->getSpaceType()) + ").");
+                voyager::toString(metadata->getSpaceType()) + ").");
           }
           if (metadata->getNumDimensions() != num_dimensions) {
             throw std::domain_error(
@@ -991,42 +1007,44 @@ of Voyager prior to v1.3.
                 std::to_string(metadata->getNumDimensions()) + ").");
           }
 
-          return loadTypedIndexFromMetadata(std::move(metadata), inputStream);
+          return voyager::loadTypedIndexFromMetadata(std::move(metadata), inputStream);
         }
 
         switch (storageDataType) {
-        case StorageDataType::E4M3:
-          return std::make_shared<TypedIndex<float, E4M3>>(inputStream, space,
-                                                           num_dimensions);
-        case StorageDataType::Float8:
+        case voyager::StorageDataType::E4M3:
+          return std::make_shared<voyager::TypedIndex<float, voyager::E4M3>>(
+              inputStream, space, num_dimensions);
+        case voyager::StorageDataType::Float8:
           return std::make_shared<
-              TypedIndex<float, int8_t, std::ratio<1, 127>>>(inputStream, space,
-                                                             num_dimensions);
-        case StorageDataType::Float32:
-          return std::make_shared<TypedIndex<float>>(inputStream, space,
-                                                     num_dimensions);
+              voyager::TypedIndex<float, int8_t, std::ratio<1, 127>>>(
+              inputStream, space, num_dimensions);
+        case voyager::StorageDataType::Float32:
+          return std::make_shared<voyager::TypedIndex<float>>(
+              inputStream, space, num_dimensions);
         default:
           throw std::runtime_error("Unknown storage data type received!");
         }
       },
       nb::arg("filename"), nb::arg("space"), nb::arg("num_dimensions"),
-      nb::arg("storage_data_type") = StorageDataType::Float32, LOAD_DOCSTRING);
+      nb::arg("storage_data_type") = voyager::StorageDataType::Float32,
+      LOAD_DOCSTRING);
 
   index.def_static(
       "load",
-      [](const std::string filename) -> std::shared_ptr<Index> {
+      [](const std::string filename) -> std::shared_ptr<voyager::Index> {
         nb::gil_scoped_release release;
 
-        return loadTypedIndexFromStream(
-            std::make_shared<FileInputStream>(filename));
+        return voyager::loadTypedIndexFromStream(
+            std::make_shared<voyager::FileInputStream>(filename));
       },
       nb::arg("filename"), LOAD_DOCSTRING);
 
   index.def_static(
       "load",
-      [](const nb::object filelike, const SpaceType space,
+      [](const nb::object filelike, const voyager::SpaceType space,
          const int num_dimensions,
-         const StorageDataType storageDataType) -> std::shared_ptr<Index> {
+         const voyager::StorageDataType storageDataType)
+          -> std::shared_ptr<voyager::Index> {
         if (!isReadableFileLike(filelike)) {
           throw nb::type_error(
               ("Expected either a filename or a file-like object (with "
@@ -1044,15 +1062,16 @@ of Voyager prior to v1.3.
         if (metadata) {
           if (metadata->getStorageDataType() != storageDataType) {
             throw std::domain_error(
-                "Provided storage data type (" + toString(storageDataType) +
+                "Provided storage data type (" +
+                voyager::toString(storageDataType) +
                 ") does not match the data type used in this file (" +
-                toString(metadata->getStorageDataType()) + ").");
+                voyager::toString(metadata->getStorageDataType()) + ").");
           }
           if (metadata->getSpaceType() != space) {
             throw std::domain_error(
-                "Provided space type (" + toString(space) +
+                "Provided space type (" + voyager::toString(space) +
                 ") does not match the space type used in this file (" +
-                toString(metadata->getSpaceType()) + ").");
+                voyager::toString(metadata->getSpaceType()) + ").");
           }
           if (metadata->getNumDimensions() != num_dimensions) {
             throw std::domain_error(
@@ -1062,30 +1081,31 @@ of Voyager prior to v1.3.
                 "(" +
                 std::to_string(metadata->getNumDimensions()) + ").");
           }
-          return loadTypedIndexFromMetadata(std::move(metadata), inputStream);
+          return voyager::loadTypedIndexFromMetadata(std::move(metadata), inputStream);
         }
 
         switch (storageDataType) {
-        case StorageDataType::E4M3:
-          return std::make_shared<TypedIndex<float, E4M3>>(inputStream, space,
-                                                           num_dimensions);
-        case StorageDataType::Float8:
+        case voyager::StorageDataType::E4M3:
+          return std::make_shared<voyager::TypedIndex<float, voyager::E4M3>>(
+              inputStream, space, num_dimensions);
+        case voyager::StorageDataType::Float8:
           return std::make_shared<
-              TypedIndex<float, int8_t, std::ratio<1, 127>>>(inputStream, space,
-                                                             num_dimensions);
-        case StorageDataType::Float32:
-          return std::make_shared<TypedIndex<float>>(inputStream, space,
-                                                     num_dimensions);
+              voyager::TypedIndex<float, int8_t, std::ratio<1, 127>>>(
+              inputStream, space, num_dimensions);
+        case voyager::StorageDataType::Float32:
+          return std::make_shared<voyager::TypedIndex<float>>(
+              inputStream, space, num_dimensions);
         default:
           throw std::runtime_error("Unknown storage data type received!");
         }
       },
       nb::arg("file_like"), nb::arg("space"), nb::arg("num_dimensions"),
-      nb::arg("storage_data_type") = StorageDataType::Float32, LOAD_DOCSTRING);
+      nb::arg("storage_data_type") = voyager::StorageDataType::Float32,
+      LOAD_DOCSTRING);
 
   index.def_static(
       "load",
-      [](const nb::object filelike) -> std::shared_ptr<Index> {
+      [](const nb::object filelike) -> std::shared_ptr<voyager::Index> {
         if (!isReadableFileLike(filelike)) {
           throw nb::type_error(
               ("Expected either a filename or a file-like object (with "
@@ -1097,7 +1117,7 @@ of Voyager prior to v1.3.
         auto inputStream = std::make_shared<PythonInputStream>(filelike);
         nb::gil_scoped_release release;
 
-        return loadTypedIndexFromStream(inputStream);
+        return voyager::loadTypedIndexFromStream(inputStream);
       },
       nb::arg("file_like"), LOAD_DOCSTRING);
 }

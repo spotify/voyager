@@ -30,6 +30,8 @@
 #include "array_utils.h"
 #include "hnswlib.h"
 
+namespace voyager {
+
 /**
  * A C++ wrapper class for a Voyager index, which accepts
  * and returns floating-point data.
@@ -108,3 +110,5 @@ public:
   virtual size_t getEfConstruction() const = 0;
   virtual size_t getM() const = 0;
 };
+
+} // namespace voyager

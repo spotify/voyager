@@ -31,7 +31,7 @@ bool isWriteableFileLike(nb::object fileLike) {
  * An OutputStream subclass that writes its
  * data to a provided Python file-like object.
  */
-class PythonOutputStream : public OutputStream, public PythonFileLike {
+class PythonOutputStream : public voyager::OutputStream, public PythonFileLike {
 public:
   static constexpr unsigned long long MAX_BUFFER_SIZE = 1024 * 1024 * 100;
 

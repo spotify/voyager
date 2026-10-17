@@ -1,0 +1,5 @@
+if(EXISTS "/home/sanaullah/Office-Work/Open-Source-Contributions/voyager/cpp/test/VoyagerTests_tests-b858cb2.cmake")
+  include("/home/sanaullah/Office-Work/Open-Source-Contributions/voyager/cpp/test/VoyagerTests_tests-b858cb2.cmake")
+else()
+  add_test(VoyagerTests_NOT_BUILT-b858cb2 VoyagerTests_NOT_BUILT-b858cb2)
+endif()
