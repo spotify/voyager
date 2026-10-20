@@ -371,6 +371,17 @@ public class Index implements Closeable {
       String[][] names,
       float[][] distances);
 
+  native byte[] queryUtf8(float[] vector, int[] offsets, float[] distances, long ef);
+
+  native void queryUtf8Batch(
+      float[][] vectors,
+      int numNeighbors,
+      int numThreads,
+      long ef,
+      byte[][] names,
+      int[][] offsets,
+      float[][] distances);
+
   private native void nativeDestructor();
 
   /**

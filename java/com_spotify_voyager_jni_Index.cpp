@@ -29,6 +29,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <limits>
 #include <mutex>
 #include <thread>
 #include <type_traits>
@@ -1372,6 +1373,89 @@ Java_com_spotify_voyager_jni_Index_queryStringsBatch(
                              std::get<1>(result)[i], numNeighbors, names,
                              distances);
       env->DeleteLocalRef(names);
+      env->DeleteLocalRef(distances);
+    }
+  } catch (const std::exception &error) {
+    stringQueryException(env, error);
+  }
+}
+
+// One native packing pass and one JNI byte-array copy per target, independent
+// of the Java string cache. The name lock protects the source bytes while
+// copied.
+jbyteArray fillUtf8QueryResults(JNIEnv *env, const Index &index,
+                                const hnswlib::labeltype *labels,
+                                const float *distances, jsize count,
+                                jintArray javaOffsets,
+                                jfloatArray javaDistances) {
+  if (env->GetArrayLength(javaOffsets) != static_cast<jlong>(count) + 1 ||
+      env->GetArrayLength(javaDistances) != count)
+    throw std::invalid_argument("Query result arrays have incorrect lengths.");
+  std::string bytes;
+  std::vector<jint> offsets(static_cast<size_t>(count) + 1, 0);
+  index.visitNames(labels, count, [&](size_t i, const std::string &name) {
+    if (name.size() >
+        static_cast<size_t>(std::numeric_limits<jsize>::max()) - bytes.size())
+      throw std::length_error(
+          "Packed query names exceed Java array size limit.");
+    bytes.append(name);
+    offsets[i + 1] = static_cast<jint>(bytes.size());
+  });
+  auto result = env->NewByteArray(static_cast<jsize>(bytes.size()));
+  if (!result)
+    throw std::runtime_error("Unable to allocate UTF-8 query results.");
+  env->SetByteArrayRegion(result, 0, bytes.size(),
+                          reinterpret_cast<const jbyte *>(bytes.data()));
+  env->SetIntArrayRegion(javaOffsets, 0, offsets.size(), offsets.data());
+  env->SetFloatArrayRegion(javaDistances, 0, count, distances);
+  return result;
+}
+
+extern "C" JNIEXPORT jbyteArray JNICALL
+Java_com_spotify_voyager_jni_Index_queryUtf8(JNIEnv *env, jobject self,
+                                             jfloatArray queryVector,
+                                             jintArray javaOffsets,
+                                             jfloatArray javaDistances,
+                                             jlong queryEf) {
+  try {
+    auto index = getHandle<Index>(env, self);
+    auto count = env->GetArrayLength(javaDistances);
+    auto result = index->query(toStdVector(env, queryVector), count, queryEf);
+    return fillUtf8QueryResults(env, *index, std::get<0>(result).data(),
+                                std::get<1>(result).data(), count, javaOffsets,
+                                javaDistances);
+  } catch (const std::exception &error) {
+    stringQueryException(env, error);
+    return nullptr;
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_queryUtf8Batch(
+    JNIEnv *env, jobject self, jobjectArray queryVectors, jint numNeighbors,
+    jint numThreads, jlong queryEf, jobjectArray javaNames,
+    jobjectArray javaOffsets, jobjectArray javaDistances) {
+  try {
+    auto index = getHandle<Index>(env, self);
+    auto rows = env->GetArrayLength(queryVectors);
+    if (env->GetArrayLength(javaNames) != rows ||
+        env->GetArrayLength(javaOffsets) != rows ||
+        env->GetArrayLength(javaDistances) != rows)
+      throw std::invalid_argument(
+          "Query result arrays have incorrect lengths.");
+    auto result = index->query(toNDArray(env, queryVectors), numNeighbors,
+                               numThreads, queryEf);
+    for (jsize i = 0; i < rows; ++i) {
+      auto offsets =
+          static_cast<jintArray>(env->GetObjectArrayElement(javaOffsets, i));
+      auto distances = static_cast<jfloatArray>(
+          env->GetObjectArrayElement(javaDistances, i));
+      auto names = fillUtf8QueryResults(env, *index, std::get<0>(result)[i],
+                                        std::get<1>(result)[i], numNeighbors,
+                                        offsets, distances);
+      env->SetObjectArrayElement(javaNames, i, names);
+      env->DeleteLocalRef(names);
+      env->DeleteLocalRef(offsets);
       env->DeleteLocalRef(distances);
     }
   } catch (const std::exception &error) {

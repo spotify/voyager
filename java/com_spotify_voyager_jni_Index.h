@@ -329,6 +329,23 @@ JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getStringID(JNIEnv *,
 JNIEXPORT jobjectArray JNICALL
 Java_com_spotify_voyager_jni_Index_getNames(JNIEnv *, jobject, jlongArray);
 
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    queryUtf8
+ * Signature: ([F[I[FJ)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_spotify_voyager_jni_Index_queryUtf8(
+    JNIEnv *, jobject, jfloatArray, jintArray, jfloatArray, jlong);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    queryUtf8Batch
+ * Signature: ([[FIIJ[[B[[I[[F)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_queryUtf8Batch(
+    JNIEnv *, jobject, jobjectArray, jint, jint, jlong, jobjectArray,
+    jobjectArray, jobjectArray);
+
 #ifdef __cplusplus
 }
 #endif

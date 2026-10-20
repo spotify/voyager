@@ -388,6 +388,83 @@ public class StringIndexTest {
   }
 
   @Test
+  public void utf8QueriesMatchStringQueriesAcrossMetricsAndStorage() throws Exception {
+    String[] names = {"", "ascii", "nul\0end", "東京🛰️", "caf\u00e9", "deleted"};
+    Random random = new Random(421);
+    float[][] vectors = TestUtils.randomVectors(() -> random, names.length, 16);
+    for (SpaceType space : SpaceType.values()) {
+      for (StorageDataType storage : StorageDataType.values()) {
+        try (StringIndex index = new StringIndex(space, 16, 20, 100, 1, names.length, storage)) {
+          for (int i = 0; i < names.length; i++) {
+            index.addItem(names[i], vectors[i]);
+          }
+          index.markDeleted("deleted");
+          StringIndex.Utf8QueryResults[] batch = index.queryUtf8(vectors, 5, 4, 100);
+          for (int i = 0; i < vectors.length; i++) {
+            QueryResults expected = index.query(vectors[i], 5, 100);
+            assertUtf8Results(expected, index.queryUtf8(vectors[i], 5, 100));
+            assertUtf8Results(expected, batch[i]);
+          }
+        }
+      }
+    }
+  }
+
+  private static void assertUtf8Results(
+      QueryResults expected, StringIndex.Utf8QueryResults actual) {
+    assertThat(actual.getNumResults()).isEqualTo(expected.getNumResults());
+    assertThat(actual.getDistances()).containsExactly(expected.getDistances());
+    int[] offsets = actual.getNameOffsets();
+    byte[] bytes = actual.getNameBytes();
+    assertThat(offsets.length).isEqualTo(expected.getNumResults() + 1);
+    assertThat(offsets[0]).isZero();
+    assertThat(offsets[offsets.length - 1]).isEqualTo(bytes.length);
+    for (int i = 0; i < expected.getNumResults(); i++) {
+      assertThat(Arrays.copyOfRange(bytes, offsets[i], offsets[i + 1]))
+          .containsExactly(expected.getName(i).getBytes(StandardCharsets.UTF_8));
+    }
+  }
+
+  @Test
+  public void utf8ResultsSurviveUpdatesReloadAndClose() throws Exception {
+    String longName = new String(new char[4096]).replace('\0', 'x') + "\0🛰️";
+    StringIndex.Utf8QueryResults result;
+    java.io.ByteArrayOutputStream saved = new java.io.ByteArrayOutputStream();
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      index.addItem(longName, new float[] {1, 0});
+      result = index.queryUtf8(new float[] {1, 0}, 1, 10);
+      index.addItem(longName, new float[] {0, 1});
+      index.saveIndex(saved);
+    }
+    assertThat(result.getNameBytes()).containsExactly(longName.getBytes(StandardCharsets.UTF_8));
+    assertThat(result.getDistances()).containsExactly(0);
+    try (StringIndex loaded =
+        StringIndex.load(new java.io.ByteArrayInputStream(saved.toByteArray()))) {
+      float[][] vectors = new float[2048][];
+      Arrays.fill(vectors, new float[] {0, 1});
+      for (StringIndex.Utf8QueryResults row : loaded.queryUtf8(vectors, 1, 4, 10)) {
+        assertThat(row.getNameBytes()).containsExactly(longName.getBytes(StandardCharsets.UTF_8));
+        assertThat(row.getDistances()).containsExactly(0);
+      }
+    }
+  }
+
+  @Test
+  public void utf8QueriesPreserveErrors() throws Exception {
+    StringIndex index = new StringIndex(SpaceType.Euclidean, 2);
+    try {
+      index.addItem("only", new float[] {1, 0});
+      assertThrows(RecallException.class, () -> index.queryUtf8(new float[] {1, 0}, 2, 10));
+      assertThrows(RecallException.class, () -> index.queryUtf8(new float[][] {{1, 0}}, 2, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.queryUtf8(new float[] {1}, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.queryUtf8(new float[][] {{1}}, 1, 1, 10));
+    } finally {
+      index.close();
+    }
+    assertThrows(RuntimeException.class, () -> index.queryUtf8(new float[] {1, 0}, 1, 10));
+  }
+
+  @Test
   public void cachedNamesSurviveEvictionUpdatesAndReload() throws Exception {
     java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
     try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {

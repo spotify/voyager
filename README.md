@@ -71,6 +71,24 @@ In Java, use `StringIndex.save("tracks.voy")` or
 index-plus-JSON methods remain available for migration. Their binary output
 also embeds the names and requires Voyager 3.
 
+Java callers that immediately serialize identifiers can use `queryUtf8` instead
+of `query`. It returns one packed UTF-8 byte array, a terminal-offset array, and
+distances, without creating or caching Java strings:
+
+```java
+StringIndex.Utf8QueryResults results = index.queryUtf8(vector, 20, 100);
+byte[] names = results.getNameBytes();
+int[] offsets = results.getNameOffsets();
+// Name i occupies names[offsets[i] ... offsets[i + 1]).
+// For a protobuf string field, copy that slice into a ByteString and use setNameBytes.
+```
+
+The batch overload accepts the same search arguments as `query` and returns one
+packed result per target. Results own their Java arrays and remain valid after
+the index closes. Treat the exposed arrays as read-only. Names are copied as
+stored; this API does not decode or normalize malformed UTF-8 from external
+index producers.
+
 Voyager 3 reads Voyager 2 index files. To migrate a Java string index, load it
 with the existing index-plus-JSON `StringIndex.load` overload, then save it as a
 single file. In Python, use

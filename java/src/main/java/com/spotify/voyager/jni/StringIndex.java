@@ -396,6 +396,47 @@ public class StringIndex implements Closeable {
     return results;
   }
 
+  /**
+   * Find neighbors without creating Java strings. Names are copied verbatim from the index into one
+   * packed UTF-8 byte array; offsets delimit each name, including empty names. This path does not
+   * populate the Java string cache. Search order, distances and recall errors match {@link
+   * #query(float[], int, int)}.
+   *
+   * @param queryVector Vector to search around
+   * @param numNeighbors Number of neighbors to return
+   * @param ef Search depth in the graph
+   * @return Packed names and distances, independent of the index lifetime
+   */
+  public Utf8QueryResults queryUtf8(float[] queryVector, int numNeighbors, int ef) {
+    int[] offsets = new int[Math.addExact(numNeighbors, 1)];
+    float[] distances = new float[numNeighbors];
+    byte[] names = index.queryUtf8(queryVector, offsets, distances, ef);
+    return new Utf8QueryResults(names, offsets, distances);
+  }
+
+  /**
+   * Query multiple vectors in parallel without creating Java strings. Each target has its own
+   * packed name buffer. Search parameters match {@link #query(float[][], int, int, int)}.
+   *
+   * @param queryVectors Vectors to search around
+   * @param numNeighbors Number of neighbors per target
+   * @param numThreads Search threads; -1 uses all available CPU cores
+   * @param ef Search depth in the graph
+   * @return One packed result per target, in target order
+   */
+  public Utf8QueryResults[] queryUtf8(
+      float[][] queryVectors, int numNeighbors, int numThreads, int ef) {
+    byte[][] names = new byte[queryVectors.length][];
+    int[][] offsets = new int[queryVectors.length][Math.addExact(numNeighbors, 1)];
+    float[][] distances = new float[queryVectors.length][numNeighbors];
+    index.queryUtf8Batch(queryVectors, numNeighbors, numThreads, ef, names, offsets, distances);
+    Utf8QueryResults[] results = new Utf8QueryResults[queryVectors.length];
+    for (int i = 0; i < results.length; i++) {
+      results[i] = new Utf8QueryResults(names[i], offsets[i], distances[i]);
+    }
+    return results;
+  }
+
   @Override
   public void close() throws IOException {
     index.close();
@@ -420,6 +461,40 @@ public class StringIndex implements Closeable {
    */
   public long getMaxElements() {
     return index.getMaxElements();
+  }
+
+  /**
+   * Names stored in one UTF-8 buffer, with a terminal offset equal to the buffer length. Name i
+   * occupies [offsets[i], offsets[i + 1]). Arrays belong to this result and remain valid after the
+   * index closes. Accessors expose the arrays without copying; callers should treat them as
+   * read-only. No protobuf dependency or native-memory lifetime management is required.
+   */
+  public static final class Utf8QueryResults {
+    private final byte[] nameBytes;
+    private final int[] nameOffsets;
+    private final float[] distances;
+
+    private Utf8QueryResults(byte[] nameBytes, int[] nameOffsets, float[] distances) {
+      this.nameBytes = nameBytes;
+      this.nameOffsets = nameOffsets;
+      this.distances = distances;
+    }
+
+    public byte[] getNameBytes() {
+      return nameBytes;
+    }
+
+    public int[] getNameOffsets() {
+      return nameOffsets;
+    }
+
+    public float[] getDistances() {
+      return distances;
+    }
+
+    public int getNumResults() {
+      return distances.length;
+    }
   }
 
   /** A wrapper class for nearest neighbor query results. */
