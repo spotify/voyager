@@ -301,7 +301,7 @@ public:
   E4M3(uint8_t c)
       : sign(c >> 7), exponent((c >> 3) & 0b1111), mantissa(c & 0b111) {}
 
-  E4M3(float input) {
+  E4M3(float input) : E4M3() {
     if (std::isnan(input) || std::isinf(input)) {
       exponent = 15;
       mantissa = 7;

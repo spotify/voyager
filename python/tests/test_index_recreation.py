@@ -19,6 +19,20 @@ import pytest
 import voyager
 
 
+def test_recreate_sparse_e4m3_cosine_index():
+    input_data = np.zeros((128, 4096), dtype=np.float32)
+    input_data[:, 1::2] = 1
+    index = voyager.Index(voyager.Space.Cosine, 4096, storage_data_type=voyager.StorageDataType.E4M3)
+    ids = index.add_items(input_data)
+    stored_vectors = index.get_vectors(ids)
+
+    recreated = voyager.Index(voyager.Space.Cosine, 4096, storage_data_type=voyager.StorageDataType.E4M3)
+    recreated.add_items(stored_vectors, ids)
+
+    np.testing.assert_array_equal(stored_vectors[:, ::2], 0)
+    np.testing.assert_array_equal(recreated.get_vectors(ids), stored_vectors)
+
+
 @pytest.mark.parametrize(
     "num_dimensions,num_elements",
     [

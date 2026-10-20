@@ -2,8 +2,30 @@
 
 #include "StringIndex.h"
 #include "test_utils.cpp"
+#include <new>
 #include <tuple>
 #include <type_traits>
+
+TEST_CASE("E4M3 zero conversion initializes every bit") {
+  alignas(E4M3) unsigned char storage[sizeof(E4M3)];
+  std::memset(storage, 0xff, sizeof(storage));
+  auto value = new (storage) E4M3(0.0f);
+  CHECK((value->sign == 0));
+  CHECK((value->exponent == 0));
+  CHECK((value->mantissa == 0));
+  CHECK(static_cast<float>(*value) == 0.0f);
+  value->~E4M3();
+}
+
+TEST_CASE("E4M3 cosine normalization preserves zero coordinates") {
+  std::vector<float> input(4096, 0.015625f);
+  input[0] = 0.0f;
+  std::vector<E4M3> output(input.size(), E4M3(2.75f));
+
+  normalizeVector<float, E4M3>(input.data(), output.data(), input.size());
+
+  CHECK(static_cast<float>(output[0]) == 0.0f);
+}
 
 template <typename dist_t, typename data_t = dist_t,
           typename scalefactor = std::ratio<1, 1>>
