@@ -369,7 +369,9 @@ public class StringIndex implements Closeable {
    *     distance from the query vector, sorted in ascending order of distance
    */
   public QueryResults query(float[] queryVector, int numNeighbors, int ef) {
-    return convertResult(index.query(queryVector, numNeighbors, ef));
+    QueryResults result = new QueryResults(new String[numNeighbors], new float[numNeighbors]);
+    index.queryStrings(queryVector, result.names, result.distances, ef);
+    return result;
   }
 
   /**
@@ -383,17 +385,15 @@ public class StringIndex implements Closeable {
    * @return Array of QueryResults, one for each target vector
    */
   public QueryResults[] query(float[][] queryVectors, int numNeighbors, int numThreads, int ef) {
+    String[][] names = new String[queryVectors.length][numNeighbors];
+    float[][] distances = new float[queryVectors.length][numNeighbors];
+    index.queryStringsBatch(queryVectors, numNeighbors, numThreads, ef, names, distances);
     QueryResults[] results = new QueryResults[queryVectors.length];
-    Index.QueryResults[] idxResults = index.query(queryVectors, numNeighbors, numThreads, ef);
-    for (int i = 0; i < idxResults.length; i++) {
-      results[i] = this.convertResult(idxResults[i]);
+    for (int i = 0; i < results.length; i++) {
+      results[i] = new QueryResults(names[i], distances[i]);
     }
 
     return results;
-  }
-
-  private QueryResults convertResult(Index.QueryResults idxResults) {
-    return new QueryResults(index.getNames(idxResults.getLabels()), idxResults.getDistances());
   }
 
   @Override

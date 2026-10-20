@@ -22,12 +22,14 @@ package com.spotify.voyager.jni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.io.Resources;
 import com.spotify.voyager.jni.Index.SpaceType;
 import com.spotify.voyager.jni.Index.StorageDataType;
 import com.spotify.voyager.jni.StringIndex.QueryResults;
 import com.spotify.voyager.jni.TestUtils.Vector;
+import com.spotify.voyager.jni.exception.RecallException;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -310,6 +312,78 @@ public class StringIndexTest {
       assertThat(loaded.query(new float[] {0.5f, 0.5f}, 2, 10).getNames()).doesNotContain(name);
       loaded.unmarkDeleted(name);
       assertThat(loaded.query(new float[] {0.5f, 0.5f}, 1, 10).getNames()).containsExactly(name);
+    }
+  }
+
+  @Test
+  public void nativeStringQueriesMatchNumericResults() throws Exception {
+    int count = 64;
+    Random random = new Random(42);
+    float[][] vectors = TestUtils.randomVectors(() -> random, count, 16);
+    String[] names = new String[count];
+    for (int i = 0; i < count; i++) {
+      names[i] = i % 2 == 0 ? "track-" + i : "東京🛰️\0-" + i;
+    }
+    for (SpaceType space : SpaceType.values()) {
+      for (StorageDataType storage : StorageDataType.values()) {
+        try (Index index = new Index(space, 16, 20, 100, 1, count, storage)) {
+          index.enableStringIdentifiers();
+          for (int i = 0; i < count; i++) {
+            index.addStringItem(names[i], vectors[i]);
+          }
+          index.markDeleted(0);
+          String[][] batchNames = new String[count][4];
+          float[][] batchDistances = new float[count][4];
+          index.queryStringsBatch(vectors, 4, 4, 100, batchNames, batchDistances);
+          for (int i = 0; i < count; i++) {
+            Index.QueryResults expected = index.query(vectors[i], 4, 100);
+            String[] expectedNames =
+                Arrays.stream(expected.getLabels())
+                    .mapToObj(id -> names[(int) id])
+                    .toArray(String[]::new);
+            String[] actualNames = new String[4];
+            float[] actualDistances = new float[4];
+            index.queryStrings(vectors[i], actualNames, actualDistances, 100);
+            assertThat(actualNames).containsExactly(expectedNames);
+            assertThat(actualDistances).containsExactly(expected.getDistances());
+            assertThat(batchNames[i]).containsExactly(expectedNames);
+            assertThat(batchDistances[i]).containsExactly(expected.getDistances());
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  public void stringQueriesPreserveExceptions() throws Exception {
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      index.addItem("only", new float[] {1, 0});
+      assertThrows(RecallException.class, () -> index.query(new float[] {1, 0}, 2, 10));
+      assertThrows(RecallException.class, () -> index.query(new float[][] {{1, 0}}, 2, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.query(new float[] {1}, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.query(new float[][] {{1}}, 1, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.query(new float[] {1, 0}, 2, 1));
+      assertThat(index.query(new float[] {1, 0}, 1, 10).getNames()).containsExactly("only");
+    }
+  }
+
+  @Test
+  public void largeStringQueryBatchPreservesNames() throws Exception {
+    String[] names = {"ascii", "nul\0end", "東京🛰️"};
+    float[][] vectors = {{0, 0}, {1, 0}, {0, 1}};
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      for (int i = 0; i < names.length; i++) {
+        index.addItem(names[i], vectors[i]);
+      }
+      float[][] queries = new float[2048][];
+      for (int i = 0; i < queries.length; i++) {
+        queries[i] = vectors[i % vectors.length];
+      }
+      QueryResults[] results = index.query(queries, 1, 4, 10);
+      for (int i = 0; i < results.length; i++) {
+        assertThat(results[i].getNames()).containsExactly(names[i % names.length]);
+        assertThat(results[i].getDistances()).containsExactly(0);
+      }
     }
   }
 

@@ -159,6 +159,15 @@ public:
       result.push_back(names.name(label));
     return result;
   }
+  // The visitor may read each name while the mapping is locked, without
+  // copying it. It must not retain references or modify this index.
+  template <typename Visitor>
+  void visitNames(const hnswlib::labeltype *labels, size_t count,
+                  Visitor visitor) const {
+    std::shared_lock<std::shared_mutex> lock(namesMutex);
+    for (size_t i = 0; i < count; ++i)
+      visitor(i, names.name(labels[i]));
+  }
   std::vector<std::string> getNames() const {
     std::shared_lock<std::shared_mutex> lock(namesMutex);
     std::vector<hnswlib::labeltype> labels;

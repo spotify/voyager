@@ -361,6 +361,16 @@ public class Index implements Closeable {
 
   native String[] getNames(long[] labels);
 
+  native void queryStrings(float[] vector, String[] names, float[] distances, long ef);
+
+  native void queryStringsBatch(
+      float[][] vectors,
+      int numNeighbors,
+      int numThreads,
+      long ef,
+      String[][] names,
+      float[][] distances);
+
   private native void nativeDestructor();
 
   /**

@@ -1207,3 +1207,79 @@ Java_com_spotify_voyager_jni_Index_getNames(JNIEnv *env, jobject self,
     return nullptr;
   }
 }
+
+void fillStringQueryResults(JNIEnv *env, const Index &index,
+                            const hnswlib::labeltype *labels,
+                            const float *distances, jsize count,
+                            jobjectArray javaNames, jfloatArray javaDistances) {
+  if (env->GetArrayLength(javaNames) != count ||
+      env->GetArrayLength(javaDistances) != count)
+    throw std::invalid_argument("Query result arrays have incorrect lengths.");
+  index.visitNames(labels, count, [&](size_t i, const std::string &name) {
+    auto value = identifierToJava(env, name);
+    if (!value)
+      throw std::runtime_error("Unable to allocate string identifier.");
+    env->SetObjectArrayElement(javaNames, i, value);
+    env->DeleteLocalRef(value);
+  });
+  env->SetFloatArrayRegion(javaDistances, 0, count, distances);
+}
+
+void stringQueryException(JNIEnv *env, const std::exception &error) {
+  if (dynamic_cast<const RecallError *>(&error)) {
+    if (!env->ExceptionCheck())
+      env->ThrowNew(
+          env->FindClass("com/spotify/voyager/jni/exception/RecallException"),
+          error.what());
+  } else {
+    stringIndexException(env, error);
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_queryStrings(JNIEnv *env, jobject self,
+                                                jfloatArray queryVector,
+                                                jobjectArray javaNames,
+                                                jfloatArray javaDistances,
+                                                jlong queryEf) {
+  try {
+    auto index = getHandle<Index>(env, self);
+    auto count = env->GetArrayLength(javaNames);
+    auto result = index->query(toStdVector(env, queryVector), count, queryEf);
+    fillStringQueryResults(env, *index, std::get<0>(result).data(),
+                           std::get<1>(result).data(), count, javaNames,
+                           javaDistances);
+  } catch (const std::exception &error) {
+    stringQueryException(env, error);
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_queryStringsBatch(
+    JNIEnv *env, jobject self, jobjectArray queryVectors, jint numNeighbors,
+    jint numThreads, jlong queryEf, jobjectArray javaNames,
+    jobjectArray javaDistances) {
+  try {
+    auto index = getHandle<Index>(env, self);
+    auto rows = env->GetArrayLength(queryVectors);
+    if (env->GetArrayLength(javaNames) != rows ||
+        env->GetArrayLength(javaDistances) != rows)
+      throw std::invalid_argument(
+          "Query result arrays have incorrect lengths.");
+    auto result = index->query(toNDArray(env, queryVectors), numNeighbors,
+                               numThreads, queryEf);
+    for (jsize i = 0; i < rows; ++i) {
+      auto names =
+          static_cast<jobjectArray>(env->GetObjectArrayElement(javaNames, i));
+      auto distances = static_cast<jfloatArray>(
+          env->GetObjectArrayElement(javaDistances, i));
+      fillStringQueryResults(env, *index, std::get<0>(result)[i],
+                             std::get<1>(result)[i], numNeighbors, names,
+                             distances);
+      env->DeleteLocalRef(names);
+      env->DeleteLocalRef(distances);
+    }
+  } catch (const std::exception &error) {
+    stringQueryException(env, error);
+  }
+}

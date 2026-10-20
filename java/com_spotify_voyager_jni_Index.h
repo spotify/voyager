@@ -55,6 +55,22 @@ Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(JNIEnv *, jobject,
 
 /*
  * Class:     com_spotify_voyager_jni_Index
+ * Method:    queryStrings
+ * Signature: ([F[Ljava/lang/String;[FJ)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_queryStrings(
+    JNIEnv *, jobject, jfloatArray, jobjectArray, jfloatArray, jlong);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    queryStringsBatch
+ * Signature: ([[FIIJ[[Ljava/lang/String;[[F)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_queryStringsBatch(
+    JNIEnv *, jobject, jobjectArray, jint, jint, jlong, jobjectArray,
+    jobjectArray);
+/*
+ * Class:     com_spotify_voyager_jni_Index
  * Method:    nativeDestructor
  * Signature: ()V
  */
