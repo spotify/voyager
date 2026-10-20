@@ -55,6 +55,22 @@ Java_com_spotify_voyager_jni_Index_nativeLoadFromInputStream(JNIEnv *, jobject,
 
 /*
  * Class:     com_spotify_voyager_jni_Index
+ * Method:    queryStrings
+ * Signature: ([F[Ljava/lang/String;[FJ)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_queryStrings(
+    JNIEnv *, jobject, jfloatArray, jobjectArray, jfloatArray, jlong);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    queryStringsBatch
+ * Signature: ([[FIIJ[[Ljava/lang/String;[[F)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_queryStringsBatch(
+    JNIEnv *, jobject, jobjectArray, jint, jint, jlong, jobjectArray,
+    jobjectArray);
+/*
+ * Class:     com_spotify_voyager_jni_Index
  * Method:    nativeDestructor
  * Signature: ()V
  */
@@ -263,6 +279,72 @@ Java_com_spotify_voyager_jni_Index_getEfConstruction(JNIEnv *, jobject);
  */
 JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getM(JNIEnv *,
                                                                 jobject);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    enableStringIdentifiers
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_enableStringIdentifiers(JNIEnv *, jobject);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    importNames
+ * Signature: ([Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_importNames(JNIEnv *, jobject, jobjectArray);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    addStringItem
+ * Signature: (Ljava/lang/String;[F)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addStringItem(
+    JNIEnv *, jobject, jstring, jfloatArray);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    addStringItems
+ * Signature: ([Ljava/lang/String;[[F)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_addStringItems(
+    JNIEnv *, jobject, jobjectArray, jobjectArray);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    getStringID
+ * Signature: (Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_spotify_voyager_jni_Index_getStringID(JNIEnv *,
+                                                                       jobject,
+                                                                       jstring);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    getNames
+ * Signature: ([J)[Ljava/lang/String;
+ */
+JNIEXPORT jobjectArray JNICALL
+Java_com_spotify_voyager_jni_Index_getNames(JNIEnv *, jobject, jlongArray);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    queryUtf8
+ * Signature: ([F[I[FJ)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_spotify_voyager_jni_Index_queryUtf8(
+    JNIEnv *, jobject, jfloatArray, jintArray, jfloatArray, jlong);
+
+/*
+ * Class:     com_spotify_voyager_jni_Index
+ * Method:    queryUtf8Batch
+ * Signature: ([[FIIJ[[B[[I[[F)V
+ */
+JNIEXPORT void JNICALL Java_com_spotify_voyager_jni_Index_queryUtf8Batch(
+    JNIEnv *, jobject, jobjectArray, jint, jint, jlong, jobjectArray,
+    jobjectArray, jobjectArray);
 
 #ifdef __cplusplus
 }

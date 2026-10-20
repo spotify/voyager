@@ -25,12 +25,92 @@
 #include <Index.h>
 #include <TypedIndex.h>
 
+#include <algorithm>
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <limits>
+#include <mutex>
 #include <thread>
 #include <type_traits>
 #include <vector>
+
+namespace {
+// Only bootstrap classes are cached. Global references keep the class and
+// charset alive across calls and threads until this native library is unloaded.
+struct IdentifierEncoding {
+  jclass stringClass = nullptr;
+  jobject utf8 = nullptr;
+  jmethodID getBytes = nullptr;
+  jmethodID constructor = nullptr;
+
+  void release(JNIEnv *env) {
+    if (stringClass)
+      env->DeleteGlobalRef(stringClass);
+    if (utf8)
+      env->DeleteGlobalRef(utf8);
+    *this = {};
+  }
+};
+
+IdentifierEncoding identifierEncoding;
+
+jobject utf8Charset(JNIEnv *env) {
+  auto cls = env->FindClass("java/nio/charset/StandardCharsets");
+  if (!cls)
+    return nullptr;
+  auto field =
+      env->GetStaticFieldID(cls, "UTF_8", "Ljava/nio/charset/Charset;");
+  auto charset = field ? env->GetStaticObjectField(cls, field) : nullptr;
+  env->DeleteLocalRef(cls);
+  return charset;
+}
+
+bool initializeIdentifierEncoding(JNIEnv *env) {
+  auto cls = env->FindClass("java/lang/String");
+  if (!cls)
+    return false;
+  identifierEncoding.stringClass = static_cast<jclass>(env->NewGlobalRef(cls));
+  env->DeleteLocalRef(cls);
+  if (!identifierEncoding.stringClass)
+    return false;
+
+  identifierEncoding.getBytes =
+      env->GetMethodID(identifierEncoding.stringClass, "getBytes",
+                       "(Ljava/nio/charset/Charset;)[B");
+  if (!identifierEncoding.getBytes)
+    return false;
+  identifierEncoding.constructor =
+      env->GetMethodID(identifierEncoding.stringClass, "<init>",
+                       "([BLjava/nio/charset/Charset;)V");
+  if (!identifierEncoding.constructor)
+    return false;
+
+  auto charset = utf8Charset(env);
+  if (!charset)
+    return false;
+  identifierEncoding.utf8 = env->NewGlobalRef(charset);
+  env->DeleteLocalRef(charset);
+  return identifierEncoding.utf8 != nullptr;
+}
+} // namespace
+
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
+  JNIEnv *env = nullptr;
+  if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_8) != JNI_OK)
+    return JNI_ERR;
+  if (!initializeIdentifierEncoding(env)) {
+    identifierEncoding.release(env);
+    return JNI_ERR;
+  }
+  return JNI_VERSION_1_8;
+}
+
+extern "C" JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *) {
+  JNIEnv *env = nullptr;
+  if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_8) == JNI_OK)
+    identifierEncoding.release(env);
+}
 
 /**
  * Given a Java object, return the field ID for the "native handle" property
@@ -42,52 +122,100 @@ jfieldID getHandleFieldID(JNIEnv *env, jobject obj) {
   return env->GetFieldID(c, "nativeHandle", "J");
 }
 
-template <typename T>
-std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj,
-                             bool allow_missing = false) {
-  env->MonitorEnter(obj);
-  jlong handle = env->GetLongField(obj, getHandleFieldID(env, obj));
-  env->MonitorExit(obj);
+// Direct-mapped and bounded in both entry count and identifier length. Numeric
+// indexes allocate no slots. Names are compared on hits so label reassignment
+// cannot return a stale value. Long identifiers bypass the cache.
+class JavaNames {
+  struct Entry {
+    std::string name;
+    jstring value = nullptr;
+    hnswlib::labeltype candidate = 0;
+    bool hasCandidate = false;
+    bool admit(hnswlib::labeltype label) {
+      bool repeated = hasCandidate && candidate == label;
+      candidate = label;
+      hasCandidate = true;
+      return repeated;
+    }
+    void replace(JNIEnv *env, const std::string &newName);
+  };
+  static constexpr size_t capacity = 4096;
+  static constexpr size_t maxNameBytes = 256;
+  JavaVM *vm;
+  std::vector<Entry> entries;
 
-  // Yes, we're storing a pointer to a shared pointer on a Java object.
-  // A bit strange, but totally okay to ensure that we still get shared_ptr
-  // semantics while storing a single Long value.
-  std::shared_ptr<T> *pointer = reinterpret_cast<std::shared_ptr<T> *>(handle);
-
-  if (!allow_missing && !pointer) {
-    throw std::runtime_error(
-        "This Voyager index has been closed and can no longer be used.");
+public:
+  std::mutex mutex;
+  explicit JavaNames(JNIEnv *env) { env->GetJavaVM(&vm); }
+  ~JavaNames() {
+    if (entries.empty())
+      return;
+    JNIEnv *env = nullptr;
+    bool attached = vm->GetEnv(reinterpret_cast<void **>(&env),
+                               JNI_VERSION_1_8) == JNI_EDETACHED;
+    if (attached && vm->AttachCurrentThread(reinterpret_cast<void **>(&env),
+                                            nullptr) != JNI_OK)
+      return;
+    if (!env)
+      return;
+    for (auto &entry : entries)
+      if (entry.value)
+        env->DeleteGlobalRef(entry.value);
+    if (attached)
+      vm->DetachCurrentThread();
   }
 
-  // Return a copy of this shared pointer, thereby ensuring that it remains
-  // alive until the shared_ptr goes out of scope.
-  return *pointer;
+  // Caller holds mutex until the returned reference has been used.
+  void setResult(JNIEnv *env, jobjectArray results, jsize offset,
+                 hnswlib::labeltype label, const std::string &name);
+};
+
+template <typename T> struct JavaHandle {
+  std::unique_ptr<T> index;
+  JavaNames names;
+  JavaHandle(JNIEnv *env, std::unique_ptr<T> index)
+      : index(std::move(index)), names(env) {}
+};
+
+template <typename T>
+std::shared_ptr<JavaHandle<T>> getJavaHandle(JNIEnv *env, jobject obj) {
+  env->MonitorEnter(obj);
+  auto pointer = reinterpret_cast<std::shared_ptr<JavaHandle<T>> *>(
+      env->GetLongField(obj, getHandleFieldID(env, obj)));
+  // Copy while holding the monitor: close may otherwise delete the pointer
+  // before this query has acquired shared ownership.
+  auto handle = pointer ? *pointer : std::shared_ptr<JavaHandle<T>>{};
+  env->MonitorExit(obj);
+  if (!handle)
+    throw std::runtime_error(
+        "This Voyager index has been closed and can no longer be used.");
+  return handle;
+}
+
+template <typename T> std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj) {
+  auto handle = getJavaHandle<T>(env, obj);
+  return std::shared_ptr<T>(handle, handle->index.get());
 }
 
 template <typename T> void setHandle(JNIEnv *env, jobject obj, T *t) {
-  std::shared_ptr<T> *sharedPointerForJava = new std::shared_ptr<T>(t);
+  std::unique_ptr<T> index(t);
+  auto handle = std::make_shared<JavaHandle<T>>(env, std::move(index));
+  auto pointer = new std::shared_ptr<JavaHandle<T>>(std::move(handle));
   env->MonitorEnter(obj);
   env->SetLongField(obj, getHandleFieldID(env, obj),
-                    reinterpret_cast<jlong>(sharedPointerForJava));
+                    reinterpret_cast<jlong>(pointer));
   env->MonitorExit(obj);
 }
 
 template <typename T> void deleteHandle(JNIEnv *env, jobject obj) {
   env->MonitorEnter(obj);
-  jlong handle = env->GetLongField(obj, getHandleFieldID(env, obj));
+  auto field = getHandleFieldID(env, obj);
+  auto pointer = reinterpret_cast<std::shared_ptr<JavaHandle<T>> *>(
+      env->GetLongField(obj, field));
+  env->SetLongField(obj, field, 0);
   env->MonitorExit(obj);
-
-  if (handle == 0)
-    return;
-
-  std::shared_ptr<T> *pointer = reinterpret_cast<std::shared_ptr<T> *>(handle);
-  // Note: This _may_ trigger the destructor of T, but if any other threads have
-  // thread-local copies of this shared_ptr, the destructor will be triggered
-  // on the last thread that has one of these shared_ptrs.
-  env->MonitorEnter(obj);
+  // The last in-flight call releases the index and cached global references.
   delete pointer;
-  env->SetLongField(obj, getHandleFieldID(env, obj), 0);
-  env->MonitorExit(obj);
 }
 
 std::string toString(JNIEnv *env, jstring js) {
@@ -980,5 +1108,357 @@ void Java_com_spotify_voyager_jni_Index_nativeDestructor(JNIEnv *env,
     if (!env->ExceptionCheck()) {
       env->ThrowNew(env->FindClass("java/lang/RuntimeException"), e.what());
     }
+  }
+}
+
+// JNI's GetStringUTFChars uses modified UTF-8. Use standard UTF-8 so names
+// containing NUL or supplementary characters round-trip through Python/C++.
+std::string identifierFromJava(JNIEnv *env, jstring value) {
+  if (!value)
+    throw std::invalid_argument("String identifiers cannot be null.");
+  auto bytes = static_cast<jbyteArray>(env->CallObjectMethod(
+      value, identifierEncoding.getBytes, identifierEncoding.utf8));
+  if (env->ExceptionCheck() || !bytes)
+    throw std::runtime_error("Unable to encode string identifier.");
+  std::string result(env->GetArrayLength(bytes), '\0');
+  env->GetByteArrayRegion(bytes, 0, result.size(),
+                          reinterpret_cast<jbyte *>(result.data()));
+  env->DeleteLocalRef(bytes);
+  return result;
+}
+
+jstring identifierToJava(JNIEnv *env, const std::string &value) {
+  // Standard and JNI modified UTF-8 agree for non-NUL ASCII. This common path
+  // needs only the returned Java string, with no intermediate Java byte array.
+  if (std::all_of(value.begin(), value.end(),
+                  [](unsigned char c) { return c > 0 && c < 0x80; }))
+    return env->NewStringUTF(value.c_str());
+
+  // Keep Java's decoder for Unicode, embedded NULs and malformed input,
+  // including its existing replacement-character behavior.
+  auto bytes = env->NewByteArray(value.size());
+  if (!bytes)
+    throw std::runtime_error("Unable to allocate string identifier.");
+  env->SetByteArrayRegion(bytes, 0, value.size(),
+                          reinterpret_cast<const jbyte *>(value.data()));
+  auto result = static_cast<jstring>(env->NewObject(
+      identifierEncoding.stringClass, identifierEncoding.constructor, bytes,
+      identifierEncoding.utf8));
+  bool failed = env->ExceptionCheck();
+  env->DeleteLocalRef(bytes);
+  if (failed || !result)
+    throw std::runtime_error("Unable to decode string identifier.");
+  return result;
+}
+
+std::vector<std::string> identifiersFromJava(JNIEnv *env, jobjectArray values) {
+  if (!values)
+    throw std::invalid_argument("Names cannot be null.");
+  std::vector<std::string> result;
+  for (jsize i = 0; i < env->GetArrayLength(values); ++i) {
+    auto value = static_cast<jstring>(env->GetObjectArrayElement(values, i));
+    result.push_back(identifierFromJava(env, value));
+    env->DeleteLocalRef(value);
+  }
+  return result;
+}
+
+void stringIndexException(JNIEnv *env, const std::exception &error) {
+  if (!env->ExceptionCheck())
+    env->ThrowNew(env->FindClass("java/lang/RuntimeException"), error.what());
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_enableStringIdentifiers(JNIEnv *env,
+                                                           jobject self) {
+  try {
+    getHandle<Index>(env, self)->enableStringIdentifiers();
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+  }
+}
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_importNames(JNIEnv *env, jobject self,
+                                               jobjectArray names) {
+  try {
+    getHandle<Index>(env, self)->importNames(identifiersFromJava(env, names));
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+  }
+}
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_addStringItem(JNIEnv *env, jobject self,
+                                                 jstring name,
+                                                 jfloatArray vector) {
+  try {
+    if (!vector)
+      throw std::invalid_argument("Vectors cannot be null.");
+    getHandle<Index>(env, self)->addStringItem(identifierFromJava(env, name),
+                                               toStdVector(env, vector));
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+  }
+}
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_addStringItems(JNIEnv *env, jobject self,
+                                                  jobjectArray names,
+                                                  jobjectArray vectors) {
+  try {
+    auto values = identifiersFromJava(env, names);
+    if (!vectors ||
+        env->GetArrayLength(vectors) != static_cast<jsize>(values.size()))
+      throw std::invalid_argument(
+          "Names and vectors must have the same length.");
+    std::vector<std::vector<float>> data;
+    for (jsize i = 0; i < env->GetArrayLength(vectors); ++i) {
+      auto vector =
+          static_cast<jfloatArray>(env->GetObjectArrayElement(vectors, i));
+      if (!vector)
+        throw std::invalid_argument("Vectors cannot be null.");
+      data.push_back(toStdVector(env, vector));
+      env->DeleteLocalRef(vector);
+    }
+    getHandle<Index>(env, self)->addStringItems(values, data);
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+  }
+}
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_spotify_voyager_jni_Index_getStringID(JNIEnv *env, jobject self,
+                                               jstring name) {
+  try {
+    return getHandle<Index>(env, self)->getStringID(
+        identifierFromJava(env, name));
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+    return 0;
+  }
+}
+extern "C" JNIEXPORT jobjectArray JNICALL
+Java_com_spotify_voyager_jni_Index_getNames(JNIEnv *env, jobject self,
+                                            jlongArray labels) {
+  try {
+    auto values =
+        getHandle<Index>(env, self)->getNames(toUnsignedStdVector(env, labels));
+    auto result = env->NewObjectArray(values.size(),
+                                      identifierEncoding.stringClass, nullptr);
+    if (!result)
+      throw std::runtime_error("Unable to allocate string results.");
+    for (size_t i = 0; i < values.size(); ++i) {
+      auto value = identifierToJava(env, values[i]);
+      if (!value)
+        throw std::runtime_error("Unable to allocate string identifier.");
+      env->SetObjectArrayElement(result, i, value);
+      env->DeleteLocalRef(value);
+    }
+    return result;
+  } catch (const std::exception &e) {
+    stringIndexException(env, e);
+    return nullptr;
+  }
+}
+
+void JavaNames::Entry::replace(JNIEnv *env, const std::string &newName) {
+  // Copy before allocating JNI references, so bad_alloc cannot leak them.
+  std::string key(newName);
+  auto local = identifierToJava(env, newName);
+  if (!local)
+    throw std::runtime_error("Unable to allocate string identifier.");
+  auto global = static_cast<jstring>(env->NewGlobalRef(local));
+  env->DeleteLocalRef(local);
+  if (!global)
+    throw std::runtime_error("Unable to cache string identifier.");
+  if (value)
+    env->DeleteGlobalRef(value);
+  name.swap(key);
+  value = global;
+}
+
+void setUncachedName(JNIEnv *env, jobjectArray results, jsize offset,
+                     const std::string &name) {
+  auto value = identifierToJava(env, name);
+  if (!value)
+    throw std::runtime_error("Unable to allocate string identifier.");
+  env->SetObjectArrayElement(results, offset, value);
+  env->DeleteLocalRef(value);
+}
+
+void JavaNames::setResult(JNIEnv *env, jobjectArray results, jsize offset,
+                          hnswlib::labeltype label, const std::string &name) {
+  if (name.size() > maxNameBytes) {
+    setUncachedName(env, results, offset, name);
+    return;
+  }
+  if (entries.empty())
+    entries.resize(capacity);
+  auto &entry = entries[label % capacity];
+  if (!entry.value || entry.name != name) {
+    // Admit after two consecutive misses for this label in its slot. Streaming
+    // results should not churn global JNI references or displace reused names.
+    if (!entry.admit(label)) {
+      setUncachedName(env, results, offset, name);
+      return;
+    }
+    entry.replace(env, name);
+  }
+  env->SetObjectArrayElement(results, offset, entry.value);
+}
+
+void fillStringQueryResults(JNIEnv *env, JavaHandle<Index> &handle,
+                            const hnswlib::labeltype *labels,
+                            const float *distances, jsize count,
+                            jobjectArray javaNames, jfloatArray javaDistances) {
+  if (env->GetArrayLength(javaNames) != count ||
+      env->GetArrayLength(javaDistances) != count)
+    throw std::invalid_argument("Query result arrays have incorrect lengths.");
+  std::lock_guard<std::mutex> lock(handle.names.mutex);
+  handle.index->visitNames(
+      labels, count, [&](size_t i, const std::string &name) {
+        handle.names.setResult(env, javaNames, i, labels[i], name);
+      });
+  env->SetFloatArrayRegion(javaDistances, 0, count, distances);
+}
+
+void stringQueryException(JNIEnv *env, const std::exception &error) {
+  if (dynamic_cast<const RecallError *>(&error)) {
+    if (!env->ExceptionCheck())
+      env->ThrowNew(
+          env->FindClass("com/spotify/voyager/jni/exception/RecallException"),
+          error.what());
+  } else {
+    stringIndexException(env, error);
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_queryStrings(JNIEnv *env, jobject self,
+                                                jfloatArray queryVector,
+                                                jobjectArray javaNames,
+                                                jfloatArray javaDistances,
+                                                jlong queryEf) {
+  try {
+    auto handle = getJavaHandle<Index>(env, self);
+    auto &index = handle->index;
+    auto count = env->GetArrayLength(javaNames);
+    auto result = index->query(toStdVector(env, queryVector), count, queryEf);
+    fillStringQueryResults(env, *handle, std::get<0>(result).data(),
+                           std::get<1>(result).data(), count, javaNames,
+                           javaDistances);
+  } catch (const std::exception &error) {
+    stringQueryException(env, error);
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_queryStringsBatch(
+    JNIEnv *env, jobject self, jobjectArray queryVectors, jint numNeighbors,
+    jint numThreads, jlong queryEf, jobjectArray javaNames,
+    jobjectArray javaDistances) {
+  try {
+    auto handle = getJavaHandle<Index>(env, self);
+    auto &index = handle->index;
+    auto rows = env->GetArrayLength(queryVectors);
+    if (env->GetArrayLength(javaNames) != rows ||
+        env->GetArrayLength(javaDistances) != rows)
+      throw std::invalid_argument(
+          "Query result arrays have incorrect lengths.");
+    auto result = index->query(toNDArray(env, queryVectors), numNeighbors,
+                               numThreads, queryEf);
+    for (jsize i = 0; i < rows; ++i) {
+      auto names =
+          static_cast<jobjectArray>(env->GetObjectArrayElement(javaNames, i));
+      auto distances = static_cast<jfloatArray>(
+          env->GetObjectArrayElement(javaDistances, i));
+      fillStringQueryResults(env, *handle, std::get<0>(result)[i],
+                             std::get<1>(result)[i], numNeighbors, names,
+                             distances);
+      env->DeleteLocalRef(names);
+      env->DeleteLocalRef(distances);
+    }
+  } catch (const std::exception &error) {
+    stringQueryException(env, error);
+  }
+}
+
+// One native packing pass and one JNI byte-array copy per target, independent
+// of the Java string cache. The name lock protects the source bytes while
+// copied.
+jbyteArray fillUtf8QueryResults(JNIEnv *env, const Index &index,
+                                const hnswlib::labeltype *labels,
+                                const float *distances, jsize count,
+                                jintArray javaOffsets,
+                                jfloatArray javaDistances) {
+  if (env->GetArrayLength(javaOffsets) != static_cast<jlong>(count) + 1 ||
+      env->GetArrayLength(javaDistances) != count)
+    throw std::invalid_argument("Query result arrays have incorrect lengths.");
+  std::string bytes;
+  std::vector<jint> offsets(static_cast<size_t>(count) + 1, 0);
+  index.visitNames(labels, count, [&](size_t i, const std::string &name) {
+    if (name.size() >
+        static_cast<size_t>(std::numeric_limits<jsize>::max()) - bytes.size())
+      throw std::length_error(
+          "Packed query names exceed Java array size limit.");
+    bytes.append(name);
+    offsets[i + 1] = static_cast<jint>(bytes.size());
+  });
+  auto result = env->NewByteArray(static_cast<jsize>(bytes.size()));
+  if (!result)
+    throw std::runtime_error("Unable to allocate UTF-8 query results.");
+  env->SetByteArrayRegion(result, 0, bytes.size(),
+                          reinterpret_cast<const jbyte *>(bytes.data()));
+  env->SetIntArrayRegion(javaOffsets, 0, offsets.size(), offsets.data());
+  env->SetFloatArrayRegion(javaDistances, 0, count, distances);
+  return result;
+}
+
+extern "C" JNIEXPORT jbyteArray JNICALL
+Java_com_spotify_voyager_jni_Index_queryUtf8(JNIEnv *env, jobject self,
+                                             jfloatArray queryVector,
+                                             jintArray javaOffsets,
+                                             jfloatArray javaDistances,
+                                             jlong queryEf) {
+  try {
+    auto index = getHandle<Index>(env, self);
+    auto count = env->GetArrayLength(javaDistances);
+    auto result = index->query(toStdVector(env, queryVector), count, queryEf);
+    return fillUtf8QueryResults(env, *index, std::get<0>(result).data(),
+                                std::get<1>(result).data(), count, javaOffsets,
+                                javaDistances);
+  } catch (const std::exception &error) {
+    stringQueryException(env, error);
+    return nullptr;
+  }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_spotify_voyager_jni_Index_queryUtf8Batch(
+    JNIEnv *env, jobject self, jobjectArray queryVectors, jint numNeighbors,
+    jint numThreads, jlong queryEf, jobjectArray javaNames,
+    jobjectArray javaOffsets, jobjectArray javaDistances) {
+  try {
+    auto index = getHandle<Index>(env, self);
+    auto rows = env->GetArrayLength(queryVectors);
+    if (env->GetArrayLength(javaNames) != rows ||
+        env->GetArrayLength(javaOffsets) != rows ||
+        env->GetArrayLength(javaDistances) != rows)
+      throw std::invalid_argument(
+          "Query result arrays have incorrect lengths.");
+    auto result = index->query(toNDArray(env, queryVectors), numNeighbors,
+                               numThreads, queryEf);
+    for (jsize i = 0; i < rows; ++i) {
+      auto offsets =
+          static_cast<jintArray>(env->GetObjectArrayElement(javaOffsets, i));
+      auto distances = static_cast<jfloatArray>(
+          env->GetObjectArrayElement(javaDistances, i));
+      auto names = fillUtf8QueryResults(env, *index, std::get<0>(result)[i],
+                                        std::get<1>(result)[i], numNeighbors,
+                                        offsets, distances);
+      env->SetObjectArrayElement(javaNames, i, names);
+      env->DeleteLocalRef(names);
+      env->DeleteLocalRef(offsets);
+      env->DeleteLocalRef(distances);
+    }
+  } catch (const std::exception &error) {
+    stringQueryException(env, error);
   }
 }

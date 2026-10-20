@@ -34,7 +34,7 @@ Add the following artifact to your `pom.xml`:
 <dependency>
   <groupId>com.spotify</groupId>
   <artifactId>voyager</artifactId>
-  <version>2.2.2</version>
+  <version>3.0.0</version>
 </dependency>
 ```
 You can find the latest version on [Voyager's Releases page](https://github.com/spotify/voyager/releases).
@@ -43,10 +43,65 @@ You can find the latest version on [Voyager's Releases page](https://github.com/
 
 Add the following artifact to your `build.sbt`:
 ```sbt
-"com.spotify" % "voyager" % "2.2.2"
+"com.spotify" % "voyager" % "3.0.0"
 ```
 You can find the latest version on [Voyager's Releases page](https://github.com/spotify/voyager/releases).
 
+
+### String identifiers and Voyager 3
+
+`StringIndex` stores string identifiers in a C++ bidirectional map. Adding an
+existing name updates its vector; duplicate names within a batch use the last
+vector. Names, including Unicode and embedded NUL characters, are stored with
+the graph in a single binary file shared by C++, Java, and Python.
+
+```python
+from voyager import Space, StringIndex
+
+index = StringIndex(Space.Euclidean, num_dimensions=2)
+index.add_item("track:one", [0.0, 1.0])
+index.add_item("track:one", [1.0, 0.0])  # Updates the existing item.
+index.save("tracks.voy")
+names, distances = StringIndex.load("tracks.voy").query([1.0, 0.0])
+```
+
+In Java, use `StringIndex.save("tracks.voy")` or
+`saveIndex(OutputStream)` and `StringIndex.load("tracks.voy")` or
+`load(InputStream)` for single-file persistence. The existing directory and
+index-plus-JSON methods remain available for migration. Their binary output
+also embeds the names and requires Voyager 3.
+
+Java callers that immediately serialize identifiers can use `queryUtf8` instead
+of `query`. It returns one packed UTF-8 byte array, a terminal-offset array, and
+distances, without creating or caching Java strings:
+
+```java
+StringIndex.Utf8QueryResults results = index.queryUtf8(vector, 20, 100);
+byte[] names = results.getNameBytes();
+int[] offsets = results.getNameOffsets();
+// Name i occupies names[offsets[i] ... offsets[i + 1]).
+// For a protobuf string field, copy that slice into a ByteString and use setNameBytes.
+```
+
+The batch overload accepts the same search arguments as `query` and returns one
+packed result per target. Results own their Java arrays and remain valid after
+the index closes. Treat the exposed arrays as read-only. Names are copied as
+stored; this API does not decode or normalize malformed UTF-8 from external
+index producers.
+
+Voyager 3 reads Voyager 2 index files. To migrate a Java string index, load it
+with the existing index-plus-JSON `StringIndex.load` overload, then save it as a
+single file. In Python, use
+`StringIndex.from_index(Index.load("index.hnsw"), json.load(names_file))`.
+Legacy name lists must contain one unique name per numeric label, starting at
+zero; duplicate names are rejected with an error rather than choosing a vector
+silently.
+
+All Voyager 3 saves, including numeric indexes and re-saved legacy indexes, use
+file format **2** (Voyager 2 used file format **1**). Voyager 2 rejects these
+files with its existing `unsupported version "0x2"` error and a message that a
+newer Voyager library is required. Keep the original files if Voyager 2 clients
+still need to read them.
 
 ### Compatibility
 

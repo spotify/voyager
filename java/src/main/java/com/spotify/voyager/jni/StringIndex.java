@@ -43,8 +43,8 @@ import java.util.Map.Entry;
  * Wrapper around com.spotify.voyager.jni.Index with a simplified interface which maps the index ID
  * to a provided String.
  *
- * <p>StringIndex can only accommodate up to 2^31 - 1 (2.1B) items, despite typical Voyager indices
- * allowing up to 2^63 - 1 (9e18) items.
+ * <p>Identifiers are stored in a native bidirectional map and persisted with the index. Adding an
+ * existing name updates its vector.
  */
 public class StringIndex implements Closeable {
   private static final String INDEX_FILE_NAME = "index.hnsw";
@@ -52,7 +52,6 @@ public class StringIndex implements Closeable {
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024 * 100;
 
   private final Index index;
-  private final List<String> names;
 
   /**
    * Instantiate a new empty index with the specified space type and dimensionality
@@ -63,7 +62,7 @@ public class StringIndex implements Closeable {
    */
   public StringIndex(SpaceType spaceType, int numDimensions) {
     this.index = new Index(spaceType, numDimensions);
-    this.names = new ArrayList<>();
+    this.index.enableStringIdentifiers();
   }
 
   /**
@@ -98,12 +97,69 @@ public class StringIndex implements Closeable {
             randomSeed,
             maxElements,
             storageDataType);
-    this.names = new ArrayList<>();
+    this.index.enableStringIdentifiers();
   }
 
   private StringIndex(Index index, List<String> names) {
     this.index = index;
-    this.names = names;
+    try {
+      this.index.importNames(names.toArray(new String[0]));
+    } catch (RuntimeException e) {
+      try {
+        index.close();
+      } catch (IOException closeError) {
+        e.addSuppressed(closeError);
+      }
+      throw e;
+    }
+  }
+
+  private StringIndex(Index index) {
+    this.index = index;
+    try {
+      index.enableStringIdentifiers();
+    } catch (RuntimeException e) {
+      try {
+        index.close();
+      } catch (IOException closeError) {
+        e.addSuppressed(closeError);
+      }
+      throw e;
+    }
+  }
+
+  /** Load a Voyager 3 index, including its embedded string identifiers. */
+  public static StringIndex load(String filename) {
+    return new StringIndex(Index.load(filename));
+  }
+
+  /** Load a Voyager 3 index from a stream. */
+  public static StringIndex load(InputStream inputStream) {
+    return new StringIndex(Index.load(inputStream));
+  }
+
+  /** Save the graph and identifiers to a single file. */
+  public void save(String filename) {
+    index.saveIndex(filename);
+  }
+
+  /** Save the graph and identifiers to a single stream. The caller owns the stream. */
+  public void saveIndex(OutputStream outputStream) {
+    index.saveIndex(outputStream);
+  }
+
+  public void markDeleted(String name) {
+    index.markDeleted(index.getStringID(name));
+  }
+
+  public void unmarkDeleted(String name) {
+    index.unmarkDeleted(index.getStringID(name));
+  }
+
+  private List<String> exportNames() {
+    long[] labels = index.getIDs();
+    Arrays.sort(labels);
+    return Arrays.asList(index.getNames(labels));
   }
 
   /**
@@ -221,7 +277,7 @@ public class StringIndex implements Closeable {
       this.index.saveIndex(indexPath.toString());
 
       final OutputStream outputStream = Files.newOutputStream(namesPath);
-      TinyJson.writeStringList(this.names, outputStream);
+      TinyJson.writeStringList(exportNames(), outputStream);
 
       outputStream.flush();
       outputStream.close();
@@ -244,7 +300,7 @@ public class StringIndex implements Closeable {
     BufferedOutputStream outputStream =
         new BufferedOutputStream(indexOutputStream, 1024 * 1024 * 100);
     this.index.saveIndex(outputStream);
-    TinyJson.writeStringList(this.names, namesListOutputStream);
+    TinyJson.writeStringList(exportNames(), namesListOutputStream);
 
     outputStream.flush();
     outputStream.close();
@@ -253,9 +309,7 @@ public class StringIndex implements Closeable {
   }
 
   public void addItem(String name, float[] vector) {
-    int nextIndex = names.size();
-    index.addItem(vector, nextIndex);
-    names.add(name);
+    index.addStringItem(name, vector);
   }
 
   public void addItem(String name, List<Float> vector) {
@@ -267,18 +321,15 @@ public class StringIndex implements Closeable {
 
     List<String> newNames = new ArrayList<>(numVectors);
     float[][] primitiveVectors = new float[numVectors][index.getNumDimensions()];
-    long[] labels = new long[numVectors];
 
     Iterator<Entry<String, List<Float>>> iterator = vectors.entrySet().iterator();
     for (int i = 0; i < numVectors; i++) {
       Entry<String, List<Float>> nextVector = iterator.next();
       newNames.add(nextVector.getKey());
       assignPrimitive(nextVector.getValue(), primitiveVectors[i]);
-      labels[i] = names.size() + i;
     }
 
-    names.addAll(newNames);
-    index.addItems(primitiveVectors, labels, -1);
+    index.addStringItems(newNames.toArray(new String[0]), primitiveVectors);
   }
 
   public long getNumElements() {
@@ -286,7 +337,7 @@ public class StringIndex implements Closeable {
   }
 
   public float[] getVector(String name) {
-    return index.getVector(names.indexOf(name));
+    return index.getVector(index.getStringID(name));
   }
 
   private float[] toPrimitive(List<Float> vector) {
@@ -296,6 +347,9 @@ public class StringIndex implements Closeable {
   }
 
   private void assignPrimitive(List<Float> vector, float[] target) {
+    if (vector.size() != target.length) {
+      throw new IllegalArgumentException("Vector dimensionality does not match the index.");
+    }
     for (int i = 0; i < target.length; i++) {
       target[i] = vector.get(i);
     }
@@ -315,7 +369,9 @@ public class StringIndex implements Closeable {
    *     distance from the query vector, sorted in ascending order of distance
    */
   public QueryResults query(float[] queryVector, int numNeighbors, int ef) {
-    return convertResult(index.query(queryVector, numNeighbors, ef));
+    QueryResults result = new QueryResults(new String[numNeighbors], new float[numNeighbors]);
+    index.queryStrings(queryVector, result.names, result.distances, ef);
+    return result;
   }
 
   /**
@@ -329,36 +385,56 @@ public class StringIndex implements Closeable {
    * @return Array of QueryResults, one for each target vector
    */
   public QueryResults[] query(float[][] queryVectors, int numNeighbors, int numThreads, int ef) {
+    String[][] names = new String[queryVectors.length][numNeighbors];
+    float[][] distances = new float[queryVectors.length][numNeighbors];
+    index.queryStringsBatch(queryVectors, numNeighbors, numThreads, ef, names, distances);
     QueryResults[] results = new QueryResults[queryVectors.length];
-    Index.QueryResults[] idxResults = index.query(queryVectors, numNeighbors, numThreads, ef);
-    for (int i = 0; i < idxResults.length; i++) {
-      results[i] = this.convertResult(idxResults[i]);
+    for (int i = 0; i < results.length; i++) {
+      results[i] = new QueryResults(names[i], distances[i]);
     }
 
     return results;
   }
 
-  private QueryResults convertResult(Index.QueryResults idxResults) {
-    int numResults = idxResults.distances.length;
-    String[] resultNames = new String[numResults];
-    float[] distances = new float[numResults];
+  /**
+   * Find neighbors without creating Java strings. Names are copied verbatim from the index into one
+   * packed UTF-8 byte array; offsets delimit each name, including empty names. This path does not
+   * populate the Java string cache. Search order, distances and recall errors match {@link
+   * #query(float[], int, int)}.
+   *
+   * @param queryVector Vector to search around
+   * @param numNeighbors Number of neighbors to return
+   * @param ef Search depth in the graph
+   * @return Packed names and distances, independent of the index lifetime
+   */
+  public Utf8QueryResults queryUtf8(float[] queryVector, int numNeighbors, int ef) {
+    int[] offsets = new int[Math.addExact(numNeighbors, 1)];
+    float[] distances = new float[numNeighbors];
+    byte[] names = index.queryUtf8(queryVector, offsets, distances, ef);
+    return new Utf8QueryResults(names, offsets, distances);
+  }
 
-    for (int i = 0; i < idxResults.getLabels().length; i++) {
-      long indexId = idxResults.getLabels()[i];
-      float dist = idxResults.getDistances()[i];
-      if (indexId > Integer.MAX_VALUE || indexId < Integer.MIN_VALUE) {
-        throw new ArrayIndexOutOfBoundsException(
-            "Voyager index returned a label ("
-                + indexId
-                + ") which is out of range for StringIndex. "
-                + "This index may not be compatible with Voyager's Java bindings, or the index file may be corrupt.");
-      }
-      String name = names.get((int) indexId);
-      resultNames[i] = name;
-      distances[i] = dist;
+  /**
+   * Query multiple vectors in parallel without creating Java strings. Each target has its own
+   * packed name buffer. Search parameters match {@link #query(float[][], int, int, int)}.
+   *
+   * @param queryVectors Vectors to search around
+   * @param numNeighbors Number of neighbors per target
+   * @param numThreads Search threads; -1 uses all available CPU cores
+   * @param ef Search depth in the graph
+   * @return One packed result per target, in target order
+   */
+  public Utf8QueryResults[] queryUtf8(
+      float[][] queryVectors, int numNeighbors, int numThreads, int ef) {
+    byte[][] names = new byte[queryVectors.length][];
+    int[][] offsets = new int[queryVectors.length][Math.addExact(numNeighbors, 1)];
+    float[][] distances = new float[queryVectors.length][numNeighbors];
+    index.queryUtf8Batch(queryVectors, numNeighbors, numThreads, ef, names, offsets, distances);
+    Utf8QueryResults[] results = new Utf8QueryResults[queryVectors.length];
+    for (int i = 0; i < results.length; i++) {
+      results[i] = new Utf8QueryResults(names[i], offsets[i], distances[i]);
     }
-
-    return new QueryResults(resultNames, distances);
+    return results;
   }
 
   @Override
@@ -385,6 +461,40 @@ public class StringIndex implements Closeable {
    */
   public long getMaxElements() {
     return index.getMaxElements();
+  }
+
+  /**
+   * Names stored in one UTF-8 buffer, with a terminal offset equal to the buffer length. Name i
+   * occupies [offsets[i], offsets[i + 1]). Arrays belong to this result and remain valid after the
+   * index closes. Accessors expose the arrays without copying; callers should treat them as
+   * read-only. No protobuf dependency or native-memory lifetime management is required.
+   */
+  public static final class Utf8QueryResults {
+    private final byte[] nameBytes;
+    private final int[] nameOffsets;
+    private final float[] distances;
+
+    private Utf8QueryResults(byte[] nameBytes, int[] nameOffsets, float[] distances) {
+      this.nameBytes = nameBytes;
+      this.nameOffsets = nameOffsets;
+      this.distances = distances;
+    }
+
+    public byte[] getNameBytes() {
+      return nameBytes;
+    }
+
+    public int[] getNameOffsets() {
+      return nameOffsets;
+    }
+
+    public float[] getDistances() {
+      return distances;
+    }
+
+    public int getNumResults() {
+      return distances.length;
+    }
   }
 
   /** A wrapper class for nearest neighbor query results. */

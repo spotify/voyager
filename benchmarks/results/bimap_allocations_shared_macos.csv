@@ -1,0 +1,3 @@
+items,name_bytes,copies,live_bytes,live_blocks,string_payload_bytes,string_allocation_bytes,node_and_bucket_bytes
+100000,32,1,14471168,300002,3200000,4800000,9671168
+100000,128,1,25671168,300002,12800000,16000000,9671168

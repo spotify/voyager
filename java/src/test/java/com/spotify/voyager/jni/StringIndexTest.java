@@ -22,13 +22,16 @@ package com.spotify.voyager.jni;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.io.Resources;
 import com.spotify.voyager.jni.Index.SpaceType;
 import com.spotify.voyager.jni.Index.StorageDataType;
 import com.spotify.voyager.jni.StringIndex.QueryResults;
 import com.spotify.voyager.jni.TestUtils.Vector;
+import com.spotify.voyager.jni.exception.RecallException;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -283,5 +286,333 @@ public class StringIndexTest {
     List<Float> floats = new ArrayList<Float>(input.length);
     for (float f : input) floats.add(f);
     return floats;
+  }
+
+  @Test
+  public void itUpdatesNamesAndSavesOneFile() throws Exception {
+    String name = "東京🛰️\0café";
+    java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      index.addItem(name, new float[] {0, 0});
+      index.addItem(name, new float[] {1, 1});
+      index.addItem("", new float[] {0, 0});
+      assertThat(index.getNumElements()).isEqualTo(2);
+      assertThat(index.getVector(name)).containsExactly(1, 1);
+      assertThat(index.query(new float[] {1, 1}, 1, 10).getNames()).containsExactly(name);
+      index.saveIndex(output);
+    }
+    try (StringIndex loaded =
+        StringIndex.load(new java.io.ByteArrayInputStream(output.toByteArray()))) {
+      assertThat(loaded.getVector(name)).containsExactly(1, 1);
+      loaded.addItem(name, new float[] {0.5f, 0.5f});
+      loaded.addItem("new", new float[] {1, 0});
+      assertThat(loaded.getNumElements()).isEqualTo(3);
+      assertThat(loaded.query(new float[] {0.5f, 0.5f}, 1, 10).getNames()).containsExactly(name);
+      loaded.markDeleted(name);
+      assertThat(loaded.query(new float[] {0.5f, 0.5f}, 2, 10).getNames()).doesNotContain(name);
+      loaded.unmarkDeleted(name);
+      assertThat(loaded.query(new float[] {0.5f, 0.5f}, 1, 10).getNames()).containsExactly(name);
+    }
+  }
+
+  @Test
+  public void nativeStringQueriesMatchNumericResults() throws Exception {
+    int count = 64;
+    Random random = new Random(42);
+    float[][] vectors = TestUtils.randomVectors(() -> random, count, 16);
+    String[] names = new String[count];
+    for (int i = 0; i < count; i++) {
+      names[i] = i % 2 == 0 ? "track-" + i : "東京🛰️\0-" + i;
+    }
+    for (SpaceType space : SpaceType.values()) {
+      for (StorageDataType storage : StorageDataType.values()) {
+        try (Index index = new Index(space, 16, 20, 100, 1, count, storage)) {
+          index.enableStringIdentifiers();
+          for (int i = 0; i < count; i++) {
+            index.addStringItem(names[i], vectors[i]);
+          }
+          index.markDeleted(0);
+          String[][] batchNames = new String[count][4];
+          float[][] batchDistances = new float[count][4];
+          index.queryStringsBatch(vectors, 4, 4, 100, batchNames, batchDistances);
+          for (int i = 0; i < count; i++) {
+            Index.QueryResults expected = index.query(vectors[i], 4, 100);
+            String[] expectedNames =
+                Arrays.stream(expected.getLabels())
+                    .mapToObj(id -> names[(int) id])
+                    .toArray(String[]::new);
+            String[] actualNames = new String[4];
+            float[] actualDistances = new float[4];
+            index.queryStrings(vectors[i], actualNames, actualDistances, 100);
+            assertThat(actualNames).containsExactly(expectedNames);
+            assertThat(actualDistances).containsExactly(expected.getDistances());
+            assertThat(batchNames[i]).containsExactly(expectedNames);
+            assertThat(batchDistances[i]).containsExactly(expected.getDistances());
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  public void stringQueriesPreserveExceptions() throws Exception {
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      index.addItem("only", new float[] {1, 0});
+      assertThrows(RecallException.class, () -> index.query(new float[] {1, 0}, 2, 10));
+      assertThrows(RecallException.class, () -> index.query(new float[][] {{1, 0}}, 2, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.query(new float[] {1}, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.query(new float[][] {{1}}, 1, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.query(new float[] {1, 0}, 2, 1));
+      assertThat(index.query(new float[] {1, 0}, 1, 10).getNames()).containsExactly("only");
+    }
+  }
+
+  @Test
+  public void largeStringQueryBatchPreservesNames() throws Exception {
+    String[] names = {"ascii", "nul\0end", "東京🛰️"};
+    float[][] vectors = {{0, 0}, {1, 0}, {0, 1}};
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      for (int i = 0; i < names.length; i++) {
+        index.addItem(names[i], vectors[i]);
+      }
+      float[][] queries = new float[2048][];
+      for (int i = 0; i < queries.length; i++) {
+        queries[i] = vectors[i % vectors.length];
+      }
+      QueryResults[] results = index.query(queries, 1, 4, 10);
+      for (int i = 0; i < results.length; i++) {
+        assertThat(results[i].getNames()).containsExactly(names[i % names.length]);
+        assertThat(results[i].getDistances()).containsExactly(0);
+      }
+    }
+  }
+
+  @Test
+  public void utf8QueriesMatchStringQueriesAcrossMetricsAndStorage() throws Exception {
+    String[] names = {"", "ascii", "nul\0end", "東京🛰️", "caf\u00e9", "deleted"};
+    Random random = new Random(421);
+    float[][] vectors = TestUtils.randomVectors(() -> random, names.length, 16);
+    for (SpaceType space : SpaceType.values()) {
+      for (StorageDataType storage : StorageDataType.values()) {
+        try (StringIndex index = new StringIndex(space, 16, 20, 100, 1, names.length, storage)) {
+          for (int i = 0; i < names.length; i++) {
+            index.addItem(names[i], vectors[i]);
+          }
+          index.markDeleted("deleted");
+          StringIndex.Utf8QueryResults[] batch = index.queryUtf8(vectors, 5, 4, 100);
+          for (int i = 0; i < vectors.length; i++) {
+            QueryResults expected = index.query(vectors[i], 5, 100);
+            assertUtf8Results(expected, index.queryUtf8(vectors[i], 5, 100));
+            assertUtf8Results(expected, batch[i]);
+          }
+        }
+      }
+    }
+  }
+
+  private static void assertUtf8Results(
+      QueryResults expected, StringIndex.Utf8QueryResults actual) {
+    assertThat(actual.getNumResults()).isEqualTo(expected.getNumResults());
+    assertThat(actual.getDistances()).containsExactly(expected.getDistances());
+    int[] offsets = actual.getNameOffsets();
+    byte[] bytes = actual.getNameBytes();
+    assertThat(offsets.length).isEqualTo(expected.getNumResults() + 1);
+    assertThat(offsets[0]).isZero();
+    assertThat(offsets[offsets.length - 1]).isEqualTo(bytes.length);
+    for (int i = 0; i < expected.getNumResults(); i++) {
+      assertThat(Arrays.copyOfRange(bytes, offsets[i], offsets[i + 1]))
+          .containsExactly(expected.getName(i).getBytes(StandardCharsets.UTF_8));
+    }
+  }
+
+  @Test
+  public void utf8ResultsSurviveUpdatesReloadAndClose() throws Exception {
+    String longName = new String(new char[4096]).replace('\0', 'x') + "\0🛰️";
+    StringIndex.Utf8QueryResults result;
+    java.io.ByteArrayOutputStream saved = new java.io.ByteArrayOutputStream();
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      index.addItem(longName, new float[] {1, 0});
+      result = index.queryUtf8(new float[] {1, 0}, 1, 10);
+      index.addItem(longName, new float[] {0, 1});
+      index.saveIndex(saved);
+    }
+    assertThat(result.getNameBytes()).containsExactly(longName.getBytes(StandardCharsets.UTF_8));
+    assertThat(result.getDistances()).containsExactly(0);
+    try (StringIndex loaded =
+        StringIndex.load(new java.io.ByteArrayInputStream(saved.toByteArray()))) {
+      float[][] vectors = new float[2048][];
+      Arrays.fill(vectors, new float[] {0, 1});
+      for (StringIndex.Utf8QueryResults row : loaded.queryUtf8(vectors, 1, 4, 10)) {
+        assertThat(row.getNameBytes()).containsExactly(longName.getBytes(StandardCharsets.UTF_8));
+        assertThat(row.getDistances()).containsExactly(0);
+      }
+    }
+  }
+
+  @Test
+  public void utf8QueriesPreserveErrors() throws Exception {
+    StringIndex index = new StringIndex(SpaceType.Euclidean, 2);
+    try {
+      index.addItem("only", new float[] {1, 0});
+      assertThrows(RecallException.class, () -> index.queryUtf8(new float[] {1, 0}, 2, 10));
+      assertThrows(RecallException.class, () -> index.queryUtf8(new float[][] {{1, 0}}, 2, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.queryUtf8(new float[] {1}, 1, 10));
+      assertThrows(RuntimeException.class, () -> index.queryUtf8(new float[][] {{1}}, 1, 1, 10));
+    } finally {
+      index.close();
+    }
+    assertThrows(RuntimeException.class, () -> index.queryUtf8(new float[] {1, 0}, 1, 10));
+  }
+
+  @Test
+  public void cachedNamesSurviveEvictionUpdatesAndReload() throws Exception {
+    java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      // Labels 0 and 4096 collide in the bounded JNI cache.
+      for (int i = 0; i <= 4096; i++) {
+        index.addItem("東京\0-" + i, new float[] {i, 0});
+      }
+      index.query(new float[] {0, 0}, 1, 100);
+      String first = index.query(new float[] {0, 0}, 1, 100).getNames()[0];
+      assertThat(index.query(new float[] {0, 0}, 1, 100).getNames()[0]).isSameAs(first);
+      assertThat(index.query(new float[] {4096, 0}, 1, 100).getNames())
+          .containsExactly("東京\0-4096");
+      index.query(new float[] {4096, 0}, 1, 100);
+      String recreated = index.query(new float[] {0, 0}, 1, 100).getNames()[0];
+      assertThat(recreated).isEqualTo(first).isNotSameAs(first);
+      // Eviction must not invalidate names already returned to Java.
+      assertThat(first).isEqualTo("東京\0-0");
+      index.markDeleted(first);
+      assertThat(index.query(new float[] {0, 0}, 1, 100).getNames()).containsExactly("東京\0-1");
+      index.unmarkDeleted(first);
+      index.addItem(first, new float[] {-1, 0});
+      assertThat(index.query(new float[] {-1, 0}, 1, 100).getNames()).containsExactly(first);
+      index.saveIndex(output);
+    }
+    try (StringIndex loaded =
+        StringIndex.load(new java.io.ByteArrayInputStream(output.toByteArray()))) {
+      assertThat(loaded.query(new float[] {-1, 0}, 1, 100).getNames()).containsExactly("東京\0-0");
+    }
+  }
+
+  @Test
+  public void cachedNamesFollowReassignedLabels() throws Exception {
+    try (Index index = new Index(SpaceType.Euclidean, 2)) {
+      index.enableStringIdentifiers();
+      index.addStringItem("before", new float[] {1, 0});
+      String[] names = new String[1];
+      index.queryStrings(new float[] {1, 0}, names, new float[1], 10);
+      assertThat(names).containsExactly("before");
+      index.queryStrings(new float[] {1, 0}, names, new float[1], 10);
+      index.importNames(new String[] {"after\0🛰️"});
+      index.queryStrings(new float[] {1, 0}, names, new float[1], 10);
+      assertThat(names).containsExactly("after\0🛰️");
+    }
+  }
+
+  @Test
+  public void cachedNamesAreSafeAcrossConcurrentQueriesAndClose() throws Exception {
+    StringIndex index = new StringIndex(SpaceType.Euclidean, 2);
+    java.util.concurrent.ExecutorService pool =
+        java.util.concurrent.Executors.newFixedThreadPool(4);
+    try {
+      index.addItem("東京\0🛰️", new float[] {1, 0});
+      java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(4);
+      List<java.util.concurrent.Future<?>> futures = new ArrayList<>();
+      for (int thread = 0; thread < 4; thread++) {
+        futures.add(
+            pool.submit(
+                () -> {
+                  assertThat(index.query(new float[] {1, 0}, 1, 10).getNames())
+                      .containsExactly("東京\0🛰️");
+                  ready.countDown();
+                  for (int i = 0; i < 10000; i++) {
+                    try {
+                      assertThat(index.query(new float[] {1, 0}, 1, 10).getNames())
+                          .containsExactly("東京\0🛰️");
+                    } catch (RuntimeException closed) {
+                      assertThat(closed).hasMessageContaining("closed");
+                      return;
+                    }
+                  }
+                }));
+      }
+      assertThat(ready.await(10, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+      index.close();
+      for (java.util.concurrent.Future<?> future : futures) {
+        future.get(10, java.util.concurrent.TimeUnit.SECONDS);
+      }
+      assertThrows(RuntimeException.class, () -> index.query(new float[] {1, 0}, 1, 10));
+    } finally {
+      pool.shutdownNow();
+      index.close();
+    }
+  }
+
+  @Test
+  public void itPreservesIdentifierEncoding() throws Exception {
+    String[] names = {
+      "",
+      "spotify:track:0123456789abcdefghijkL",
+      "\u0001\u007f",
+      "\0",
+      "\0start",
+      "middle\0end",
+      "trailing\0",
+      "\u0080\u07ff\u0800\ud7ff\ue000\uffff",
+      "\ud800\udc00\udbff\udfff",
+      "東京🛰️\0café",
+      "unpaired-high-\ud800",
+      "unpaired-low-\udc00",
+      new String(new char[4096]).replace('\0', 'x')
+    };
+    for (String name : names) {
+      // Preserve the Java UTF-8 encoder's replacement of unpaired surrogates.
+      String expected = new String(name.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+      java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+      try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+        index.addItem(name, new float[] {1, 0});
+        assertThat(index.query(new float[] {1, 0}, 1, 10).getNames()).containsExactly(expected);
+        assertThat(index.query(new float[] {1, 0}, 1, 10).getNames()).containsExactly(expected);
+        assertThat(index.getVector(name)).containsExactly(1, 0);
+        index.saveIndex(output);
+      }
+      try (StringIndex loaded =
+          StringIndex.load(new java.io.ByteArrayInputStream(output.toByteArray()))) {
+        assertThat(loaded.query(new float[] {1, 0}, 1, 10).getNames()).containsExactly(expected);
+      }
+    }
+  }
+
+  @Test
+  public void itUpdatesNamesInBatch() throws Exception {
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      index.addItem("a", new float[] {0, 0});
+      java.util.Map<String, List<Float>> vectors = new java.util.LinkedHashMap<>();
+      vectors.put("a", java.util.Arrays.asList(1f, 1f));
+      vectors.put("b", java.util.Arrays.asList(0f, 0f));
+      index.addItems(vectors);
+      assertThat(index.getNumElements()).isEqualTo(2);
+      assertThat(index.getVector("a")).containsExactly(1, 1);
+    }
+  }
+
+  @Test
+  public void itMigratesV2NamesIntoTheBinary() throws Exception {
+    java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+    try (StringIndex legacy =
+        StringIndex.load(
+            Resources.getResource(EXPECTED_INDEX_V2_FILE_NAME).openStream(),
+            Resources.getResource(EXPECTED_NAME_V2_FILE_NAME).openStream())) {
+      legacy.saveIndex(output);
+    }
+    try (StringIndex loaded =
+        StringIndex.load(new java.io.ByteArrayInputStream(output.toByteArray()))) {
+      assertThat(loaded.query(TestUtils.TEST_VECTOR, 2, 100).getNames())
+          .containsExactly("my-vector-78", "my-vector-1");
+      long count = loaded.getNumElements();
+      loaded.addItem("my-vector-78", TestUtils.TEST_VECTOR);
+      assertThat(loaded.getNumElements()).isEqualTo(count);
+    }
   }
 }
