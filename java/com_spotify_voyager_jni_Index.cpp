@@ -25,12 +25,90 @@
 #include <Index.h>
 #include <TypedIndex.h>
 
+#include <algorithm>
 #include <cstring>
 #include <exception>
 #include <iostream>
 #include <thread>
 #include <type_traits>
 #include <vector>
+
+namespace {
+// Only bootstrap classes are cached. Global references keep the class and
+// charset alive across calls and threads until this native library is unloaded.
+struct IdentifierEncoding {
+  jclass stringClass = nullptr;
+  jobject utf8 = nullptr;
+  jmethodID getBytes = nullptr;
+  jmethodID constructor = nullptr;
+
+  void release(JNIEnv *env) {
+    if (stringClass)
+      env->DeleteGlobalRef(stringClass);
+    if (utf8)
+      env->DeleteGlobalRef(utf8);
+    *this = {};
+  }
+};
+
+IdentifierEncoding identifierEncoding;
+
+jobject utf8Charset(JNIEnv *env) {
+  auto cls = env->FindClass("java/nio/charset/StandardCharsets");
+  if (!cls)
+    return nullptr;
+  auto field =
+      env->GetStaticFieldID(cls, "UTF_8", "Ljava/nio/charset/Charset;");
+  auto charset = field ? env->GetStaticObjectField(cls, field) : nullptr;
+  env->DeleteLocalRef(cls);
+  return charset;
+}
+
+bool initializeIdentifierEncoding(JNIEnv *env) {
+  auto cls = env->FindClass("java/lang/String");
+  if (!cls)
+    return false;
+  identifierEncoding.stringClass = static_cast<jclass>(env->NewGlobalRef(cls));
+  env->DeleteLocalRef(cls);
+  if (!identifierEncoding.stringClass)
+    return false;
+
+  identifierEncoding.getBytes =
+      env->GetMethodID(identifierEncoding.stringClass, "getBytes",
+                       "(Ljava/nio/charset/Charset;)[B");
+  if (!identifierEncoding.getBytes)
+    return false;
+  identifierEncoding.constructor =
+      env->GetMethodID(identifierEncoding.stringClass, "<init>",
+                       "([BLjava/nio/charset/Charset;)V");
+  if (!identifierEncoding.constructor)
+    return false;
+
+  auto charset = utf8Charset(env);
+  if (!charset)
+    return false;
+  identifierEncoding.utf8 = env->NewGlobalRef(charset);
+  env->DeleteLocalRef(charset);
+  return identifierEncoding.utf8 != nullptr;
+}
+} // namespace
+
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
+  JNIEnv *env = nullptr;
+  if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_8) != JNI_OK)
+    return JNI_ERR;
+  if (!initializeIdentifierEncoding(env)) {
+    identifierEncoding.release(env);
+    return JNI_ERR;
+  }
+  return JNI_VERSION_1_8;
+}
+
+extern "C" JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *) {
+  JNIEnv *env = nullptr;
+  if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_8) == JNI_OK)
+    identifierEncoding.release(env);
+}
 
 /**
  * Given a Java object, return the field ID for the "native handle" property
@@ -988,36 +1066,38 @@ void Java_com_spotify_voyager_jni_Index_nativeDestructor(JNIEnv *env,
 std::string identifierFromJava(JNIEnv *env, jstring value) {
   if (!value)
     throw std::invalid_argument("String identifiers cannot be null.");
-  auto cls = env->FindClass("java/lang/String");
-  auto encoding = env->NewStringUTF("UTF-8");
   auto bytes = static_cast<jbyteArray>(env->CallObjectMethod(
-      value, env->GetMethodID(cls, "getBytes", "(Ljava/lang/String;)[B"),
-      encoding));
-  if (!bytes)
+      value, identifierEncoding.getBytes, identifierEncoding.utf8));
+  if (env->ExceptionCheck() || !bytes)
     throw std::runtime_error("Unable to encode string identifier.");
   std::string result(env->GetArrayLength(bytes), '\0');
   env->GetByteArrayRegion(bytes, 0, result.size(),
                           reinterpret_cast<jbyte *>(result.data()));
   env->DeleteLocalRef(bytes);
-  env->DeleteLocalRef(encoding);
-  env->DeleteLocalRef(cls);
   return result;
 }
 
 jstring identifierToJava(JNIEnv *env, const std::string &value) {
+  // Standard and JNI modified UTF-8 agree for non-NUL ASCII. This common path
+  // needs only the returned Java string, with no intermediate Java byte array.
+  if (std::all_of(value.begin(), value.end(),
+                  [](unsigned char c) { return c > 0 && c < 0x80; }))
+    return env->NewStringUTF(value.c_str());
+
+  // Keep Java's decoder for Unicode, embedded NULs and malformed input,
+  // including its existing replacement-character behavior.
   auto bytes = env->NewByteArray(value.size());
   if (!bytes)
     throw std::runtime_error("Unable to allocate string identifier.");
   env->SetByteArrayRegion(bytes, 0, value.size(),
                           reinterpret_cast<const jbyte *>(value.data()));
-  auto cls = env->FindClass("java/lang/String");
-  auto encoding = env->NewStringUTF("UTF-8");
   auto result = static_cast<jstring>(env->NewObject(
-      cls, env->GetMethodID(cls, "<init>", "([BLjava/lang/String;)V"), bytes,
-      encoding));
+      identifierEncoding.stringClass, identifierEncoding.constructor, bytes,
+      identifierEncoding.utf8));
+  bool failed = env->ExceptionCheck();
   env->DeleteLocalRef(bytes);
-  env->DeleteLocalRef(encoding);
-  env->DeleteLocalRef(cls);
+  if (failed || !result)
+    throw std::runtime_error("Unable to decode string identifier.");
   return result;
 }
 
@@ -1110,12 +1190,14 @@ Java_com_spotify_voyager_jni_Index_getNames(JNIEnv *env, jobject self,
   try {
     auto values =
         getHandle<Index>(env, self)->getNames(toUnsignedStdVector(env, labels));
-    auto result = env->NewObjectArray(
-        values.size(), env->FindClass("java/lang/String"), nullptr);
+    auto result = env->NewObjectArray(values.size(),
+                                      identifierEncoding.stringClass, nullptr);
     if (!result)
       throw std::runtime_error("Unable to allocate string results.");
     for (size_t i = 0; i < values.size(); ++i) {
       auto value = identifierToJava(env, values[i]);
+      if (!value)
+        throw std::runtime_error("Unable to allocate string identifier.");
       env->SetObjectArrayElement(result, i, value);
       env->DeleteLocalRef(value);
     }

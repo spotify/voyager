@@ -29,6 +29,7 @@ import com.spotify.voyager.jni.Index.StorageDataType;
 import com.spotify.voyager.jni.StringIndex.QueryResults;
 import com.spotify.voyager.jni.TestUtils.Vector;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -309,6 +310,40 @@ public class StringIndexTest {
       assertThat(loaded.query(new float[] {0.5f, 0.5f}, 2, 10).getNames()).doesNotContain(name);
       loaded.unmarkDeleted(name);
       assertThat(loaded.query(new float[] {0.5f, 0.5f}, 1, 10).getNames()).containsExactly(name);
+    }
+  }
+
+  @Test
+  public void itPreservesIdentifierEncoding() throws Exception {
+    String[] names = {
+      "",
+      "spotify:track:0123456789abcdefghijkL",
+      "\u0001\u007f",
+      "\0",
+      "\0start",
+      "middle\0end",
+      "trailing\0",
+      "\u0080\u07ff\u0800\ud7ff\ue000\uffff",
+      "\ud800\udc00\udbff\udfff",
+      "東京🛰️\0café",
+      "unpaired-high-\ud800",
+      "unpaired-low-\udc00",
+      new String(new char[4096]).replace('\0', 'x')
+    };
+    for (String name : names) {
+      // Preserve the Java UTF-8 encoder's replacement of unpaired surrogates.
+      String expected = new String(name.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+      java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+      try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+        index.addItem(name, new float[] {1, 0});
+        assertThat(index.query(new float[] {1, 0}, 1, 10).getNames()).containsExactly(expected);
+        assertThat(index.getVector(name)).containsExactly(1, 0);
+        index.saveIndex(output);
+      }
+      try (StringIndex loaded =
+          StringIndex.load(new java.io.ByteArrayInputStream(output.toByteArray()))) {
+        assertThat(loaded.query(new float[] {1, 0}, 1, 10).getNames()).containsExactly(expected);
+      }
     }
   }
 
