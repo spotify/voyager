@@ -388,6 +388,91 @@ public class StringIndexTest {
   }
 
   @Test
+  public void cachedNamesSurviveEvictionUpdatesAndReload() throws Exception {
+    java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+    try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
+      // Labels 0 and 4096 collide in the bounded JNI cache.
+      for (int i = 0; i <= 4096; i++) {
+        index.addItem("東京\0-" + i, new float[] {i, 0});
+      }
+      index.query(new float[] {0, 0}, 1, 100);
+      String first = index.query(new float[] {0, 0}, 1, 100).getNames()[0];
+      assertThat(index.query(new float[] {0, 0}, 1, 100).getNames()[0]).isSameAs(first);
+      assertThat(index.query(new float[] {4096, 0}, 1, 100).getNames())
+          .containsExactly("東京\0-4096");
+      index.query(new float[] {4096, 0}, 1, 100);
+      String recreated = index.query(new float[] {0, 0}, 1, 100).getNames()[0];
+      assertThat(recreated).isEqualTo(first).isNotSameAs(first);
+      // Eviction must not invalidate names already returned to Java.
+      assertThat(first).isEqualTo("東京\0-0");
+      index.markDeleted(first);
+      assertThat(index.query(new float[] {0, 0}, 1, 100).getNames()).containsExactly("東京\0-1");
+      index.unmarkDeleted(first);
+      index.addItem(first, new float[] {-1, 0});
+      assertThat(index.query(new float[] {-1, 0}, 1, 100).getNames()).containsExactly(first);
+      index.saveIndex(output);
+    }
+    try (StringIndex loaded =
+        StringIndex.load(new java.io.ByteArrayInputStream(output.toByteArray()))) {
+      assertThat(loaded.query(new float[] {-1, 0}, 1, 100).getNames()).containsExactly("東京\0-0");
+    }
+  }
+
+  @Test
+  public void cachedNamesFollowReassignedLabels() throws Exception {
+    try (Index index = new Index(SpaceType.Euclidean, 2)) {
+      index.enableStringIdentifiers();
+      index.addStringItem("before", new float[] {1, 0});
+      String[] names = new String[1];
+      index.queryStrings(new float[] {1, 0}, names, new float[1], 10);
+      assertThat(names).containsExactly("before");
+      index.queryStrings(new float[] {1, 0}, names, new float[1], 10);
+      index.importNames(new String[] {"after\0🛰️"});
+      index.queryStrings(new float[] {1, 0}, names, new float[1], 10);
+      assertThat(names).containsExactly("after\0🛰️");
+    }
+  }
+
+  @Test
+  public void cachedNamesAreSafeAcrossConcurrentQueriesAndClose() throws Exception {
+    StringIndex index = new StringIndex(SpaceType.Euclidean, 2);
+    java.util.concurrent.ExecutorService pool =
+        java.util.concurrent.Executors.newFixedThreadPool(4);
+    try {
+      index.addItem("東京\0🛰️", new float[] {1, 0});
+      java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(4);
+      List<java.util.concurrent.Future<?>> futures = new ArrayList<>();
+      for (int thread = 0; thread < 4; thread++) {
+        futures.add(
+            pool.submit(
+                () -> {
+                  assertThat(index.query(new float[] {1, 0}, 1, 10).getNames())
+                      .containsExactly("東京\0🛰️");
+                  ready.countDown();
+                  for (int i = 0; i < 10000; i++) {
+                    try {
+                      assertThat(index.query(new float[] {1, 0}, 1, 10).getNames())
+                          .containsExactly("東京\0🛰️");
+                    } catch (RuntimeException closed) {
+                      assertThat(closed).hasMessageContaining("closed");
+                      return;
+                    }
+                  }
+                }));
+      }
+      assertThat(ready.await(10, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+      index.close();
+      for (java.util.concurrent.Future<?> future : futures) {
+        future.get(10, java.util.concurrent.TimeUnit.SECONDS);
+      }
+      assertThrows(RuntimeException.class, () -> index.query(new float[] {1, 0}, 1, 10));
+    } finally {
+      pool.shutdownNow();
+      index.close();
+    }
+  }
+
+  @Test
   public void itPreservesIdentifierEncoding() throws Exception {
     String[] names = {
       "",
@@ -410,6 +495,7 @@ public class StringIndexTest {
       java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
       try (StringIndex index = new StringIndex(SpaceType.Euclidean, 2)) {
         index.addItem(name, new float[] {1, 0});
+        assertThat(index.query(new float[] {1, 0}, 1, 10).getNames()).containsExactly(expected);
         assertThat(index.query(new float[] {1, 0}, 1, 10).getNames()).containsExactly(expected);
         assertThat(index.getVector(name)).containsExactly(1, 0);
         index.saveIndex(output);

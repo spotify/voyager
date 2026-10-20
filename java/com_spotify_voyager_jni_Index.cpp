@@ -29,6 +29,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <mutex>
 #include <thread>
 #include <type_traits>
 #include <vector>
@@ -120,52 +121,100 @@ jfieldID getHandleFieldID(JNIEnv *env, jobject obj) {
   return env->GetFieldID(c, "nativeHandle", "J");
 }
 
-template <typename T>
-std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj,
-                             bool allow_missing = false) {
-  env->MonitorEnter(obj);
-  jlong handle = env->GetLongField(obj, getHandleFieldID(env, obj));
-  env->MonitorExit(obj);
+// Direct-mapped and bounded in both entry count and identifier length. Numeric
+// indexes allocate no slots. Names are compared on hits so label reassignment
+// cannot return a stale value. Long identifiers bypass the cache.
+class JavaNames {
+  struct Entry {
+    std::string name;
+    jstring value = nullptr;
+    hnswlib::labeltype candidate = 0;
+    bool hasCandidate = false;
+    bool admit(hnswlib::labeltype label) {
+      bool repeated = hasCandidate && candidate == label;
+      candidate = label;
+      hasCandidate = true;
+      return repeated;
+    }
+    void replace(JNIEnv *env, const std::string &newName);
+  };
+  static constexpr size_t capacity = 4096;
+  static constexpr size_t maxNameBytes = 256;
+  JavaVM *vm;
+  std::vector<Entry> entries;
 
-  // Yes, we're storing a pointer to a shared pointer on a Java object.
-  // A bit strange, but totally okay to ensure that we still get shared_ptr
-  // semantics while storing a single Long value.
-  std::shared_ptr<T> *pointer = reinterpret_cast<std::shared_ptr<T> *>(handle);
-
-  if (!allow_missing && !pointer) {
-    throw std::runtime_error(
-        "This Voyager index has been closed and can no longer be used.");
+public:
+  std::mutex mutex;
+  explicit JavaNames(JNIEnv *env) { env->GetJavaVM(&vm); }
+  ~JavaNames() {
+    if (entries.empty())
+      return;
+    JNIEnv *env = nullptr;
+    bool attached = vm->GetEnv(reinterpret_cast<void **>(&env),
+                               JNI_VERSION_1_8) == JNI_EDETACHED;
+    if (attached && vm->AttachCurrentThread(reinterpret_cast<void **>(&env),
+                                            nullptr) != JNI_OK)
+      return;
+    if (!env)
+      return;
+    for (auto &entry : entries)
+      if (entry.value)
+        env->DeleteGlobalRef(entry.value);
+    if (attached)
+      vm->DetachCurrentThread();
   }
 
-  // Return a copy of this shared pointer, thereby ensuring that it remains
-  // alive until the shared_ptr goes out of scope.
-  return *pointer;
+  // Caller holds mutex until the returned reference has been used.
+  void setResult(JNIEnv *env, jobjectArray results, jsize offset,
+                 hnswlib::labeltype label, const std::string &name);
+};
+
+template <typename T> struct JavaHandle {
+  std::unique_ptr<T> index;
+  JavaNames names;
+  JavaHandle(JNIEnv *env, std::unique_ptr<T> index)
+      : index(std::move(index)), names(env) {}
+};
+
+template <typename T>
+std::shared_ptr<JavaHandle<T>> getJavaHandle(JNIEnv *env, jobject obj) {
+  env->MonitorEnter(obj);
+  auto pointer = reinterpret_cast<std::shared_ptr<JavaHandle<T>> *>(
+      env->GetLongField(obj, getHandleFieldID(env, obj)));
+  // Copy while holding the monitor: close may otherwise delete the pointer
+  // before this query has acquired shared ownership.
+  auto handle = pointer ? *pointer : std::shared_ptr<JavaHandle<T>>{};
+  env->MonitorExit(obj);
+  if (!handle)
+    throw std::runtime_error(
+        "This Voyager index has been closed and can no longer be used.");
+  return handle;
+}
+
+template <typename T> std::shared_ptr<T> getHandle(JNIEnv *env, jobject obj) {
+  auto handle = getJavaHandle<T>(env, obj);
+  return std::shared_ptr<T>(handle, handle->index.get());
 }
 
 template <typename T> void setHandle(JNIEnv *env, jobject obj, T *t) {
-  std::shared_ptr<T> *sharedPointerForJava = new std::shared_ptr<T>(t);
+  std::unique_ptr<T> index(t);
+  auto handle = std::make_shared<JavaHandle<T>>(env, std::move(index));
+  auto pointer = new std::shared_ptr<JavaHandle<T>>(std::move(handle));
   env->MonitorEnter(obj);
   env->SetLongField(obj, getHandleFieldID(env, obj),
-                    reinterpret_cast<jlong>(sharedPointerForJava));
+                    reinterpret_cast<jlong>(pointer));
   env->MonitorExit(obj);
 }
 
 template <typename T> void deleteHandle(JNIEnv *env, jobject obj) {
   env->MonitorEnter(obj);
-  jlong handle = env->GetLongField(obj, getHandleFieldID(env, obj));
+  auto field = getHandleFieldID(env, obj);
+  auto pointer = reinterpret_cast<std::shared_ptr<JavaHandle<T>> *>(
+      env->GetLongField(obj, field));
+  env->SetLongField(obj, field, 0);
   env->MonitorExit(obj);
-
-  if (handle == 0)
-    return;
-
-  std::shared_ptr<T> *pointer = reinterpret_cast<std::shared_ptr<T> *>(handle);
-  // Note: This _may_ trigger the destructor of T, but if any other threads have
-  // thread-local copies of this shared_ptr, the destructor will be triggered
-  // on the last thread that has one of these shared_ptrs.
-  env->MonitorEnter(obj);
+  // The last in-flight call releases the index and cached global references.
   delete pointer;
-  env->SetLongField(obj, getHandleFieldID(env, obj), 0);
-  env->MonitorExit(obj);
 }
 
 std::string toString(JNIEnv *env, jstring js) {
@@ -1208,20 +1257,64 @@ Java_com_spotify_voyager_jni_Index_getNames(JNIEnv *env, jobject self,
   }
 }
 
-void fillStringQueryResults(JNIEnv *env, const Index &index,
+void JavaNames::Entry::replace(JNIEnv *env, const std::string &newName) {
+  // Copy before allocating JNI references, so bad_alloc cannot leak them.
+  std::string key(newName);
+  auto local = identifierToJava(env, newName);
+  if (!local)
+    throw std::runtime_error("Unable to allocate string identifier.");
+  auto global = static_cast<jstring>(env->NewGlobalRef(local));
+  env->DeleteLocalRef(local);
+  if (!global)
+    throw std::runtime_error("Unable to cache string identifier.");
+  if (value)
+    env->DeleteGlobalRef(value);
+  name.swap(key);
+  value = global;
+}
+
+void setUncachedName(JNIEnv *env, jobjectArray results, jsize offset,
+                     const std::string &name) {
+  auto value = identifierToJava(env, name);
+  if (!value)
+    throw std::runtime_error("Unable to allocate string identifier.");
+  env->SetObjectArrayElement(results, offset, value);
+  env->DeleteLocalRef(value);
+}
+
+void JavaNames::setResult(JNIEnv *env, jobjectArray results, jsize offset,
+                          hnswlib::labeltype label, const std::string &name) {
+  if (name.size() > maxNameBytes) {
+    setUncachedName(env, results, offset, name);
+    return;
+  }
+  if (entries.empty())
+    entries.resize(capacity);
+  auto &entry = entries[label % capacity];
+  if (!entry.value || entry.name != name) {
+    // Admit after two consecutive misses for this label in its slot. Streaming
+    // results should not churn global JNI references or displace reused names.
+    if (!entry.admit(label)) {
+      setUncachedName(env, results, offset, name);
+      return;
+    }
+    entry.replace(env, name);
+  }
+  env->SetObjectArrayElement(results, offset, entry.value);
+}
+
+void fillStringQueryResults(JNIEnv *env, JavaHandle<Index> &handle,
                             const hnswlib::labeltype *labels,
                             const float *distances, jsize count,
                             jobjectArray javaNames, jfloatArray javaDistances) {
   if (env->GetArrayLength(javaNames) != count ||
       env->GetArrayLength(javaDistances) != count)
     throw std::invalid_argument("Query result arrays have incorrect lengths.");
-  index.visitNames(labels, count, [&](size_t i, const std::string &name) {
-    auto value = identifierToJava(env, name);
-    if (!value)
-      throw std::runtime_error("Unable to allocate string identifier.");
-    env->SetObjectArrayElement(javaNames, i, value);
-    env->DeleteLocalRef(value);
-  });
+  std::lock_guard<std::mutex> lock(handle.names.mutex);
+  handle.index->visitNames(
+      labels, count, [&](size_t i, const std::string &name) {
+        handle.names.setResult(env, javaNames, i, labels[i], name);
+      });
   env->SetFloatArrayRegion(javaDistances, 0, count, distances);
 }
 
@@ -1243,10 +1336,11 @@ Java_com_spotify_voyager_jni_Index_queryStrings(JNIEnv *env, jobject self,
                                                 jfloatArray javaDistances,
                                                 jlong queryEf) {
   try {
-    auto index = getHandle<Index>(env, self);
+    auto handle = getJavaHandle<Index>(env, self);
+    auto &index = handle->index;
     auto count = env->GetArrayLength(javaNames);
     auto result = index->query(toStdVector(env, queryVector), count, queryEf);
-    fillStringQueryResults(env, *index, std::get<0>(result).data(),
+    fillStringQueryResults(env, *handle, std::get<0>(result).data(),
                            std::get<1>(result).data(), count, javaNames,
                            javaDistances);
   } catch (const std::exception &error) {
@@ -1260,7 +1354,8 @@ Java_com_spotify_voyager_jni_Index_queryStringsBatch(
     jint numThreads, jlong queryEf, jobjectArray javaNames,
     jobjectArray javaDistances) {
   try {
-    auto index = getHandle<Index>(env, self);
+    auto handle = getJavaHandle<Index>(env, self);
+    auto &index = handle->index;
     auto rows = env->GetArrayLength(queryVectors);
     if (env->GetArrayLength(javaNames) != rows ||
         env->GetArrayLength(javaDistances) != rows)
@@ -1273,7 +1368,7 @@ Java_com_spotify_voyager_jni_Index_queryStringsBatch(
           static_cast<jobjectArray>(env->GetObjectArrayElement(javaNames, i));
       auto distances = static_cast<jfloatArray>(
           env->GetObjectArrayElement(javaDistances, i));
-      fillStringQueryResults(env, *index, std::get<0>(result)[i],
+      fillStringQueryResults(env, *handle, std::get<0>(result)[i],
                              std::get<1>(result)[i], numNeighbors, names,
                              distances);
       env->DeleteLocalRef(names);
