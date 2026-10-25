@@ -22,7 +22,7 @@ To compile Voyager from scratch, the following packages will need to be installe
 
 ### Building Voyager
 #### Building Python
-There are some nuances to building the Voyager python code.  Please read on for more information.
+There are some nuances to building the Voyager Python code.  Please read on for more information.
 
 For basic building, you should be able to simply run the following commands:
 ```shell
@@ -64,6 +64,7 @@ mvn package
 
 #### Building C++
 To build the C++ library with `cmake`, use the following commands:
+
 ```shell
 cd cpp
 git submodule update --init --recursive
@@ -74,7 +75,7 @@ make build
 ### Python Tests
 We use `tox` for testing - running tests from end-to-end should be as simple as:
 
-```
+```shell
 cd python
 pip3 install tox
 tox
@@ -85,14 +86,14 @@ tox
 We use `airspeed-velocity` for benchmarking - running all benchmarks to compare latest 
 commit against previous should be as simple as:
 
-```
+```shell
 pip3 install asv
 asv continuous --sort name --no-only-changed HEAD HEAD~1
 ```
 
 To compare current commit against `main` branch:
 
-```
+```shell
 pip3 install asv
 asv continuous --sort name --no-only-changed HEAD main
 ```
@@ -109,7 +110,9 @@ mvn verify
 ```
 
 ### C++ Tests
-To run the C++ tests, use the following commands:
+
+To run the C++ tests use the following commands:
+
 ```shell
 cd cpp
 git submodule update --init --recursive
@@ -130,7 +133,8 @@ tox -e format
 ```
 
 ### C++
-If you are working on any C++ code throughout the repo, ensure you have `clang-format` (version 16) installed, and then use clang-format to handle C++ formatting:
+If you are working on any C++ code throughout the repo, ensure you have `clang-format` (version 16) installed, and then use `clang-format` to handle C++ formatting:
+
 ```bash
 cd cpp
 cmake .
