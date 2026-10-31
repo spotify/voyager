@@ -71,6 +71,17 @@ You can find the latest version on [Voyager's Releases page](https://github.com/
 | Windows   | Python   | 3.13    | ✅       | ❌       |
 | Windows   | Java     | 8-16+   | ✅       | ❌       |
 
+#### Python support policy
+
+The Python versions and platforms listed above are officially supported. Release
+wheels are tested on each listed combination before publication.
+
+Standard CPython 3.12 and later share `cp312-abi3` wheels. These wheels may also
+install on newer Python versions that have not yet been tested; installation
+alone does not establish official support. New versions become officially
+supported when their wheel tests are added to CI and pass. Free-threaded Python
+builds are not currently supported.
+
 
 ## Contributing
 

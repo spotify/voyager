@@ -34,7 +34,21 @@ endif()
 set(IS_UNIX ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" OR ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
 set(IS_WINDOWS ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
-find_package(Python 3.9 COMPONENTS Interpreter ${DEV_MODULE})
+# Nanobind needs Python::SABIModule to enable STABLE_ABI on Python 3.12+.
+# Keep it optional so older Python versions can still build regular wheels.
+find_package(Python 3.9 COMPONENTS Interpreter ${DEV_MODULE}
+             OPTIONAL_COMPONENTS Development.SABIModule)
+
+set(VOYAGER_STABLE_ABI FALSE)
+if (Python_INTERPRETER_ID STREQUAL "Python" AND
+    Python_VERSION VERSION_GREATER_EQUAL 3.12 AND NOT Python_GIL_DISABLED)
+  set(VOYAGER_STABLE_ABI TRUE)
+  if (NOT TARGET Python::SABIModule)
+    message(FATAL_ERROR
+      "Voyager requires Development.SABIModule for its ABI3 wheels. "
+      "Refusing to build a version-specific extension with an ABI3 wheel tag.")
+  endif()
+endif()
 
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
@@ -81,6 +95,21 @@ nanobind_add_module(
   # Sources:
   src/bindings.cpp
 )
+
+if (VOYAGER_STABLE_ABI)
+  # Catch nanobind silently falling back to a version-specific extension.
+  get_target_property(VOYAGER_EXTENSION_SUFFIX voyager_ext SUFFIX)
+  if (WIN32)
+    set(VOYAGER_ABI3_SUFFIX ".pyd")
+  else()
+    set(VOYAGER_ABI3_SUFFIX ".abi3${CMAKE_SHARED_MODULE_SUFFIX}")
+  endif()
+  if (NOT VOYAGER_EXTENSION_SUFFIX STREQUAL VOYAGER_ABI3_SUFFIX)
+    message(FATAL_ERROR
+      "Voyager's ABI3 wheel requires extension suffix ${VOYAGER_ABI3_SUFFIX}, "
+      "but nanobind configured ${VOYAGER_EXTENSION_SUFFIX}.")
+  endif()
+endif()
 
 # Install directive for scikit-build-core
 install(TARGETS voyager_ext LIBRARY DESTINATION voyager)
