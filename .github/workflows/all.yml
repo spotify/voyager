@@ -459,6 +459,7 @@ jobs:
         with:
           name: python-wheels-${{ matrix.python.build }}-${{ matrix.platform.build }}
           path: wheelhouse
+      # Keep NumPy pins in sync with python/dev-requirements.txt.
       - name: Install test dependencies
         run: >-
           python -m pip install --only-binary=:all:
