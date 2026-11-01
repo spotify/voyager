@@ -216,3 +216,26 @@ TEST_CASE(
       {1.0f}, {5.0f, 6.0f, 7.0f}, {9.0f, 10.0f, 11.0f}};
   REQUIRE_THROWS_AS(vectorsToNDArray(vectors2), std::invalid_argument);
 }
+TEST_CASE("Test batch and incremental insertion capacity growth") {
+  auto index = TypedIndex<float>(SpaceType::Euclidean, 4, /* M= */ 12,
+                                 /* efConstruction= */ 200, /* randomSeed= */ 1,
+                                 /* maxElements= */ 2);
+  REQUIRE(index.getMaxElements() == 2);
+  REQUIRE(index.getNumElements() == 0);
+
+  // Add 10 items one by one
+  for (int i = 0; i < 10; ++i) {
+    std::vector<float> vec = {static_cast<float>(i), 0.0f, 0.0f, 0.0f};
+    index.addItem(vec, i);
+  }
+
+  REQUIRE(index.getNumElements() == 10);
+  REQUIRE(index.getMaxElements() >= 10);
+
+  // Query to ensure nearest neighbor search remains accurate
+  std::vector<float> queryVec = {5.0f, 0.0f, 0.0f, 0.0f};
+  auto result = index.query(queryVec, 1);
+  auto labels = std::get<0>(result);
+  REQUIRE(labels.size() == 1);
+  REQUIRE(labels[0] == 5);
+}
