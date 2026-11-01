@@ -39,9 +39,21 @@ set(IS_WINDOWS ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 find_package(Python 3.9 COMPONENTS Interpreter ${DEV_MODULE}
              OPTIONAL_COMPONENTS Development.SABIModule)
 
+# FindPython does not expose Py_GIL_DISABLED as a CMake variable.
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" -c
+          "import sysconfig; print(sysconfig.get_config_var('Py_GIL_DISABLED') or 0)"
+  OUTPUT_VARIABLE VOYAGER_PYTHON_GIL_DISABLED
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE VOYAGER_PYTHON_CONFIG_RESULT
+)
+if (NOT VOYAGER_PYTHON_CONFIG_RESULT EQUAL 0)
+  message(FATAL_ERROR "Could not determine Python's GIL configuration.")
+endif()
+
 set(VOYAGER_STABLE_ABI FALSE)
 if (Python_INTERPRETER_ID STREQUAL "Python" AND
-    Python_VERSION VERSION_GREATER_EQUAL 3.12 AND NOT Python_GIL_DISABLED)
+    Python_VERSION VERSION_GREATER_EQUAL 3.12 AND NOT VOYAGER_PYTHON_GIL_DISABLED)
   set(VOYAGER_STABLE_ABI TRUE)
   if (NOT TARGET Python::SABIModule)
     message(FATAL_ERROR
