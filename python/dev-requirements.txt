@@ -1,4 +1,5 @@
 -r test-requirements.txt
+# Keep NumPy pins in sync with test-python-wheels in .github/workflows/all.yml.
 # NumPy 2.0 is the last release series supporting Python 3.9.
 numpy==2.0.2; python_version < "3.10"
 numpy==2.2.6; python_version >= "3.10"

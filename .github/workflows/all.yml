@@ -427,6 +427,52 @@ jobs:
           name: python-wheels-${{ matrix.build }}
           path: ./wheelhouse/*.whl
 
+  test-python-wheels:
+    needs: build-python-wheels
+    runs-on: ${{ matrix.platform.runner }}
+    name: Test wheel ${{ matrix.python.build }}-${{ matrix.platform.build }} on Python ${{ matrix.python.version }} (${{ matrix.platform.runner }})
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - { version: '3.9', build: cp39 }
+          - { version: '3.10', build: cp310 }
+          - { version: '3.11', build: cp311 }
+          # Install the same cp312 wheel in both interpreters; never rebuild it.
+          - { version: '3.12', build: cp312 }
+          - { version: '3.13', build: cp312 }
+        platform:
+          - { runner: ubuntu-24.04, build: manylinux_x86_64 }
+          - { runner: ubuntu-24.04-arm, build: manylinux_aarch64 }
+          - { runner: windows-latest, build: win_amd64 }
+          - { runner: macos-15-intel, build: macosx_x86_64 }
+          - { runner: macos-15, build: macosx_arm64 }
+          # Test both architecture slices of the universal2 artifact.
+          - { runner: macos-15-intel, build: macosx_universal2 }
+          - { runner: macos-15, build: macosx_universal2 }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python.version }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: python-wheels-${{ matrix.python.build }}-${{ matrix.platform.build }}
+          path: wheelhouse
+      # Keep NumPy pins in sync with python/dev-requirements.txt.
+      - name: Install test dependencies
+        run: >-
+          python -m pip install --only-binary=:all:
+          pytest "numpy==${{ matrix.python.version == '3.9' && '2.0.2' || '2.2.6' }}"
+      - name: Install the release wheel without source fallback
+        run: >-
+          python -m pip install --no-index --only-binary=:all: --no-deps
+          --force-reinstall --find-links wheelhouse voyager
+      - name: Verify the installed extension imports
+        run: python -I -c "import voyager.voyager_ext; print(voyager.voyager_ext.__file__)"
+      - name: Test the installed wheel without rebuilding Voyager
+        run: python -I -m pytest --import-mode=importlib python/tests -q
+
   build-java-jars:
     continue-on-error: false
     name: Build JAR with on ${{ matrix.os }}
@@ -515,7 +561,7 @@ jobs:
     defaults:
       run:
         working-directory: python
-    needs: [build-python-wheels, build-python-sdist, run-python-tests-with-address-sanitizer, run-python-tests]
+    needs: [build-python-wheels, test-python-wheels, build-python-sdist, run-python-tests-with-address-sanitizer, run-python-tests]
     runs-on: 'ubuntu-latest'
     name: "Upload wheels and sdist to PyPI"
     if: github.event_name == 'release' && github.event.action == 'published'
