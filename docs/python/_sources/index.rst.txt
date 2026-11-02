@@ -29,6 +29,16 @@ Python compatibility
 
 Voyager 2.2.0 requires Python 3.9 or newer. Python 3.8 is no longer supported.
 
+Official support covers the Python versions and platforms in the
+`compatibility table <https://github.com/spotify/voyager#compatibility>`_.
+Release wheels are tested on each listed combination before publication.
+
+Standard CPython 3.12 and later share ``cp312-abi3`` wheels. These wheels may
+also install on newer, untested Python versions; installation alone does not
+establish official support. New versions become officially supported when their
+wheel tests are added to CI and pass. Free-threaded Python builds are not
+currently supported.
+
 
 .. toctree::
    :maxdepth: 1
