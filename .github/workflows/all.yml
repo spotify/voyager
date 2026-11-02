@@ -132,7 +132,6 @@ jobs:
 
   run-python-tests:
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
     defaults:
       run:
         working-directory: python
