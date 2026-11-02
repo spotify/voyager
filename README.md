@@ -57,18 +57,24 @@ You can find the latest version on [Voyager's Releases page](https://github.com/
 | Linux     | Python   | 3.11    | ✅       | ✅       |
 | Linux     | Python   | 3.12    | ✅       | ✅       |
 | Linux     | Python   | 3.13    | ✅       | ✅       |
+| Linux     | Python   | 3.14    | ✅       | ✅       |
+| Linux     | Python   | 3.15    | ✅       | ✅       |
 | Linux     | Java     | 8-16+   | ✅       | ✅      |
 | macOS     | Python   | 3.9     | ✅       | ✅       |
 | macOS     | Python   | 3.10    | ✅       | ✅       |
 | macOS     | Python   | 3.11    | ✅       | ✅       |
 | macOS     | Python   | 3.12    | ✅       | ✅       |
 | macOS     | Python   | 3.13    | ✅       | ✅       |
+| macOS     | Python   | 3.14    | ✅       | ✅       |
+| macOS     | Python   | 3.15    | ✅       | ✅       |
 | macOS     | Java     | 8-16+   | ✅       | ✅       |
 | Windows   | Python   | 3.9     | ✅       | ❌       |
 | Windows   | Python   | 3.10    | ✅       | ❌       |
 | Windows   | Python   | 3.11    | ✅       | ❌       |
 | Windows   | Python   | 3.12    | ✅       | ❌       |
 | Windows   | Python   | 3.13    | ✅       | ❌       |
+| Windows   | Python   | 3.14    | ✅       | ❌       |
+| Windows   | Python   | 3.15    | ✅       | ❌       |
 | Windows   | Java     | 8-16+   | ✅       | ❌       |
 
 #### Python support policy
