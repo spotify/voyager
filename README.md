@@ -98,4 +98,4 @@ See [CONTRIBUTING.md](https://github.com/spotify/voyager/blob/master/CONTRIBUTIN
 ### License
 Voyager is copyright 2022-2024 Spotify AB.
 
-Voyager is licensed under the [Apache 2 License]([https://www.gnu.org/licenses/gpl-3.0.en.html](https://www.apache.org/licenses/LICENSE-2.0)).
+Voyager is licensed under the [Apache 2 License](https://www.apache.org/licenses/LICENSE-2.0).
