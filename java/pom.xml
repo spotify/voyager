@@ -58,6 +58,17 @@
       </roles>
       <timezone>-5</timezone>
     </developer>
+    <developer>
+      <id>stephen29xie</id>
+      <name>Stephen Xie</name>
+      <email>stephenx@spotify.com</email>
+      <organization>Spotify AB</organization>
+      <organizationUrl>http://www.spotify.com</organizationUrl>
+      <roles>
+        <role>developer</role>
+      </roles>
+      <timezone>-5</timezone>
+    </developer>    
   </developers>
 
 
