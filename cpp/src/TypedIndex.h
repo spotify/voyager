@@ -23,8 +23,10 @@
 
 #pragma once
 
+#include <algorithm>
 #include <atomic>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <ratio>
 
@@ -301,6 +303,22 @@ public:
     return addItems(vectorsToNDArray(vectors), ids, numThreads);
   }
 
+  size_t calculateNewCapacity(size_t rowsToAdd) const {
+    size_t currentMax = getMaxElements();
+    size_t minCapacity = getNumElements() + rowsToAdd;
+    // For small indices (< 1000), double capacity (or start with 16) to prevent frequent resizes.
+    // For larger indices, grow by at least 10% or rowsToAdd, whichever is larger.
+    size_t growth = currentMax < 1000 ? std::max(currentMax, (size_t)16) : (currentMax / 10);
+    if (growth < rowsToAdd) {
+      growth = rowsToAdd;
+    }
+    // Prevent integer overflow
+    if (currentMax > std::numeric_limits<size_t>::max() - growth) {
+      return minCapacity;
+    }
+    return std::max(minCapacity, currentMax + growth);
+  }
+
   std::vector<hnswlib::labeltype>
   addItems(NDArray<float, 2> floatInput,
            std::vector<hnswlib::labeltype> ids = {}, int numThreads = -1) {
@@ -336,7 +354,7 @@ public:
     // an adaptive algorithm to minimize both reallocations and memory usage?
     while (getNumElements() + rows > getMaxElements()) {
       try {
-        resizeIndex(getNumElements() + rows);
+        resizeIndex(calculateNewCapacity(rows));
       } catch (IndexCannotBeShrunkError &e) {
         // Retry with a larger size; some other thread may have resized
         // behind our back.
@@ -400,7 +418,7 @@ public:
               // NOTE: This will resize the index to be at least as large as
               // the number of elements we're trying to add, but may
               // allocate more space than necessary.
-              resizeIndex(getNumElements() + rows);
+              resizeIndex(calculateNewCapacity(rows));
             } catch (IndexCannotBeShrunkError &e) {
               // Retry with a larger size; some other thread may have resized
               // behind our back.
@@ -437,7 +455,7 @@ public:
               // NOTE: This will resize the index to be at least as large as
               // the number of elements we're trying to add, but may
               // allocate more space than necessary.
-              resizeIndex(getNumElements() + rows);
+              resizeIndex(calculateNewCapacity(rows));
             } catch (IndexCannotBeShrunkError &e) {
               // Retry with a larger size; some other thread may have resized
               // behind our back.
