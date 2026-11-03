@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace voyager {
+
 /**
  * The space (i.e. distance metric) to use for searching.
  */
@@ -60,3 +62,5 @@ std::ostream &operator<<(std::ostream &os, const StorageDataType sdt) {
   os << toString(sdt);
   return os;
 }
+
+} // namespace voyager
