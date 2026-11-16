@@ -32,7 +32,7 @@
 #endif
 #endif
 #endif
-#ifdef __ARM_NEON
+#if defined(__ARM_NEON) && defined(__aarch64__)
 #define USE_NEON
 #endif
 #endif
