@@ -7,12 +7,14 @@
 
 template <typename dist_t, typename data_t = dist_t,
           typename scalefactor = std::ratio<1, 1>>
-void testIndexProperties(TypedIndex<dist_t, data_t, scalefactor> &index,
-                         SpaceType spaceType, int numDimensions,
-                         StorageDataType storageType) {
-  REQUIRE(toString(index.getSpace()) == toString(spaceType));
+void testIndexProperties(
+    voyager::TypedIndex<dist_t, data_t, scalefactor> &index,
+    voyager::SpaceType spaceType, int numDimensions,
+    voyager::StorageDataType storageType) {
+  REQUIRE(voyager::toString(index.getSpace()) == voyager::toString(spaceType));
   REQUIRE(index.getNumDimensions() == numDimensions);
-  REQUIRE(toString(index.getStorageDataType()) == toString(storageType));
+  REQUIRE(voyager::toString(index.getStorageDataType()) ==
+          voyager::toString(storageType));
 }
 
 /**
@@ -23,20 +25,20 @@ void testIndexProperties(TypedIndex<dist_t, data_t, scalefactor> &index,
  */
 template <typename dist_t, typename data_t = dist_t,
           typename scalefactor = std::ratio<1, 1>>
-void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
-               int numDimensions, SpaceType spaceType,
-               StorageDataType storageType, bool testSingleVectorMethod,
-               float precisionTolerance, int k) {
+void testQuery(voyager::TypedIndex<dist_t, data_t, scalefactor> &index,
+               int numVectors, int numDimensions, voyager::SpaceType spaceType,
+               voyager::StorageDataType storageType,
+               bool testSingleVectorMethod, float precisionTolerance, int k) {
   /**
    * Create test data and ids. If we are using Float8 or E4M3 storage, quantize
    * the vector values, if we are using Float32 storage, keep the float values
    * as-is. We want to match the storage type use case with the input data.
    */
   std::vector<std::vector<float>> inputData;
-  if (storageType == StorageDataType::Float8 ||
-      storageType == StorageDataType::E4M3) {
+  if (storageType == voyager::StorageDataType::Float8 ||
+      storageType == voyager::StorageDataType::E4M3) {
     inputData = randomQuantizedVectors(numVectors, numDimensions);
-  } else if (storageType == StorageDataType::Float32) {
+  } else if (storageType == voyager::StorageDataType::Float32) {
     inputData = randomVectors(numVectors, numDimensions);
   }
   std::vector<hnswlib::labeltype> ids(numVectors);
@@ -79,8 +81,8 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
        * its NN. InnerProduct will have negative distance to the closest item,
        * not zero
        */
-      if (storageType != StorageDataType::E4M3 &&
-          spaceType != SpaceType::InnerProduct) {
+      if (storageType != voyager::StorageDataType::E4M3 &&
+          spaceType != voyager::SpaceType::InnerProduct) {
         REQUIRE(i == labels[0]);
         REQUIRE(distances[0] >= lowerBound);
         REQUIRE(distances[0] <= upperBound);
@@ -92,8 +94,9 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
   for (long queryEf = 100; queryEf <= numVectors; queryEf *= 10) {
     auto nearestNeighbors = index.query(
         inputData, /* k= */ k, /* numThreads= */ -1, /* queryEf= */ queryEf);
-    NDArray<hnswlib::labeltype, 2> labels = std::get<0>(nearestNeighbors);
-    NDArray<dist_t, 2> distances = std::get<1>(nearestNeighbors);
+    voyager::NDArray<hnswlib::labeltype, 2> labels =
+        std::get<0>(nearestNeighbors);
+    voyager::NDArray<dist_t, 2> distances = std::get<1>(nearestNeighbors);
     REQUIRE(labels.shape[0] == numVectors);
     REQUIRE(labels.shape[1] == k);
     REQUIRE(distances.shape[0] == numVectors);
@@ -109,8 +112,8 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
        * as its NN. InnerProduct will have negative distance to the closest
        * item, not zero
        */
-      if (storageType != StorageDataType::E4M3 &&
-          spaceType != SpaceType::InnerProduct) {
+      if (storageType != voyager::StorageDataType::E4M3 &&
+          spaceType != voyager::SpaceType::InnerProduct) {
         REQUIRE(i == label);
         REQUIRE(distance >= lowerBound);
         REQUIRE(distance <= upperBound);
@@ -121,16 +124,19 @@ void testQuery(TypedIndex<dist_t, data_t, scalefactor> &index, int numVectors,
 
 TEST_CASE("Test combinations of different instantiations. Test that each "
           "vector's ANN is itself and distance is approximately zero.") {
-  std::unordered_map<StorageDataType, float> PRECISION_TOLERANCE_PER_DATA_TYPE =
-      {{StorageDataType::Float32, 0.00001f},
-       {StorageDataType::Float8, 0.10f},
-       {StorageDataType::E4M3, 0.20f}};
-  std::vector<SpaceType> spaceTypesSet = {
-      SpaceType::Euclidean, SpaceType::InnerProduct, SpaceType::Cosine};
+  std::unordered_map<voyager::StorageDataType, float>
+      PRECISION_TOLERANCE_PER_DATA_TYPE = {
+          {voyager::StorageDataType::Float32, 0.00001f},
+          {voyager::StorageDataType::Float8, 0.10f},
+          {voyager::StorageDataType::E4M3, 0.20f}};
+  std::vector<voyager::SpaceType> spaceTypesSet = {
+      voyager::SpaceType::Euclidean, voyager::SpaceType::InnerProduct,
+      voyager::SpaceType::Cosine};
   std::vector<int> numDimensionsSet = {16};
   std::vector<int> numVectorsSet = {500};
-  std::vector<StorageDataType> storageTypesSet = {
-      StorageDataType::Float8, StorageDataType::Float32, StorageDataType::E4M3};
+  std::vector<voyager::StorageDataType> storageTypesSet = {
+      voyager::StorageDataType::Float8, voyager::StorageDataType::Float32,
+      voyager::StorageDataType::E4M3};
   std::vector<bool> testSingleVectorMethods = {true, false};
   int k = 1;
 
@@ -147,23 +153,26 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
               CAPTURE(storageType);
               CAPTURE(testSingleVectorMethod);
 
-              if (storageType == StorageDataType::Float8) {
-                auto index = TypedIndex<float, int8_t, std::ratio<1, 127>>(
+              if (storageType == voyager::StorageDataType::Float8) {
+                auto index =
+                    voyager::TypedIndex<float, int8_t, std::ratio<1, 127>>(
+                        spaceType, numDimensions);
+                testIndexProperties(index, spaceType, numDimensions,
+                                    storageType);
+                testQuery(index, numVectors, numDimensions, spaceType,
+                          storageType, testSingleVectorMethod,
+                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType], k);
+              } else if (storageType == voyager::StorageDataType::Float32) {
+                auto index =
+                    voyager::TypedIndex<float>(spaceType, numDimensions);
+                testIndexProperties(index, spaceType, numDimensions,
+                                    storageType);
+                testQuery(index, numVectors, numDimensions, spaceType,
+                          storageType, testSingleVectorMethod,
+                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType], k);
+              } else if (storageType == voyager::StorageDataType::E4M3) {
+                auto index = voyager::TypedIndex<float, voyager::E4M3>(
                     spaceType, numDimensions);
-                testIndexProperties(index, spaceType, numDimensions,
-                                    storageType);
-                testQuery(index, numVectors, numDimensions, spaceType,
-                          storageType, testSingleVectorMethod,
-                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType], k);
-              } else if (storageType == StorageDataType::Float32) {
-                auto index = TypedIndex<float>(spaceType, numDimensions);
-                testIndexProperties(index, spaceType, numDimensions,
-                                    storageType);
-                testQuery(index, numVectors, numDimensions, spaceType,
-                          storageType, testSingleVectorMethod,
-                          PRECISION_TOLERANCE_PER_DATA_TYPE[storageType], k);
-              } else if (storageType == StorageDataType::E4M3) {
-                auto index = TypedIndex<float, E4M3>(spaceType, numDimensions);
                 testIndexProperties(index, spaceType, numDimensions,
                                     storageType);
                 testQuery(index, numVectors, numDimensions, spaceType,
@@ -178,12 +187,12 @@ TEST_CASE("Test combinations of different instantiations. Test that each "
   }
 }
 
-TEST_CASE(
-    "Test vectorsToNDArray converts 2D vector of float to NDArray<float,2>") {
+TEST_CASE("Test vectorsToNDArray converts 2D vector of float to "
+          "voyager::NDArray<float,2>") {
   std::vector<std::vector<float>> vectors = {{1.0f, 2.0f, 3.0f, 4.0f},
                                              {5.0f, 6.0f, 7.0f, 8.0f},
                                              {9.0f, 10.0f, 11.0f, 12.0f}};
-  NDArray<float, 2> ndArray = vectorsToNDArray(vectors);
+  voyager::NDArray<float, 2> ndArray = voyager::vectorsToNDArray(vectors);
   REQUIRE(ndArray.shape.size() == 2);
   REQUIRE(ndArray.shape[0] == 3);
   REQUIRE(ndArray.shape[1] == 4);
@@ -210,9 +219,9 @@ TEST_CASE(
   std::vector<std::vector<float>> vectors1 = {{1.0f, 2.0f, 3.0f, 4.0f},
                                               {5.0f, 6.0f, 7.0f},
                                               {9.0f, 10.0f, 11.0f, 12.0f}};
-  REQUIRE_THROWS_AS(vectorsToNDArray(vectors1), std::invalid_argument);
+  REQUIRE_THROWS_AS(voyager::vectorsToNDArray(vectors1), std::invalid_argument);
 
   std::vector<std::vector<float>> vectors2 = {
       {1.0f}, {5.0f, 6.0f, 7.0f}, {9.0f, 10.0f, 11.0f}};
-  REQUIRE_THROWS_AS(vectorsToNDArray(vectors2), std::invalid_argument);
+  REQUIRE_THROWS_AS(voyager::vectorsToNDArray(vectors2), std::invalid_argument);
 }

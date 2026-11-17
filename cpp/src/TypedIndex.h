@@ -36,6 +36,8 @@
 #include "hnswlib.h"
 #include "std_utils.h"
 
+namespace voyager {
+
 class RecallError : public std::runtime_error {
 public:
   RecallError(const std::string &what) : std::runtime_error(what) {}
@@ -337,7 +339,7 @@ public:
     while (getNumElements() + rows > getMaxElements()) {
       try {
         resizeIndex(getNumElements() + rows);
-      } catch (IndexCannotBeShrunkError &e) {
+      } catch (::IndexCannotBeShrunkError &e) {
         // Retry with a larger size; some other thread may have resized
         // behind our back.
       }
@@ -393,7 +395,7 @@ public:
         size_t id = ids.size() ? ids.at(row) : (currentLabel.fetch_add(1));
         try {
           algorithmImpl->addPoint(convertedArray.data() + startIndex, id);
-        } catch (IndexFullError &e) {
+        } catch (::IndexFullError &e) {
           // Resize the index and try again:
           while (getNumElements() + rows > getMaxElements()) {
             try {
@@ -401,7 +403,7 @@ public:
               // the number of elements we're trying to add, but may
               // allocate more space than necessary.
               resizeIndex(getNumElements() + rows);
-            } catch (IndexCannotBeShrunkError &e) {
+            } catch (::IndexCannotBeShrunkError &e) {
               // Retry with a larger size; some other thread may have resized
               // behind our back.
             }
@@ -430,7 +432,7 @@ public:
 
         try {
           algorithmImpl->addPoint(normalizedArray.data() + startIndex, id);
-        } catch (IndexFullError &e) {
+        } catch (::IndexFullError &e) {
           // Resize the index and try again:
           while (getNumElements() + rows > getMaxElements()) {
             try {
@@ -438,7 +440,7 @@ public:
               // the number of elements we're trying to add, but may
               // allocate more space than necessary.
               resizeIndex(getNumElements() + rows);
-            } catch (IndexCannotBeShrunkError &e) {
+            } catch (::IndexCannotBeShrunkError &e) {
               // Retry with a larger size; some other thread may have resized
               // behind our back.
             }
@@ -782,3 +784,5 @@ loadTypedIndexFromStream(std::shared_ptr<InputStream> inputStream) {
   return loadTypedIndexFromMetadata(
       voyager::Metadata::loadFromStream(inputStream), inputStream);
 }
+
+} // namespace voyager

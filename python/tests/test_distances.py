@@ -80,6 +80,6 @@ def test_distance(dimensions: int, space: Space, storage_data_type: StorageDataT
     else:
         raise NotImplementedError(f"Not sure how to calculate distance in tests for {space}!")
 
-    assert (
-        np.abs(actual - expected) < tolerance
-    ), f"Expected {space.name} distance between {a} and {b} to be {expected}, but was {actual}"
+    assert np.abs(actual - expected) < tolerance, (
+        f"Expected {space.name} distance between {a} and {b} to be {expected}, but was {actual}"
+    )
