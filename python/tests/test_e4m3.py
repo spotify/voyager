@@ -87,6 +87,8 @@ def test_rounding():
     for _input in (
         list(np.arange(-1.1, 1.1, 0.001))
         + [(2**-7 * (1 + x / 8)) for x in range(8)]
+        # Between the largest subnormal (7 * 2**-10) and the smallest normal value (2**-6):
+        + list(np.linspace(7 * 2**-10, 2**-6, 101))
         + list(np.arange(-448, 448, 1.0))
         + [0.04890749]
     ):

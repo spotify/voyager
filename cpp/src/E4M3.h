@@ -329,6 +329,25 @@ public:
 
     sign = input < 0;
 
+    // Subnormal values are mantissa * 2^-10 (see effectiveExponent()), so the
+    // next value above the largest subnormal (7 * 2^-10) is the smallest normal
+    // value (2^-6), not 8 * 2^-10. The bit-based rounding below assumes the
+    // latter, so round values in this gap to the nearest of the two explicitly.
+    const float largestSubnormal = 7.0f / 1024.0f;
+    const float smallestNormal = 1.0f / 64.0f;
+    const float absInput = std::fabs(input);
+    if (absInput > largestSubnormal && absInput < smallestNormal) {
+      if (absInput < (largestSubnormal + smallestNormal) / 2) {
+        exponent = 0;
+        mantissa = 7;
+      } else {
+        // Ties go to the smallest normal value, whose mantissa is even.
+        exponent = 1;
+        mantissa = 0;
+      }
+      return;
+    }
+
     // The "subnormal" number case: where the first bit of the mantissa is
     // not 1.0:
     if (originalExponent - 127 + 7 < 0) {
@@ -350,18 +369,6 @@ public:
       throw std::domain_error("E4M3 cannot represent values outside of [-448, "
                               "448] - tried to convert " +
                               std::to_string(input) + ".");
-    } else if (originalExponent - 127 + 7 == 0) {
-      // Handle the special case where our mantissa wouldn't need to change,
-      // except for the fact that an exponent of 0 means the mantissa doesn't
-      // have a "1" added to it.
-      exponent = 0;
-      mantissa = 7;
-      if (originalMantissa >> 20 >= 4) {
-        // Clear the bit that would cause us to round up:
-        originalMantissa &= ~(1 << 19);
-        exponent = 1;
-        mantissa = 0;
-      }
     } else {
       exponent = originalExponent - 127 + 7;
       mantissa = originalMantissa >> 20;
