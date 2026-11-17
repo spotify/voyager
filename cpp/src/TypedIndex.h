@@ -531,7 +531,10 @@ public:
 
     if (numFeatures != dimensions) {
       throw std::runtime_error(
-          "Query vectors expected to share dimensionality with index.");
+          "Query vectors expected to share dimensionality with index. Index "
+          "dims: " +
+          std::to_string(dimensions) +
+          ", query vector dims: " + std::to_string(numFeatures));
     }
 
     NDArray<hnswlib::labeltype, 2> labels({numRows, k});
