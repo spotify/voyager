@@ -234,7 +234,8 @@ public:
    * Save this index to the provided file path on disk.
    */
   void saveIndex(const std::string &pathToIndex) {
-    algorithmImpl->saveIndex(pathToIndex);
+    // Write metadata + index once. Calling algorithmImpl->saveIndex first
+    // would overwrite the path with an index-only payload and break loads.
     saveIndex(std::make_shared<FileOutputStream>(pathToIndex));
   }
 
