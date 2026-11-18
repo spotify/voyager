@@ -424,10 +424,21 @@ Returns:
 
   index.def(
       "add_items",
-      [](Index &index, nb::ndarray<float> vectors,
+      [](Index &index, nb::object vectors,
          std::optional<std::vector<size_t>> _ids, int num_threads) {
         std::vector<size_t> empty;
-        auto ndArray = pyArrayToNDArray<float, 2>(vectors);
+        nb::module_ numpy = nb::module_::import_("numpy");
+        auto numpyArray = [&]() {
+          if (nb::isinstance(vectors, numpy.attr("memmap"))) {
+            // Normalize memmap specifically before conversion. Keep the
+            // existing conversion path unchanged for all other array types.
+            nb::object contiguousVectors =
+                numpy.attr("ascontiguousarray")(vectors);
+            return nb::cast<nb::ndarray<float>>(contiguousVectors);
+          }
+          return nb::cast<nb::ndarray<float>>(vectors);
+        }();
+        auto ndArray = pyArrayToNDArray<float, 2>(numpyArray);
 
         nb::gil_scoped_release release;
         return index.addItems(ndArray, (_ids ? *_ids : empty), num_threads);

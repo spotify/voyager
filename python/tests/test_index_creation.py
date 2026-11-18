@@ -114,6 +114,25 @@ def test_create_and_query(
         assert index.as_bytes() == f.getvalue()
 
 
+def test_add_items_with_numpy_memmap(tmp_path):
+    num_dimensions = 4
+    input_data = np.memmap(
+        tmp_path / "vectors.dat",
+        dtype=np.float32,
+        mode="w+",
+        shape=(3, num_dimensions),
+    )
+    input_data[:] = np.arange(3 * num_dimensions, dtype=np.float32).reshape(
+        3, num_dimensions
+    )
+    input_data.flush()
+
+    index = voyager.Index(space=voyager.Space.Euclidean, num_dimensions=num_dimensions)
+
+    assert index.add_items(input_data) == list(range(len(input_data)))
+    np.testing.assert_array_equal(index.get_vectors(list(range(len(input_data)))), input_data)
+
+
 @pytest.mark.parametrize(
     "space,expected_distances",
     [
